@@ -28,7 +28,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load env vars from root directory
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -171,6 +171,4 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong on the server' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-});
+export default app;
