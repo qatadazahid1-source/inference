@@ -1,0 +1,27 @@
+.layout {
+  display: flex;
+  gap: 48px;
+  padding: 40px;
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+  max-width: 720px;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 0;
+  }
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}

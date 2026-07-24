@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════════════════════════
+   INFERENCE INTELLIGENCE — UNIFIED DESIGN SYSTEM
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+:root {
+  /* ── Core Palette (single source of truth — no duplicate token sets) ── */
+  --color-bg: #0e1619;
+  --color-card: #141d20;
+  --color-card-hover: #1a2529;
+  --color-tertiary: #1e2a2e;
+
+  --color-green: #22c55e;
+  --color-green-btn: #16a34a;
+  --color-green-hover: #4ade80;
+  --color-green-muted: rgba(34, 197, 94, 0.10);
+
+  /* Signature accent — used deliberately, in one place at a time:
+     ledger totals, key stat callouts, the ledger-panel rule line.
+     Never used for buttons or default UI chrome. */
+  --color-gold: #d4a24c;
+  --color-gold-muted: rgba(212, 162, 76, 0.12);
+
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-tertiary: #64748b;
+  --color-text-muted: #475569;
+
+  --color-border: rgba(64, 80, 85, 0.50);
+  --color-border-strong: rgba(64, 80, 85, 0.80);
+
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.08);
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+  --card-gap: 32px;
+  --max-width: 1152px;
+  --hero-max: 896px;
+
+  /* ── Type System: three roles, each with a job ─────────────────
+     Display  → Fraunces  (headlines only — carries authority/trust,
+                            a deliberate contrast to the technical subject)
+     Body     → Geist     (everything you read — matches the product's
+                            existing app-wide voice, kept for consistency)
+     Data     → Geist Mono (every number: prices, stats, costs — reads
+                            as ledger/terminal precision)                 */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font: 'Geist', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', ui-monospace, monospace;
+
+  --max-w: 1152px;
+  --max-w-hero: 1120px;
+  --max-w-wide: 1280px;
+  --container-max: 1152px;
+
+  /* ── Legacy aliases ─────────────────────────────────────────────
+     The old landing page had 3 overlapping token sets with different
+     names for the same values (a sign of un-intentional, incremental
+     AI-generated styling). Hero, Navbar, and Footer have been migrated
+     to the clean system above. Everything else still references these
+     names — kept as aliases so those sections don't break. Migrate a
+     section, then delete its old names from this block. */
+  --bg: var(--color-bg);
+  --bg-card: var(--color-card);
+  --bg-card-60: rgba(20, 29, 32, 0.60);
+  --bg-card-40: rgba(20, 29, 32, 0.40);
+  --bg-void: var(--color-bg);
+  --bg-raised: var(--color-bg);
+  --bg-base: var(--color-bg);
+  --border: var(--color-border);
+  --border-solid: var(--color-border-strong);
+  --border-1: var(--color-border);
+  --border-2: var(--color-border-strong);
+  --border-accent: var(--color-gold-muted);
+  --pine-300: var(--color-green-hover);
+  --pine-400: var(--color-green);
+  --pine-500: var(--color-green-btn);
+  --amber: var(--color-warning);
+  --red: var(--color-error);
+  --red-light: #f87171;
+  --accent: var(--color-gold);
+  --accent-hover: var(--color-gold);
+  --cyan: var(--color-gold);
+  --green: var(--color-green);
+  --text-white: var(--color-text-primary);
+  --text-muted: var(--color-text-secondary);
+  --text-dim: var(--color-text-tertiary);
+  --text-faint: var(--color-text-muted);
+  --text-1: var(--color-text-primary);
+  --text-2: var(--color-text-secondary);
+  --text-3: var(--color-text-tertiary);
+  --text-4: var(--color-text-muted);
+  --radius-md: var(--radius);
+  --font-heading: var(--font);
+  --font-body: var(--font);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg, var(--bg));
+  color: var(--color-text-primary, var(--text-white));
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ── Landing page background treatment ─────────────────────────────
+   A pure flat single-color background is one of the clearest tells of
+   an unfinished/AI-templated page — every genuinely art-directed dark
+   site (Linear, Vercel, Stripe) has *some* depth, even if subtle. This
+   is a barely-visible top-down vignette plus a fixed grain texture.
+   Scoped to .landingBg so the app/dashboard/admin panel keep their
+   flat, functional background untouched. */
+.landingBg { position: relative; }
+.landingBg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 1200px 700px at 50% -10%, rgba(212, 162, 76, 0.06), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 85% 15%, rgba(34, 197, 94, 0.04), transparent 55%);
+}
+.landingBg::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.landingBg > * { position: relative; z-index: 1; }
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+ul, ol { list-style: none; }
+
+/* ── Shared Animations ─────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes drawCheck {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes glowPulse {
+  from { opacity: 0.5; transform: scale(1); }
+  to { opacity: 1; transform: scale(1.06); }
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes modalFadeOut {
+  from { opacity: 1; transform: scale(0.95); }
+  to { opacity: 0; transform: scale(0.95); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Scroll Animation Classes ──────────────────────────────────── */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-in-up.visible { opacity: 1; transform: translateY(0); }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Dot Grid Background ───────────────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.025) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-bg, var(--bg)); }
+::-webkit-scrollbar-thumb { background: var(--color-text-muted, var(--text-faint)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary, var(--text-dim)); }

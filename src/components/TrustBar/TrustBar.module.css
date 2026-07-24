@@ -1,0 +1,42 @@
+.bar {
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border-1);
+  border-bottom: 1px solid var(--border-1);
+  padding: 28px 0;
+}
+.inner {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.companies {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+}
+.company {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-3);
+  letter-spacing: -0.01em;
+  padding: 0 32px;
+  transition: color 0.2s;
+}
+.company:hover { color: var(--text-2); }
+.divider {
+  width: 1px;
+  height: 16px;
+  background: var(--border-1);
+}

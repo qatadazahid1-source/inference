@@ -1,0 +1,124 @@
+.section {
+  background: var(--color-bg);
+  padding: 100px 0;
+  border-top: 1px solid var(--color-border);
+}
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: block;
+  margin-bottom: 16px;
+}
+.headline {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 3.6vw, 44px);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 56px;
+  max-width: 640px;
+  letter-spacing: -0.01em;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 16px;
+}
+.card {
+  padding: 32px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: border-color 180ms ease;
+}
+.card:hover {
+  border-color: var(--color-border-strong);
+}
+.iconWrap {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius);
+  background: var(--color-tertiary);
+  color: var(--color-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.cardTitle {
+  font-family: var(--font);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+}
+.cardBody {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.65;
+}
+.miniChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 56px;
+}
+.miniBar {
+  flex: 1;
+  background: var(--color-green);
+  opacity: 0.5;
+  border-radius: 2px;
+  min-width: 6px;
+}
+.miniDoc {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.docHeader {
+  height: 8px;
+  background: var(--color-gold);
+  opacity: 0.6;
+  border-radius: 2px;
+  margin-bottom: 10px;
+  width: 40%;
+}
+.docLine {
+  height: 6px;
+  background: var(--color-border-strong);
+  border-radius: 2px;
+  margin-bottom: 6px;
+}
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  background: var(--color-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+@media (max-width: 1024px) {
+  .grid { display: flex; flex-direction: column; }
+  .card { grid-column: span 12 !important; }
+}
+@media (max-width: 768px) {
+  .container { padding: 0 20px; }
+  .card { padding: 24px; }
+}

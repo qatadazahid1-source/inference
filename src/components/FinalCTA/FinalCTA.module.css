@@ -1,0 +1,154 @@
+.section {
+  background: var(--bg-void);
+  padding: 140px 0;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle,
+    rgba(26,110,240,0.1) 0%, transparent 70%);
+  filter: blur(80px);
+  pointer-events: none;
+}
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 40px;
+  position: relative;
+  z-index: 1;
+}
+.label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 20px;
+}
+.headline {
+  font-family: var(--font-heading);
+  font-size: clamp(48px, 7vw, 80px);
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+.gradientText {
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sub {
+  font-family: var(--font-body);
+  font-size: 18px;
+  color: var(--text-2);
+  max-width: 440px;
+  margin: 0 auto 40px;
+}
+.ctaRow {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 80px;
+}
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  background: var(--accent);
+  color: white;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.12) inset,
+    0 -1px 0 rgba(0,0,0,0.25) inset,
+    0 4px 16px rgba(26,110,240,0.3);
+  transition: background 0.2s, transform 0.2s;
+}
+.btnPrimary:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+.btnGhost {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-1);
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.btnGhost:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: var(--border-2);
+  color: var(--text-1);
+}
+.proofs {
+  position: relative;
+  height: 120px;
+}
+.proofCard {
+  position: absolute;
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.06) 0%,
+    rgba(255,255,255,0.02) 100%);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: float 4s ease-in-out infinite;
+}
+.left {
+  left: 15%;
+  top: 0;
+}
+.right {
+  right: 15%;
+  top: 0;
+}
+.bottom {
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  animation-delay: -2s;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.proofCard.left { animation-delay: 0s; }
+.proofCard.right { animation-delay: -1s; }
+.proofCard.bottom { animation-delay: -2s; }
+.proofIcon {
+  font-size: 16px;
+}
+.proofText {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+@media (max-width: 768px) {
+  .proofs { display: none; }
+  .ctaRow { flex-direction: column; align-items: center; }
+  .container { padding: 0 20px; }
+}

@@ -1,0 +1,103 @@
+.section {
+  background: var(--bg-base);
+  padding: 100px 0;
+  position: relative;
+}
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 40px;
+  text-align: center;
+}
+.container::before {
+  content: '';
+  position: absolute;
+  top: 28px;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent, var(--border-accent),
+    var(--border-accent), transparent);
+  display: none;
+}
+@media (min-width: 768px) {
+  .container::before { display: block; }
+}
+.label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 16px;
+}
+.headline {
+  font-family: var(--font-heading);
+  font-size: clamp(36px, 4vw, 52px);
+  font-weight: 800;
+  color: var(--text-1);
+  margin-bottom: 16px;
+}
+.sub {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text-2);
+  max-width: 480px;
+  margin: 0 auto 60px;
+}
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  position: relative;
+}
+.step {
+  flex: 1;
+  text-align: center;
+  padding: 0 24px;
+}
+.stepCircle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.stepCircle:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 24px rgba(26,110,240,0.2);
+}
+.stepNum {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.stepTitle {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 10px;
+}
+.stepBody {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.65;
+  max-width: 220px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .steps { flex-direction: column; gap: 40px; }
+  .container::before { display: none; }
+  .step { padding: 0; }
+}

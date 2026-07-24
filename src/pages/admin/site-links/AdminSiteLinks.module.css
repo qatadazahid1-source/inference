@@ -1,0 +1,142 @@
+.page { padding: 32px; max-width: 900px; }
+
+.header { margin-bottom: 28px; }
+.title { font-size: 24px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 6px; }
+.subtitle { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
+
+.loadingText, .emptyText {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  padding: 16px 0;
+}
+
+.sectionBlock { margin-bottom: 32px; }
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.sectionTitle { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
+
+.btnAdd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition: border-color 150ms, color 150ms;
+}
+.btnAdd:hover { border-color: var(--color-green); color: var(--color-text-primary); }
+
+.table {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.tableHeadRow, .tableRow {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 60px 72px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+}
+
+.tableHeadRow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tableRow:not(:last-child) { border-bottom: 1px solid var(--color-border); }
+
+.input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  width: 100%;
+  transition: border-color 150ms, background 150ms;
+}
+.input:hover { background: var(--color-card-hover); }
+.input:focus { outline: none; border-color: var(--color-green); background: var(--color-card-hover); }
+
+.toggle {
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-tertiary);
+  border: 1px solid var(--color-border);
+  position: relative;
+  transition: background 150ms;
+}
+.toggleOn { background: var(--color-green-btn); border-color: var(--color-green-btn); }
+.toggleDot {
+  position: absolute;
+  top: 1px; left: 1px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 150ms;
+}
+.toggleOn .toggleDot { transform: translateX(16px); }
+
+.rowActions { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+
+.btnIcon, .btnIconDanger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  border: 1px solid var(--color-border);
+  transition: color 150ms, border-color 150ms;
+}
+.btnIcon:hover { color: var(--color-text-primary); border-color: var(--color-border-strong); }
+.btnIconDanger:hover { color: var(--color-error); border-color: var(--color-error); }
+
+.btnSave, .btnCancel, .btnDanger {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+.btnSave { background: var(--color-green-btn); color: #fff; border-color: var(--color-green-btn); }
+.btnCancel { background: transparent; color: var(--color-text-secondary); }
+.btnDanger { background: var(--color-error); color: #fff; border-color: var(--color-error); }
+
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.confirmBox {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  max-width: 380px;
+  width: 100%;
+}
+.confirmText { font-size: 14px; color: var(--color-text-primary); margin: 0 0 16px; }
+.confirmActions { display: flex; gap: 10px; justify-content: flex-end; }

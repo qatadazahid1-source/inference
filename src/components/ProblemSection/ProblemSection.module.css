@@ -1,0 +1,151 @@
+.section {
+  background: var(--bg-raised);
+  padding: 100px 0;
+  border-top: 1px solid var(--border-1);
+}
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 40px;
+  display: grid;
+  grid-template-columns: 55% 45%;
+  gap: 60px;
+  align-items: center;
+}
+.left {}
+.label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 16px;
+}
+.headline {
+  font-family: var(--font-heading);
+  font-size: clamp(36px, 4.5vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--text-1);
+  margin-bottom: 24px;
+}
+.gradientText {
+  background: linear-gradient(90deg, var(--accent), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.body {
+  font-family: var(--font-body);
+  font-size: 16px;
+  color: var(--text-2);
+  max-width: 460px;
+  margin-bottom: 32px;
+}
+.painList {}
+.painItem {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-1);
+}
+.painNum {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-4);
+  min-width: 28px;
+  padding-top: 2px;
+}
+.painContent {}
+.painTitle {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 4px;
+}
+.painBody {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.right {}
+.card {
+  background: linear-gradient(135deg,
+    rgba(255,255,255,0.06) 0%,
+    rgba(255,255,255,0.02) 100%);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+.comparison {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.stateBox {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 20px;
+  position: relative;
+}
+.stateLabel {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: 16px;
+}
+.chaosChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 80px;
+}
+.chaosBar {
+  flex: 1;
+  background: linear-gradient(180deg, var(--red), rgba(229,72,77,0.3));
+  border-radius: 2px;
+  min-width: 8px;
+}
+.orderChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 80px;
+}
+.orderBar {
+  flex: 1;
+  background: linear-gradient(180deg, var(--accent), rgba(26,110,240,0.4));
+  border-radius: 2px;
+  min-width: 12px;
+}
+.statusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+.arrow {
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .container { grid-template-columns: 1fr; }
+  .card { margin-top: 40px; }
+}
+@media (max-width: 768px) {
+  .container { padding: 0 20px; }
+  .comparison { flex-direction: column; }
+  .arrow { transform: rotate(90deg); }
+}
