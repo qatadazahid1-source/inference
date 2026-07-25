@@ -95,7 +95,7 @@ export const DashboardService = {
   // Wired to real /api/analytics data. timeSavedHours, valueGenerated, and
   // roiPercent are not yet computed on the backend (no ROI calculator logic
   // exists yet), so they stay at 0 rather than showing a fabricated number.
-  getOverview: async (userId: string): Promise<DashboardOverview> => {
+  getOverview: async (_userId: string): Promise<DashboardOverview> => {
     const data = await DashboardService.getAnalytics(30);
     return {
       totalSpend: data.totalCost ?? 0,
@@ -116,7 +116,7 @@ export const DashboardService = {
   },
 
   // Fallbacks using the new /api/analytics
-  getCostOverTime: async (userId: string, days = 30): Promise<CostOverTime[]> => {
+  getCostOverTime: async (_userId: string, days = 30): Promise<CostOverTime[]> => {
     const data = await DashboardService.getAnalytics(days);
     const providers: string[] = data.providers || [];
     return data.timeSeriesData.map((d: any) => ({
@@ -129,7 +129,7 @@ export const DashboardService = {
     }));
   },
 
-  getModelAnalytics: async (userId: string): Promise<ModelAnalytics[]> => {
+  getModelAnalytics: async (_userId: string): Promise<ModelAnalytics[]> => {
     const data = await DashboardService.getAnalytics(30);
     return data.providerData.map((p: any) => ({
       model: p.name, // using provider as model for now, or adapt backend
@@ -139,7 +139,7 @@ export const DashboardService = {
     }));
   },
 
-  getApiUsage: async (userId: string, limit = 100): Promise<ApiUsageLog[]> => {
+  getApiUsage: async (_userId: string, limit = 100): Promise<ApiUsageLog[]> => {
     const data = await fetchWithAuth(`/api/analytics/logs?limit=${limit}`);
     return (data || []).map((log: any) => ({
       id: log.id,
@@ -153,7 +153,7 @@ export const DashboardService = {
     }));
   },
 
-  getAlerts: async (userId: string): Promise<AlertData[]> =>
+  getAlerts: async (_userId: string): Promise<AlertData[]> =>
     fetchWithAuth('/api/alerts'),
 
   markAlertRead: async (alertId: string): Promise<AlertData> =>
@@ -235,7 +235,7 @@ export const DashboardService = {
       method: 'DELETE',
     }),
 
-  getBudgets: async (userId: string): Promise<any[]> =>
+  getBudgets: async (_userId: string): Promise<any[]> =>
     fetchWithAuth('/api/budgets'),
 
   createBudget: async (budgetData: any): Promise<any> =>

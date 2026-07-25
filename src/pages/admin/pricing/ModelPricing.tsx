@@ -54,7 +54,7 @@ export function ModelPricingPage() {
       message: `Are you sure you want to add ${provider}/${model} at $${inputCost} / $${outputCost}?`,
       onConfirm: async () => {
         try {
-          await adminService.createPricing({ provider, model, input_cost_per_1k: inputCost, output_cost_per_1k: outputCost, is_active: true });
+          await adminService.createPricing({ provider, model, input_cost_per_1k: inputCost, output_cost_per_1k: outputCost });
           setShowAddModal(false);
           setShowConfirmModal(null);
           fetchPricing();

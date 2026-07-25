@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Eye } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { adminService } from '../../../api/services/admin.service';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card/Card';
 import { DataTable } from '../../../components/ui/DataTable/DataTable';

@@ -154,7 +154,6 @@ export function AdminIntegrationsPage() {
     },
   ];
 
-  const activeCount = integrations.filter(i => row => row.status === 'active').length; // or calculate from overall
   const openaiCount = integrations.filter(i => i.provider?.toLowerCase() === 'openai').length;
   const anthropicCount = integrations.filter(i => i.provider?.toLowerCase() === 'anthropic').length;
 

@@ -149,7 +149,7 @@ export function AdminBudgetsPage() {
     {
       header: 'Status',
       accessorKey: 'status',
-      cell: (status: string, row: any) => (
+      cell: (status: string) => (
         <span className={`${styles.badge} ${STATUS_CLASS[status] ?? styles.badgeHealthy}`}>{status}</span>
       ),
     },

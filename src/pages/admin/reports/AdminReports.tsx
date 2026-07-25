@@ -1,20 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  RefreshCw, Search, Plus, FileText, Download,
-  Trash2, X, AlertTriangle, FileSpreadsheet,
+  RefreshCw, Search, Plus, FileText,
+  Trash2, X, FileSpreadsheet,
 } from 'lucide-react';
 import { adminService } from '../../../api/services/admin.service';
 import { DataTable } from '../../../components/ui/DataTable/DataTable';
 import styles from './AdminReports.module.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatBytes(bytes: number): string {
-  if (!bytes) return '0 Bytes';
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
 
 function formatDate(iso: string): string {
   if (!iso) return '—';
