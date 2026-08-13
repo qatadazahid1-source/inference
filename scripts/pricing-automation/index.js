@@ -1,37 +1,46 @@
-import { chromium } from 'playwright';
-import OpenAI from 'openai';
 import { google } from 'googleapis';
-import TelegramBot from 'node-telegram-bot-api';
+import axios from 'axios';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-// Configuration
-const MODELS = [
-  {
-    name: 'GPT-4o',
-    url: 'https://openai.com/api/pricing/',
-  },
-  {
-    name: 'Claude 3.5 Sonnet',
-    url: 'https://www.anthropic.com/pricing',
-  },
-  // Add more models as needed
-];
+// ─────────────────────────────────────────────────────────
+// CONFIGURATION: Which providers to include
+// OpenRouter model IDs start with these prefixes:
+// ─────────────────────────────────────────────────────────
+const PROVIDER_PREFIXES = {
+  'OpenAI':     'openai/',
+  'Anthropic':  'anthropic/',
+  'Cohere':     'cohere/',
+  'Google':     'google/',
+  'Groq (xAI)': 'x-ai/',
+};
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  baseURL: process.env.LLM_BASE_URL || 'https://api.bluesminds.com/v1',
-  apiKey: process.env.LLM_API_KEY,
-});
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/models';
+const OPENROUTER_MODELS_PAGE = 'https://openrouter.ai/models';
 
-// Initialize Telegram Bot
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: false });
+// ─────────────────────────────────────────────────────────
+// Telegram
+// ─────────────────────────────────────────────────────────
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// Google Sheets Setup
+async function sendTelegramMessage(message) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  await axios.post(url, {
+    chat_id: TELEGRAM_CHAT_ID,
+    text: message,
+    parse_mode: 'Markdown',
+    disable_web_page_preview: true,
+  }, { timeout: 30000 });
+}
+
+// ─────────────────────────────────────────────────────────
+// Google Sheets
+// ─────────────────────────────────────────────────────────
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+
 async function getSheetsClient() {
   const credentialsJson = JSON.parse(process.env.GOOGLE_CREDENTIALS);
   const auth = new google.auth.GoogleAuth({
@@ -44,167 +53,193 @@ async function getSheetsClient() {
   return google.sheets({ version: 'v4', auth });
 }
 
-// 1. Scrape text from URL using Playwright
-async function scrapeText(url) {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    // Wait a little bit for dynamic content
-    await page.waitForTimeout(3000);
-    const text = await page.evaluate(() => document.body.innerText);
-    await browser.close();
-    return text;
-  } catch (error) {
-    console.error(`Error scraping ${url}:`, error.message);
-    await browser.close();
-    return null;
-  }
+// ─────────────────────────────────────────────────────────
+// Helper: convert per-token price to per-1M-tokens
+// ─────────────────────────────────────────────────────────
+function toPerMillion(priceStr) {
+  if (!priceStr || priceStr === '0') return '$0.00';
+  const perToken = parseFloat(priceStr);
+  const perMillion = perToken * 1_000_000;
+  return `$${perMillion.toFixed(4)}`;
 }
 
-// 2. Extract pricing using LLM
-async function extractPricingFromText(modelName, text) {
-  if (!text) return { error: 'Failed to scrape page' };
-
-  const prompt = `You are a strict data extraction bot.
-Extract the API pricing (per 1M tokens) for the model "${modelName}" from the text below.
-If the price is per 1k tokens, multiply it by 1000 to get the price per 1M tokens.
-
-Return ONLY a valid JSON object in this exact format:
-{
-  "promptPrice": "$X.XX",
-  "completionPrice": "$Y.YY"
-}
-If you cannot find the exact pricing, return:
-{
-  "error": "Pricing not found"
+// ─────────────────────────────────────────────────────────
+// Helper: skip free / batch / :nitro / :extended variants
+// ─────────────────────────────────────────────────────────
+function isVariant(modelId) {
+  return modelId.includes(':free') ||
+         modelId.includes(':batch') ||
+         modelId.includes(':nitro') ||
+         modelId.includes(':extended') ||
+         modelId.startsWith('~');
 }
 
-Do not include markdown blocks like \`\`\`json. Just the JSON object.
-
-Text to analyze:
-----------------
-${text.substring(0, 15000)}
-----------------`;
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o', // Assuming the endpoint uses a mapping or default model
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0,
-    });
-
-    let content = response.choices[0].message.content.trim();
-    // Clean up potential markdown formatting
-    if (content.startsWith('```json')) {
-        content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-    } else if (content.startsWith('```')) {
-        content = content.replace(/```/g, '').trim();
-    }
-    
-    return JSON.parse(content);
-  } catch (error) {
-    console.error(`LLM Error for ${modelName}:`, error.message);
-    return { error: 'LLM extraction failed' };
-  }
-}
-
-// 3. Main process
+// ─────────────────────────────────────────────────────────
+// Main
+// ─────────────────────────────────────────────────────────
 async function run() {
-  console.log('Starting AI Model Pricing Automation...');
-  
-  const results = [];
-  const sheets = await getSheetsClient();
+  console.log('Starting AI Pricing Automation via OpenRouter API...');
+  const today = new Date().toISOString().split('T')[0];
 
-  // Read existing sheet data to compare
-  let existingData = [];
+  // 1. Fetch all models from OpenRouter
+  console.log('Fetching models from OpenRouter...');
+  let allModels;
+  try {
+    const response = await axios.get(OPENROUTER_API_URL, { timeout: 30000 });
+    allModels = response.data.data;
+    console.log(`Total models fetched: ${allModels.length}`);
+  } catch (err) {
+    console.error('Failed to fetch from OpenRouter:', err.message);
+    await sendTelegramMessage(`❌ *Pricing Automation FAILED*\nCould not fetch data from OpenRouter.\nError: ${err.message}`);
+    return;
+  }
+
+  // 2. Filter by providers and remove variants
+  const filteredByProvider = {};
+  for (const [providerName, prefix] of Object.entries(PROVIDER_PREFIXES)) {
+    filteredByProvider[providerName] = allModels.filter(
+      m => m.id.startsWith(prefix) && !isVariant(m.id)
+    );
+  }
+
+  // 3. Read previous data from Google Sheets to detect changes
+  const sheets = await getSheetsClient();
+  let previousData = new Map(); // key: modelId -> { inputPrice, outputPrice }
   try {
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Sheet1!A2:E', // Assuming A: Name, B: Prompt, C: Completion, D: Date, E: Source
+      range: 'Sheet1!A2:G',
     });
-    existingData = res.data.values || [];
-  } catch (error) {
-    console.error('Error reading Google Sheets. It might be empty or unformatted.', error.message);
+    const rows = res.data.values || [];
+    rows.forEach(row => {
+      if (row[1]) { // column B = model id
+        previousData.set(row[1], { inputPrice: row[3], outputPrice: row[4] });
+      }
+    });
+    console.log(`Loaded ${previousData.size} previous records from Sheet.`);
+  } catch (err) {
+    console.warn('Could not read previous sheet data (may be first run):', err.message);
   }
 
-  const existingMap = new Map();
-  existingData.forEach(row => {
-    if (row[0]) existingMap.set(row[0], { prompt: row[1], completion: row[2] });
-  });
+  // 4. Build sheet rows + telegram message
+  const sheetRows = [
+    ['Provider', 'Model ID', 'Model Name', 'Input (per 1M tokens)', 'Output (per 1M tokens)', 'Status', 'Last Updated', 'Source URL']
+  ];
 
-  const sheetUpdates = [];
-  sheetUpdates.push(['Model Name', 'Prompt Price (1M)', 'Completion Price (1M)', 'Status', 'Last Updated', 'Source URL']); // Header
+  let telegramMsg = `🔔 *Daily AI Model Pricing Update*\n📅 Date: ${today}\n📊 Source: OpenRouter\n\n`;
+  let changedCount = 0;
+  let newCount = 0;
+  let totalCount = 0;
 
-  let telegramMessage = `🔔 *Daily AI Model Pricing Update* 🔔\n\nPlease check and verify:\n\n`;
-
-  for (const model of MODELS) {
-    console.log(`Processing: ${model.name}`);
-    
-    console.log(`- Scraping ${model.url}...`);
-    const text = await scrapeText(model.url);
-    
-    console.log(`- Extracting pricing via LLM...`);
-    const pricing = await extractPricingFromText(model.name, text);
-    
-    let status = '🟢 No Change';
-    let promptPrice = pricing.promptPrice || 'N/A';
-    let completionPrice = pricing.completionPrice || 'N/A';
-
-    if (pricing.error) {
-      status = `⚠️ FLAGGED (${pricing.error})`;
-    } else {
-      const old = existingMap.get(model.name);
-      if (old && (old.prompt !== promptPrice || old.completion !== completionPrice)) {
-        status = `🔴 PRICE CHANGED (Was: Prompt ${old.prompt}, Comp ${old.completion})`;
-      } else if (!old) {
-        status = `🔵 NEW MODEL ADDED`;
-      }
+  for (const [providerName, models] of Object.entries(filteredByProvider)) {
+    if (models.length === 0) {
+      console.log(`No models found for provider: ${providerName}`);
+      continue;
     }
 
-    results.push({
-      name: model.name,
-      prompt: promptPrice,
-      completion: completionPrice,
-      status: status,
-      url: model.url
-    });
+    telegramMsg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    telegramMsg += `🏢 *${providerName}* (${models.length} models)\n`;
+    telegramMsg += `━━━━━━━━━━━━━━━━━━━━\n`;
 
-    const date = new Date().toISOString().split('T')[0];
-    sheetUpdates.push([model.name, promptPrice, completionPrice, status, date, model.url]);
+    for (const model of models) {
+      const inputPrice  = toPerMillion(model.pricing?.prompt);
+      const outputPrice = toPerMillion(model.pricing?.completion);
+      const modelUrl    = `${OPENROUTER_MODELS_PAGE}/${model.id}`;
 
-    telegramMessage += `*${model.name}*\n`;
-    telegramMessage += `- Prompt: ${promptPrice}\n`;
-    telegramMessage += `- Completion: ${completionPrice}\n`;
-    telegramMessage += `- Status: ${status}\n`;
-    telegramMessage += `- Source: ${model.url}\n\n`;
+      // Detect change
+      const prev = previousData.get(model.id);
+      let status = '🟢 No Change';
+      if (!prev) {
+        status = '🔵 New Model';
+        newCount++;
+      } else if (prev.inputPrice !== inputPrice || prev.outputPrice !== outputPrice) {
+        status = `🔴 Changed (was In: ${prev.inputPrice} | Out: ${prev.outputPrice})`;
+        changedCount++;
+      }
+
+      totalCount++;
+      sheetRows.push([providerName, model.id, model.name, inputPrice, outputPrice, status, today, modelUrl]);
+
+      telegramMsg += `*${model.name}*\n`;
+      telegramMsg += `  • Input:  ${inputPrice} / 1M\n`;
+      telegramMsg += `  • Output: ${outputPrice} / 1M\n`;
+      telegramMsg += `  • Status: ${status}\n\n`;
+    }
   }
 
-  // Update Google Sheet
-  console.log('Updating Google Sheets...');
+  // 5. Summary
+  const summaryLine = `📈 *Summary:* ${totalCount} models | 🔴 ${changedCount} changed | 🔵 ${newCount} new`;
+  telegramMsg += `\n${summaryLine}\n`;
+  telegramMsg += `\n👉 [View Full Sheet](https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID})\n`;
+  telegramMsg += `🔗 [OpenRouter Models](${OPENROUTER_MODELS_PAGE})\n`;
+  telegramMsg += `\n_Please verify and update the admin panel pricing._`;
+
+  // 6. Update Google Sheets
+  console.log(`Writing ${sheetRows.length - 1} rows to Google Sheets...`);
   try {
+    // Clear existing data first
+    await sheets.spreadsheets.values.clear({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Sheet1',
+    });
+    // Write new data
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Sheet1!A1:F',
+      range: 'Sheet1!A1',
       valueInputOption: 'USER_ENTERED',
-      requestBody: { values: sheetUpdates },
+      requestBody: { values: sheetRows },
     });
     console.log('Google Sheets updated successfully.');
-  } catch (error) {
-    console.error('Failed to update Google Sheets:', error.message);
+  } catch (err) {
+    console.error('Failed to update Google Sheets:', err.message);
+    telegramMsg += `\n⚠️ *Warning:* Could not update Google Sheet.\nError: ${err.message}`;
   }
 
-  // Send Telegram Message
+  // 7. Send Telegram message
+  // Telegram has a 4096 char limit per message - split if needed
   console.log('Sending Telegram message...');
-  try {
-    telegramMessage += `\n👉 Check Sheet: https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}`;
-    await bot.sendMessage(TELEGRAM_CHAT_ID, telegramMessage, { parse_mode: 'Markdown', disable_web_page_preview: true });
-    console.log('Telegram message sent successfully.');
-  } catch (error) {
-    console.error('Failed to send Telegram message:', error.message);
+  const MAX_LEN = 4000;
+  if (telegramMsg.length <= MAX_LEN) {
+    try {
+      await sendTelegramMessage(telegramMsg);
+      console.log('Telegram message sent successfully.');
+    } catch (err) {
+      console.error('Failed to send Telegram message:', err.message);
+    }
+  } else {
+    // Split into chunks
+    const chunks = [];
+    let current = '';
+    for (const line of telegramMsg.split('\n')) {
+      if ((current + '\n' + line).length > MAX_LEN) {
+        chunks.push(current);
+        current = line;
+      } else {
+        current += (current ? '\n' : '') + line;
+      }
+    }
+    if (current) chunks.push(current);
+
+    for (let i = 0; i < chunks.length; i++) {
+      try {
+        await sendTelegramMessage(`*Part ${i + 1}/${chunks.length}*\n\n${chunks[i]}`);
+        console.log(`Sent Telegram part ${i + 1}/${chunks.length}`);
+        // Small delay between messages
+        if (i < chunks.length - 1) await new Promise(r => setTimeout(r, 1000));
+      } catch (err) {
+        console.error(`Failed to send Telegram part ${i + 1}:`, err.message);
+      }
+    }
   }
 
-  console.log('Automation completed successfully.');
+  console.log('✅ Automation completed successfully!');
+  console.log(`Summary: ${totalCount} models processed | ${changedCount} changed | ${newCount} new`);
 }
 
-run().catch(console.error);
+run().catch(async (err) => {
+  console.error('Fatal error:', err);
+  try {
+    await sendTelegramMessage(`❌ *Pricing Automation CRASHED*\nError: ${err.message}`);
+  } catch {}
+  process.exit(1);
+});
