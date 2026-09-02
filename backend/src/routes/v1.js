@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { supabase } from '../index.js';
 import { callProviderAndLog } from '../services/aiGateway.js';
+import { attachEntitlements, checkModelAndSpendEntitlement } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -45,6 +46,18 @@ router.post('/chat/completions', async (req, res) => {
     if (integration.status !== 'active') {
       return res.status(400).json({ error: { message: 'The integration behind this API key is not active.', type: 'invalid_request_error' } });
     }
+
+    // ── Plan Entitlement Enforcement ───────────────────────────────────────
+    // Shared with the internal dashboard Playground (proxy.js) via
+    // checkModelAndSpendEntitlement — see middleware/requireEntitlements.js.
+    // Throws isEntitlementModelNotAllowed / isBudgetBlocked, caught below.
+    await checkModelAndSpendEntitlement({
+      supabase,
+      organization_id,
+      provider: integration.provider,
+      model,
+    });
+    // ── End Plan Entitlement Enforcement ───────────────────────────────────
 
     const { responseText, inputTokens, outputTokens, totalTokens } = await callProviderAndLog({
       organization_id,
@@ -93,6 +106,10 @@ router.post('/chat/completions', async (req, res) => {
 
     if (err.isBudgetBlocked) {
       return res.status(403).json({ error: { message: err.message, type: 'budget_exceeded' } });
+    }
+
+    if (err.isEntitlementModelNotAllowed) {
+      return res.status(403).json({ error: { message: err.message, type: 'ENTITLEMENT_MODEL_NOT_ALLOWED' } });
     }
 
     if (err.isUnpricedModel) {

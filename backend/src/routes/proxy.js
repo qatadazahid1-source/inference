@@ -1,6 +1,7 @@
 import express from 'express';
 import { supabase } from '../index.js';
 import { callProviderAndLog } from '../services/aiGateway.js';
+import { attachEntitlements, checkModelAndSpendEntitlement } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -68,6 +69,14 @@ async function handleProxyRequest(req, res) {
       return res.status(403).json({ error: 'Your organization has been suspended. Please contact support.' });
     }
 
+    // 1b. Plan gating — Playground must respect the same feature flag and
+    // model-tier/spend limits the external API gateway (v1.js) enforces.
+    // Without this, a Starter-plan org could bypass those limits entirely
+    // just by using the dashboard Playground instead of a Platform Key.
+    if (!req.entitlements.hasFeature('ai_playground')) {
+      return res.status(403).json({ error: 'The AI Playground is not included in your current plan. Upgrade to use it.' });
+    }
+
     let integrationQuery = supabase
       .from('ai_integrations')
       .select('id')
@@ -87,6 +96,16 @@ async function handleProxyRequest(req, res) {
     if (intError || !integration) {
       return res.status(400).json({ error: `No active ${provider} integration found for your organization.` });
     }
+
+    // 2a. Same model access-tier + monthly spend enforcement as the external
+    // API gateway — see middleware/requireEntitlements.js. Throws
+    // isEntitlementModelNotAllowed / isBudgetBlocked, caught below.
+    await checkModelAndSpendEntitlement({
+      supabase,
+      organization_id,
+      provider,
+      model,
+    });
 
     // 3. Call the shared gateway — does the provider call, cost calc, and logging
     const { responseText, inputTokens, outputTokens, totalTokens, cost_usd } = await callProviderAndLog({
@@ -118,6 +137,10 @@ async function handleProxyRequest(req, res) {
       return res.status(403).json({ error: err.message });
     }
 
+    if (err.isEntitlementModelNotAllowed) {
+      return res.status(403).json({ error: err.message });
+    }
+
     if (err.isUnpricedModel) {
       return res.status(422).json({ error: err.message });
     }
@@ -135,7 +158,7 @@ async function handleProxyRequest(req, res) {
   }
 }
 
-router.post('/chat', handleProxyRequest);
-router.post('/generate', handleProxyRequest);  // legacy alias
+router.post('/chat', attachEntitlements, handleProxyRequest);
+router.post('/generate', attachEntitlements, handleProxyRequest);  // legacy alias
 
 export default router;

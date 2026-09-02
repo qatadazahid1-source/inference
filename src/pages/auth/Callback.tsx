@@ -66,9 +66,19 @@ export default function AuthCallback() {
     const isOnboarded = !!(progress?.completed_at || progress?.skipped_at)
 
     if (!isOnboarded) {
+      // New user still needs an organization created via onboarding before
+      // any checkout can happen (checkout needs a real organizationId) —
+      // pending_plan (if any) stays in localStorage and is picked up once
+      // onboarding finishes instead of here.
       navigate('/onboarding', { replace: true })
     } else {
-      navigate('/dashboard', { replace: true })
+      const pendingPlan = localStorage.getItem('pending_plan')
+      if (pendingPlan) {
+        localStorage.removeItem('pending_plan')
+        navigate(`/settings/billing?autoupgrade=${pendingPlan}`, { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
     }
   }
 

@@ -1,9 +1,14 @@
+import { useParams, Navigate } from 'react-router-dom';
+import DocsLayout from '../components/docs/DocsLayout/DocsLayout';
+import { getPageBySlug } from '../docs/content/index';
 
 export default function DocsPage() {
-  return (
-    <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Documentation</h1>
-      <p>Welcome to the documentation page. Local integration is successful!</p>
-    </div>
-  )
+  const { slug } = useParams<{ slug: string }>();
+  const page = getPageBySlug(slug || '');
+
+  if (!page) {
+    return <Navigate to="/docs/overview" replace />;
+  }
+
+  return <DocsLayout page={page} />;
 }

@@ -10,6 +10,12 @@ import budgetsRouter from './budgets.js';
 import integrationsRouter from './integrations.js';
 import reportsRouter from './reports.js';
 import siteLinksRouter from './siteLinks.js';
+import plansRouter from './plans.js';
+import pagesRouter from './pages.js';
+import providersRouter from './providers.js';
+import pricingAgentRouter from './pricingAgent.js';
+import adminsRouter from './admins.js';
+import blogRouter from './blog.js';
 
 const router = express.Router();
 
@@ -37,5 +43,11 @@ router.use('/budgets', budgetsRouter);
 router.use('/integrations', integrationsRouter);
 router.use('/reports', reportsRouter);
 router.use('/site-links', siteLinksRouter);
+router.use('/plans', plansRouter);
+router.use('/pages', pagesRouter);
+router.use('/blog', blogRouter);
+router.use('/providers', providersRouter);
+router.use('/pricing-agent', pricingAgentRouter);
+router.use('/admins', adminsRouter);
 
 export default router;

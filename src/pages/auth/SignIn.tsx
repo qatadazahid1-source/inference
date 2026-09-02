@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Spinner } from '../../components/ui/Spinner/Spinner';
 import { signInWithGoogle } from '../../lib/auth';
+import { PrivateNoIndex } from '../../components/seo/PrivateNoIndex';
 import styles from '../../components/auth/AuthLayout.module.css';
 
 export function SignIn() {
@@ -20,11 +21,12 @@ export function SignIn() {
 
   return (
     <div className={styles.page}>
+      <PrivateNoIndex />
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.card}>
         <div className={styles.logoRow}>
           <div className={styles.logoMark}>II</div>
-          <span className={styles.logoText}>Inference Intelligence</span>
+          <span className={styles.logoText}>Ordisum</span>
         </div>
 
         <h1 className={styles.heading}>Welcome back</h1>

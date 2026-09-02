@@ -129,7 +129,7 @@ router.post('/2fa/start', async (req, res) => {
   try {
     const secret = authenticator.generateSecret();
     const { data: userRow } = await supabase.from('users').select('email').eq('id', req.user.id).single();
-    const otpauth = authenticator.keyuri(userRow?.email || req.user.id, 'Inference Intelligence', secret);
+    const otpauth = authenticator.keyuri(userRow?.email || req.user.id, 'Ordisum', secret);
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
 
     const { error } = await supabase

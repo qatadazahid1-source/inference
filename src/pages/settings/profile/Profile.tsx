@@ -7,8 +7,14 @@ import { Modal } from '../../../components/ui/Modal/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton/Skeleton';
 import { useAuth } from '../../../hooks/useAuth';
 import { useToast } from '../../../components/ui/Toast/Toast';
-import { supabase } from '../../../lib/supabase';
 import { uploadAvatar } from '../../../services/users';
+import {
+  useProfile,
+  useUpdateProfile,
+  useChangeEmail,
+  useDeleteAccount,
+} from '../../../hooks/queries/useProfile';
+import { ApiError } from '../../../lib/axios';
 import styles from './Profile.module.css';
 
 const timezones = [
@@ -43,6 +49,12 @@ interface ProfileFormState {
   phone: string;
   timezone: string;
   language: string;
+}
+
+function messageFrom(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
 }
 
 function SearchableSelect({
@@ -125,31 +137,20 @@ function SearchableSelect({
   );
 }
 
-async function authedFetch(path: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No session');
-  const res = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-      ...(options.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-  return body;
-}
-
 export function Profile() {
   const { user, signOut } = useAuth();
   const { addToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Server state via React Query.
+  const { data: profile, isLoading, isError, error } = useProfile();
+  const updateProfile = useUpdateProfile();
+  const changeEmail = useChangeEmail();
+  const deleteAccount = useDeleteAccount();
+
+  // Local UI state.
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [email, setEmail] = useState('');
 
   const [form, setForm] = useState<ProfileFormState>({
@@ -162,41 +163,35 @@ export function Profile() {
   // Change email modal
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-  const [isChangingEmail, setIsChangingEmail] = useState(false);
 
   // Note: no password change UI — platform is Google OAuth only, there's
   // no password-based sign-in for a changed password to be used with.
 
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const loadProfile = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await authedFetch('/api/profile');
-      const u = data.user;
-      const loaded: ProfileFormState = {
-        fullName: u.full_name ?? '',
-        jobTitle: u.job_title ?? '',
-        phone: u.phone_number ?? '',
-        timezone: u.timezone ?? '',
-        language: u.language ?? 'en',
-      };
-      setForm(loaded);
-      setInitialForm(loaded);
-      setAvatarUrl(u.avatar_url ?? undefined);
-      setEmail(u.email ?? '');
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to load profile', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [addToast]);
+  // Hydrate local form + avatar/email state from the fetched profile.
+  useEffect(() => {
+    const u = profile?.user;
+    if (!u) return;
+    const loaded: ProfileFormState = {
+      fullName: u.full_name ?? '',
+      jobTitle: u.job_title ?? '',
+      phone: u.phone_number ?? '',
+      timezone: u.timezone ?? '',
+      language: u.language ?? 'en',
+    };
+    setForm(loaded);
+    setInitialForm(loaded);
+    setAvatarUrl(u.avatar_url ?? undefined);
+    setEmail(u.email ?? '');
+  }, [profile]);
 
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
+    if (isError) {
+      addToast(messageFrom(error, 'Failed to load profile'), 'error');
+    }
+  }, [isError, error, addToast]);
 
   // Warn on browser navigation/refresh with unsaved changes
   useEffect(() => {
@@ -226,12 +221,14 @@ export function Profile() {
 
     setIsUploadingAvatar(true);
     try {
-      const { url, error } = await uploadAvatar(user.id, file);
-      if (error || !url) throw new Error(error || 'Upload failed');
+      // Valid Supabase-direct: uploads to the 'user-content' Storage bucket
+      // (see src/services/users.ts). Deliberately NOT migrated to Axios.
+      const { url, error: uploadError } = await uploadAvatar(user.id, file);
+      if (uploadError || !url) throw new Error(uploadError || 'Upload failed');
       setAvatarUrl(url);
       addToast('Profile photo updated', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to upload photo', 'error');
+      addToast(messageFrom(err, 'Failed to upload photo'), 'error');
     } finally {
       setIsUploadingAvatar(false);
       e.target.value = '';
@@ -239,26 +236,20 @@ export function Profile() {
   }, [user, addToast]);
 
   const handleSave = useCallback(async () => {
-    setIsSaving(true);
     try {
-      await authedFetch('/api/profile', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          full_name: form.fullName,
-          job_title: form.jobTitle,
-          phone_number: form.phone,
-          timezone: form.timezone,
-          language: form.language,
-        }),
+      await updateProfile.mutateAsync({
+        full_name: form.fullName,
+        job_title: form.jobTitle,
+        phone_number: form.phone,
+        timezone: form.timezone,
+        language: form.language,
       });
       setInitialForm(form);
       addToast('Profile updated', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to update profile', 'error');
-    } finally {
-      setIsSaving(false);
+      addToast(messageFrom(err, 'Failed to update profile'), 'error');
     }
-  }, [form, addToast]);
+  }, [form, updateProfile, addToast]);
 
   const handleCancel = useCallback(() => {
     setForm(initialForm);
@@ -266,36 +257,28 @@ export function Profile() {
 
   const handleChangeEmail = useCallback(async () => {
     if (!newEmail) return;
-    setIsChangingEmail(true);
     try {
-      const { data } = await authedFetch('/api/profile/change-email', {
-        method: 'POST',
-        body: JSON.stringify({ newEmail }),
-      });
-      addToast(data.message || 'Verification email sent', 'success');
+      const result = await changeEmail.mutateAsync(newEmail);
+      addToast(result.message || 'Verification email sent', 'success');
       setEmailModalOpen(false);
       setNewEmail('');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to change email', 'error');
-    } finally {
-      setIsChangingEmail(false);
+      addToast(messageFrom(err, 'Failed to change email'), 'error');
     }
-  }, [newEmail, addToast]);
+  }, [newEmail, changeEmail, addToast]);
 
   const canDelete = deleteConfirm === 'DELETE';
 
   const handleDeleteAccount = useCallback(async () => {
     if (!canDelete) return;
-    setIsDeleting(true);
     try {
-      await authedFetch('/api/profile', { method: 'DELETE' });
+      await deleteAccount.mutateAsync();
       addToast('Account deleted', 'success');
       await signOut();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to delete account', 'error');
-      setIsDeleting(false);
+      addToast(messageFrom(err, 'Failed to delete account'), 'error');
     }
-  }, [canDelete, addToast, signOut]);
+  }, [canDelete, deleteAccount, addToast, signOut]);
 
   if (isLoading) {
     return (
@@ -390,12 +373,12 @@ export function Profile() {
         </div>
 
         <div style={{ marginTop: 24, display: 'flex', gap: 12, alignItems: 'center' }}>
-          <Button variant="primary" isLoading={isSaving} disabled={!isDirty} onClick={handleSave}>
+          <Button variant="primary" isLoading={updateProfile.isPending} disabled={!isDirty} onClick={handleSave}>
             Save Changes
           </Button>
           {isDirty && (
             <>
-              <Button variant="ghost" onClick={handleCancel} disabled={isSaving}>
+              <Button variant="ghost" onClick={handleCancel} disabled={updateProfile.isPending}>
                 Cancel
               </Button>
               <span style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
@@ -423,7 +406,7 @@ export function Profile() {
             value={deleteConfirm}
             onChange={(e) => setDeleteConfirm(e.target.value)}
           />
-          <Button variant="danger" disabled={!canDelete} isLoading={isDeleting} onClick={handleDeleteAccount}>
+          <Button variant="danger" disabled={!canDelete} isLoading={deleteAccount.isPending} onClick={handleDeleteAccount}>
             Delete Account
           </Button>
         </div>
@@ -441,7 +424,7 @@ export function Profile() {
             onChange={(e) => setNewEmail(e.target.value)}
             placeholder="you@company.com"
           />
-          <Button variant="primary" isLoading={isChangingEmail} onClick={handleChangeEmail} disabled={!newEmail}>
+          <Button variant="primary" isLoading={changeEmail.isPending} onClick={handleChangeEmail} disabled={!newEmail}>
             Send Verification Email
           </Button>
         </div>

@@ -50,6 +50,12 @@
   font-weight: var(--fw-medium);
 }
 
+.hint {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  opacity: 0.75;
+}
+
 .input {
   background: var(--color-tertiary);
   border: 1px solid var(--color-border);
@@ -100,7 +106,7 @@
 .calcBtn {
   background: var(--color-green-btn);
   border: none;
-  color: #fff;
+  color: var(--color-bg);
   padding: 12px 24px;
   border-radius: var(--radius-sm);
   font-size: 15px;

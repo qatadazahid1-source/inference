@@ -3,8 +3,7 @@ import { DocPage } from './types'
 export const troubleshootingPage: DocPage = {
   slug: 'troubleshooting',
   title: 'Troubleshooting',
-  description:
-    'Solutions to the most common issues with Inference Intelligence.',
+  description: 'Fix common integration issues.',
 
   sections: [
     {
@@ -82,7 +81,7 @@ export const troubleshootingPage: DocPage = {
       id: 'contact',
       heading: 'Still Having Issues?',
       body:
-        'Email support@inferenceintelligence.com with your workspace ID ' +
+        'Email support@ordisum.com with your workspace ID ' +
         '(found in Settings → General) and a description of the problem. ' +
         'Include a screenshot if possible.',
       callout: {

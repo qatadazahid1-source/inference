@@ -3,8 +3,7 @@ import { DocPage } from './types'
 export const budgetAlertsPage: DocPage = {
   slug: 'budget-alerts',
   title: 'Budget Alerts',
-  description:
-    'Set spending limits and get notified before your AI costs spiral out of control.',
+  description: 'Set up hard budget limits and threshold/anomaly alerts.',
 
   sections: [
     {
@@ -91,7 +90,7 @@ export const budgetAlertsPage: DocPage = {
       heading: 'Hard Limits (Auto-Throttle)',
       body:
         'When a budget has a 100% threshold with action: "throttle", ' +
-        'Inference Intelligence will automatically stop forwarding requests to ' +
+        'Ordisum will automatically stop forwarding requests to ' +
         'that provider until the next billing period begins.',
       callout: {
         type: 'danger',
@@ -122,7 +121,7 @@ export const budgetAlertsPage: DocPage = {
   "baseline_hourly_spend": 211.80,
   "deviation_percent": 300,
   "triggered_at": "2024-10-15T14:32:00Z",
-  "dashboard_url": "https://app.inferenceintelligence.com/alerts/123"
+  "dashboard_url": "https://app.ordisum.com/alerts/123"
 }`,
       },
     },

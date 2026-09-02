@@ -60,30 +60,6 @@ export function subscribeToUsageLogs(orgId: string, onLog: (log: any) => void) {
   return subscribeToTable('api_usage_logs', { event: 'INSERT' }, (p) => onLog(p.new), orgId)
 }
 
-// ─── Auth helpers ──────────────────────────────────────
-export async function invokeEdgeFunction<T = any>(
-  functionName: string,
-  body: Record<string, any>,
-): Promise<{ data: T | null; error: string | null }> {
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session?.access_token
-  if (!token) return { data: null, error: 'Not authenticated' }
-
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || ''
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/${functionName}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    const data = await res.json()
-    if (!res.ok) return { data: null, error: data.error || `Function returned ${res.status}` }
-    return { data, error: null }
-  } catch (err) {
-    return { data: null, error: err instanceof Error ? err.message : 'Network error' }
-  }
-}
-
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message
   if (typeof error === 'object' && error !== null) {

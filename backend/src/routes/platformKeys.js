@@ -1,6 +1,7 @@
 import express from 'express';
 import crypto from 'crypto';
 import { supabase } from '../index.js';
+import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -83,7 +84,7 @@ router.get('/', async (req, res) => {
 // POST /api/platform-keys — generate a new platform key for a given
 // integration. The plain key is returned ONLY in this response; after this,
 // only key_preview is ever retrievable.
-router.post('/', async (req, res) => {
+router.post('/', attachEntitlements, async (req, res) => {
   try {
     const { integration_id, name } = req.body;
 
@@ -92,6 +93,19 @@ router.post('/', async (req, res) => {
     }
 
     const organization_id = await getUserOrgId(req.user.id);
+
+    // Enforce max_platform_keys limit
+    const { count, error: countErr } = await supabase
+      .from('api_keys')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', organization_id)
+      .eq('is_active', true);
+    
+    if (countErr) throw countErr;
+    if (!req.entitlements.checkLimit('platform_keys', count)) {
+      const maxPlatformKeys = req.entitlements.getLimit('platform_keys');
+      return res.status(403).json({ error: `Plan limit reached. You can only create up to ${maxPlatformKeys} platform keys.` });
+    }
 
     // Confirm the integration belongs to this org and is active — never let
     // a user mint a key for an integration they don't own or that's been

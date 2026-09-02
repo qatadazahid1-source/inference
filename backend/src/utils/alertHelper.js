@@ -1,4 +1,5 @@
 import { supabase } from '../index.js';
+import { sendAlertEmail } from './sendAlertEmail.js';
 
 /**
  * After each proxy call, check all active organization budgets.
@@ -11,8 +12,7 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
   const { data: budgets, error } = await supabase
     .from('budgets')
     .select('id, name, total_budget, period, alert_at_50, alert_at_75, alert_at_90, alert_at_100')
-    .eq('organization_id', organization_id)
-    .eq('is_active', true);
+    .eq('organization_id', organization_id);
 
   if (error || !budgets?.length) return;
 
@@ -83,6 +83,51 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
 
       if (alertErr) {
         console.error('[alertHelper] Insert alert error:', alertErr.message, alertErr);
+      } else {
+        // Dispatch email notification
+        try {
+          let recipients = [];
+          
+          // Try billing_email first
+          const { data: org } = await supabase
+            .from('organizations')
+            .select('billing_email')
+            .eq('id', organization_id)
+            .single();
+            
+          if (org?.billing_email) {
+            recipients.push(org.billing_email);
+          } else {
+            // Fallback to org owners/admins
+            const { data: members } = await supabase
+              .from('organization_members')
+              .select('user_id, role')
+              .eq('organization_id', organization_id)
+              .in('role', ['owner', 'admin']);
+              
+            if (members?.length > 0) {
+              for (const member of members) {
+                const { data: { user }, error: userErr } = await supabase.auth.admin.getUserById(member.user_id);
+                if (!userErr && user?.email) {
+                  recipients.push(user.email);
+                }
+              }
+            }
+          }
+
+          // Send to all found recipients
+          for (const email of [...new Set(recipients)]) {
+            await sendAlertEmail({
+              to: email,
+              subject: `[Ordisum] Budget Alert: ${budget.name} at ${t.label}`,
+              title: `Budget "${budget.name}" reached ${t.label}`,
+              message: `Your organization has used ${pct.toFixed(1)}% ($${totalSpend.toFixed(2)} of $${totalBudget.toFixed(2)}) of the "${budget.name}" ${budget.period} budget.`,
+              severity: t.severity,
+            });
+          }
+        } catch (emailErr) {
+          console.error('[alertHelper] Failed to dispatch alert emails:', emailErr);
+        }
       }
 
       break; // Only fire the highest breached threshold per budget per call

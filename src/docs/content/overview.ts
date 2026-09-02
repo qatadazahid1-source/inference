@@ -3,17 +3,13 @@ import { DocPage } from './types'
 export const overviewPage: DocPage = {
   slug: 'overview',
   title: 'Overview',
-  description: 'Inference Intelligence gives you complete visibility into every AI inference dollar you spend.',
+  description: 'What Ordisum is and how the Gateway fits into your stack.',
 
   sections: [
     {
       id: 'what-it-does',
       heading: 'What It Does',
-      body:
-        'Inference Intelligence is a cost intelligence platform that sits alongside your existing AI stack. ' +
-        'Connect OpenAI, Anthropic, Google Gemini, Azure OpenAI, AWS Bedrock, and more. ' +
-        'See unified cost dashboards, configure per-provider and per-team budgets, ' +
-        'detect cost anomalies in real time, and calculate the ROI of your AI investment — all in one place.',
+      body: 'Ordisum provides a unified GraphQL & REST Gateway. We sit between your application and various AI providers (OpenAI, Anthropic, Google, Mistral). You send your requests to our Gateway, and we route them to the appropriate model, handling API keys, tracking latency, applying budget limits, and aggregating costs in real time.',
     },
     {
       id: 'why-it-matters',
@@ -22,14 +18,15 @@ export const overviewPage: DocPage = {
         'AI spend is growing faster than engineering teams can track it. ' +
         'Individual developers use multiple providers. Entire teams share a handful of API keys. ' +
         'By the time an anomaly appears on a monthly invoice, the damage is done.\n\n' +
-        'Inference Intelligence gives your finance team and engineering leads the data they need ' +
+        'Ordisum gives your finance team and engineering leads the data they need ' +
         'to make smart decisions about where to allocate AI resources.',
       callout: {
         type: 'info',
-        title: 'Data never leaves your account',
+        title: 'Core Features',
         text:
-          'Inference Intelligence uses read-only API access to your AI provider accounts. ' +
-          'We never write to your provider accounts or store your prompts, completions, or model outputs.',
+          '**Unified Gateway**: Send all inference requests to `https://api.inference-intelligence.com/v1/chat/completions`. We handle the routing based on the model name.\n' +
+          '**Zero-Code Instrumentation**: Just change your base URL and use our API key. We automatically track every token and millisecond of latency.\n' +
+          '**Budget Enforcement**: Hard stop limits prevent unexpected bills if a model spikes or a key leaks.',
       },
     },
     {
@@ -50,7 +47,7 @@ export const overviewPage: DocPage = {
       heading: 'How It Connects',
       body:
         'No agents. No SDKs. No code changes required. ' +
-        'Inference Intelligence connects to each AI provider using their official usage API — ' +
+        'Ordisum connects to each AI provider using their official usage API — ' +
         'the same read-only endpoints the providers expose for billing dashboards.\n\n' +
         'You provide read-only API keys. We read cost and usage data. Nothing else.',
       callout: {

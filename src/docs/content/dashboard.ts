@@ -2,9 +2,8 @@ import { DocPage } from './types'
 
 export const dashboardPage: DocPage = {
   slug: 'dashboard',
-  title: 'Dashboard Overview',
-  description:
-    'Learn how to navigate the Inference Intelligence dashboard and understand every metric.',
+  title: 'Dashboard',
+  description: 'How to read and use the Ordisum cost dashboard.',
 
   sections: [
     {

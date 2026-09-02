@@ -1,10 +1,8 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { DashboardService, ApiUsageLog } from '../../../api/services/dashboard.service';
-import { useDataPolling } from '../../../hooks/useDataPolling';
-import { useAuth } from '../../../hooks/useAuth';
+import { useApiUsage } from '../../../hooks/queries/useDashboard';
 import styles from './APIUsage.module.css';
 
 const chartColors = {
@@ -14,25 +12,32 @@ const chartColors = {
 };
 
 export function APIUsage() {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('30D');
-  const [usageLogs, setUsageLogs] = useState<ApiUsageLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
-    if (!user?.id) return;
-    try {
-      // In a real setup, activeTab would filter the query limit/date range
-      const usageData = await DashboardService.getApiUsage(user.id, 500);
-      setUsageLogs(usageData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Reuse the shared usage-logs query (GET /api/analytics/logs) which polls
+  // every 5s via React Query's refetchInterval, preserving the previous
+  // useDataPolling(5000) behavior without a separate fetch path.
+  const { data: allLogs = [], isLoading } = useApiUsage(500);
 
-  useDataPolling(fetchData, 5000);
+  // The date-range tabs actually filter the real logs by their `timestamp`
+  // (mapped from `logged_at`) rather than being decorative. 'All' shows every
+  // fetched row; the others keep only rows within the selected window.
+  const usageLogs = useMemo(() => {
+    if (activeTab === 'All') return allLogs;
+
+    const now = Date.now();
+    const windowMs: Record<string, number> = {
+      Today: 24 * 60 * 60 * 1000,
+      '7D': 7 * 24 * 60 * 60 * 1000,
+      '30D': 30 * 24 * 60 * 60 * 1000,
+    };
+    const cutoff = now - (windowMs[activeTab] ?? windowMs['30D']);
+
+    return allLogs.filter((log) => {
+      const ts = log.timestamp ? new Date(log.timestamp).getTime() : NaN;
+      return !Number.isNaN(ts) && ts >= cutoff;
+    });
+  }, [allLogs, activeTab]);
 
   // These 4 summary cards and the provider chart are derived directly from
   // usageLogs (the real per-request data) rather than getModelAnalytics(),
@@ -102,7 +107,7 @@ export function APIUsage() {
               <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
               <Tooltip
                 contentStyle={{
-                  background: '#1a2529',
+                  background: 'var(--color-card-hover)',
                   border: '1px solid rgba(64,80,85,0.5)',
                   borderRadius: 6,
                   fontSize: 13,

@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Eye, EyeOff, ExternalLink, Plus, Key, Copy, Check, Trash2 } from 'lucide-react';
 
 import { Badge } from '../../../components/ui/Badge/Badge';
@@ -6,9 +7,20 @@ import { Button } from '../../../components/ui/Button/Button';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { Input } from '../../../components/ui/Input/Input';
 import type { Integration } from '../../../types/dashboard.types';
-import { DashboardService, PlatformKeyData } from '../../../api/services/dashboard.service';
 import styles from './Integrations.module.css';
-import { supabase } from '../../../services/supabase';
+import { useAuth } from '../../../hooks/useAuth';
+import { useEntitlements } from '../../../context/EntitlementsContext';
+import {
+  useAiProviders,
+  useIntegrations,
+  usePlatformKeys,
+  useCreateIntegration,
+  useUpdateIntegration,
+  useDisconnectIntegration,
+  useCreatePlatformKey,
+  useRevokePlatformKey,
+  type CreateIntegrationInput,
+} from '../../../hooks/queries/usePlatformKeys';
 
 const statusVariant: Record<Integration['status'], 'success' | 'error' | 'neutral'> = {
   active: 'success',
@@ -16,24 +28,10 @@ const statusVariant: Record<Integration['status'], 'success' | 'error' | 'neutra
   inactive: 'neutral',
 };
 
-const availableProviders: Array<{ id: string; name: string; color: string; connected: boolean }> = [
-  { id: 'openai', name: 'OpenAI', color: '#74aa9c', connected: false },
-  { id: 'anthropic', name: 'Anthropic', color: '#d4a574', connected: false },
-  { id: 'google', name: 'Google AI', color: '#8ab4f8', connected: false },
-  { id: 'azure', name: 'Azure OpenAI', color: '#7fba00', connected: false },
-  { id: 'cohere', name: 'Cohere', color: '#d18ee2', connected: false },
-  { id: 'mistral', name: 'Mistral AI', color: '#f97316', connected: false },
-  { id: 'bedrock', name: 'AWS Bedrock', color: '#ff9900', connected: false },
-  { id: 'groq', name: 'Groq', color: '#22c55e', connected: false },
-];
-
-const providerColorMap: Record<string, string> = {};
-availableProviders.forEach((p) => {
-  providerColorMap[p.name.toLowerCase()] = p.color;
-});
-
-function getColor(name: string): string {
-  return providerColorMap[name.toLowerCase()] ?? '#22c55e';
+// Colors for providers not in the DB with a custom color
+function getColor(name: string, dynamicProviders: any[]): string {
+  const provider = dynamicProviders.find((p) => p.name.toLowerCase() === name.toLowerCase());
+  return provider?.color ?? '#22c55e';
 }
 
 export function Integrations() {
@@ -41,17 +39,13 @@ export function Integrations() {
   const [editingIntegrationId, setEditingIntegrationId] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [displayName, setDisplayName] = useState('');
+  // Base URL only used for custom / OpenAI-compatible providers
+  const [baseUrl, setBaseUrl] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [connected, setConnected] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
 
   // Key management: which integration's "Manage Keys" modal is open
   const [keysModalIntegration, setKeysModalIntegration] = useState<{ id: string; name: string } | null>(null);
-  const [platformKeys, setPlatformKeys] = useState<PlatformKeyData[]>([]);
-  const [keysLoading, setKeysLoading] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
-  const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [revokingKeyId, setRevokingKeyId] = useState<string | null>(null);
 
   // One-time reveal screen — shown right after a key is generated, then
@@ -64,39 +58,33 @@ export function Integrations() {
   // active platform keys will be revoked.
   const [disconnectTarget, setDisconnectTarget] = useState<{ id: string; activeKeyCount: number } | null>(null);
 
-  const fetchIntegrations = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+  // Provider picker: shown when the top-right "Connect Provider" button is clicked
+  const [showProviderPicker, setShowProviderPicker] = useState(false);
 
-      // org_id is resolved server-side from the authenticated user
-      const res = await fetch('/api/api-keys', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      });
-      const json = await res.json();
-      if (json.data) {
-        setConnected(json.data.map((item: any) => ({
-          id: item.id,
-          provider: item.provider,
-          displayName: item.display_name,
-          status: item.status,
-          lastSync: item.last_sync_at ? new Date(item.last_sync_at).toLocaleDateString() : 'Never',
-          totalCost: 0,
-          activePlatformKeys: item.active_platform_keys ?? 0,
-        })));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const { user } = useAuth();
+  const authReady = !!user?.id;
+  const { limits, isAtLimit } = useEntitlements();
 
-  useEffect(() => {
-    fetchIntegrations();
-  }, []);
+  // ---- Server state via React Query --------------------------------------
+  const { data: allProviders = [] } = useAiProviders(authReady);
+  const { data: connected = [] } = useIntegrations(authReady);
+  const { data: platformKeys = [], isLoading: keysLoading } = usePlatformKeys(keysModalIntegration?.id);
+
+  const createIntegration = useCreateIntegration();
+  const updateIntegration = useUpdateIntegration();
+  const disconnectIntegration = useDisconnectIntegration();
+  const createPlatformKey = useCreatePlatformKey();
+  const revokePlatformKey = useRevokePlatformKey();
+
+  const saving = createIntegration.isPending || updateIntegration.isPending;
+  const disconnectingId = disconnectIntegration.isPending
+    ? (disconnectIntegration.variables as string | undefined) ?? null
+    : null;
+  const isCreatingKey = createPlatformKey.isPending;
 
   const available = useMemo(
-    () => availableProviders.filter((p) => !connected.find(c => c.provider.toLowerCase() === p.id.toLowerCase())),
-    [connected],
+    () => allProviders.filter((p) => !connected.find((c) => c.provider.toLowerCase() === p.id.toLowerCase())),
+    [allProviders, connected],
   );
 
   const handleDisconnectClick = (integrationId: string) => {
@@ -106,34 +94,11 @@ export function Integrations() {
 
   const handleConfirmDisconnect = async () => {
     if (!disconnectTarget) return;
-    const integrationId = disconnectTarget.id;
-
     try {
-      setDisconnectingId(integrationId);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const res = await fetch(`/api/api-keys/${integrationId}`, {
-        method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-
-      if (res.ok) {
-        // Remove it from local state immediately so the UI updates without
-        // waiting on a refetch, then refetch in the background to stay in sync.
-        setConnected((prev) => prev.filter((item) => item.id !== integrationId));
-        setDisconnectTarget(null);
-        fetchIntegrations();
-      } else {
-        const err = await res.json();
-        console.error('[Integrations] Disconnect failed:', err);
-      }
+      await disconnectIntegration.mutateAsync(disconnectTarget.id);
+      setDisconnectTarget(null);
     } catch (err) {
-      console.error(err);
-    } finally {
-      setDisconnectingId(null);
+      console.error('[Integrations] Disconnect failed:', err);
     }
   };
 
@@ -142,12 +107,13 @@ export function Integrations() {
     setSelectedProvider(provider);
     setApiKey('');
     setDisplayName('');
+    setBaseUrl('');
     setShowPassword(false);
   };
 
   const handleOpenEditModal = (item: any) => {
     setEditingIntegrationId(item.id);
-    const providerMeta = availableProviders.find((p) => p.id.toLowerCase() === item.provider.toLowerCase());
+    const providerMeta = allProviders.find((p) => p.id.toLowerCase() === item.provider.toLowerCase());
     setSelectedProvider({ id: item.provider, name: providerMeta?.name ?? item.provider });
     setDisplayName(item.displayName);
     // Intentionally left blank: the decrypted key is never sent to the
@@ -157,48 +123,35 @@ export function Integrations() {
     setShowPassword(false);
   };
 
-  const handleOpenKeysModal = async (integration: { id: string; name: string }) => {
+  const handleOpenKeysModal = (integration: { id: string; name: string }) => {
+    // Opening the modal enables the `usePlatformKeys` query (keyed on the
+    // integration id), which fetches on demand.
     setKeysModalIntegration(integration);
     setRevealedKey(null);
     setNewKeyName('');
-    setKeysLoading(true);
-    try {
-      const keys = await DashboardService.getPlatformKeys(integration.id);
-      setPlatformKeys(keys);
-    } catch (err) {
-      console.error('Failed to fetch platform keys', err);
-    } finally {
-      setKeysLoading(false);
-    }
   };
 
   const handleCreateKey = async () => {
     if (!keysModalIntegration || !newKeyName.trim()) return;
 
-    setIsCreatingKey(true);
     try {
-      const created = await DashboardService.createPlatformKey(keysModalIntegration.id, newKeyName.trim());
-      setPlatformKeys((prev) => [created, ...prev]);
+      const created = await createPlatformKey.mutateAsync({
+        integrationId: keysModalIntegration.id,
+        name: newKeyName.trim(),
+      });
       // Show the one-time reveal screen — this is the only place the plain
-      // key will ever appear.
+      // key will ever appear. It is never logged or cached.
       setRevealedKey(created.plainKey);
       setNewKeyName('');
-      // Refresh the integration list in the background so the card's
-      // active-key count badge updates too.
-      fetchIntegrations();
     } catch (err) {
       console.error('Failed to create platform key', err);
-    } finally {
-      setIsCreatingKey(false);
     }
   };
 
   const handleRevokeKey = async (keyId: string) => {
     setRevokingKeyId(keyId);
     try {
-      await DashboardService.revokePlatformKey(keyId);
-      setPlatformKeys((prev) => prev.map((k) => (k.id === keyId ? { ...k, isActive: false } : k)));
-      fetchIntegrations();
+      await revokePlatformKey.mutateAsync(keyId);
     } catch (err) {
       console.error('Failed to revoke platform key', err);
     } finally {
@@ -221,64 +174,34 @@ export function Integrations() {
 
   const handleSaveModal = async () => {
     try {
-      setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
       const isEditing = editingIntegrationId !== null;
 
       if (isEditing) {
         // Editing: only send api_key if the user actually typed a new one.
         // Leaving it blank keeps the existing encrypted key untouched.
-        const body: Record<string, string> = { display_name: displayName };
-        if (apiKey) {
-          body.api_key = apiKey;
-        }
-
-        const res = await fetch(`/api/api-keys/${editingIntegrationId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify(body)
+        await updateIntegration.mutateAsync({
+          id: editingIntegrationId!,
+          display_name: displayName,
+          ...(apiKey ? { api_key: apiKey } : {}),
         });
-
-        if (res.ok) {
-          setSelectedProvider(null);
-          setEditingIntegrationId(null);
-          fetchIntegrations();
-        } else {
-          const err = await res.json();
-          console.error('[Integrations] Update failed:', err);
-        }
+        setSelectedProvider(null);
+        setEditingIntegrationId(null);
       } else {
         // organization_id is resolved server-side — do not send it from the frontend
-        const res = await fetch('/api/api-keys', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({
-            provider: selectedProvider?.id,
-            display_name: displayName,
-            api_key: apiKey
-          })
-        });
-
-        if (res.ok) {
-          setSelectedProvider(null);
-          fetchIntegrations();
-        } else {
-          const err = await res.json();
-          console.error('[Integrations] Save failed:', err);
+        const payload: CreateIntegrationInput = {
+          provider: selectedProvider?.id,
+          display_name: displayName,
+          api_key: apiKey,
+        };
+        // Custom / OpenAI-compatible providers require a base URL, sent as metadata
+        if (selectedProvider?.id === 'custom') {
+          payload.metadata = { base_url: baseUrl.trim() };
         }
+        await createIntegration.mutateAsync(payload);
+        setSelectedProvider(null);
       }
     } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
+      console.error('[Integrations] Save failed:', err);
     }
   };
 
@@ -286,10 +209,18 @@ export function Integrations() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1>AI Integrations</h1>
-        <Button onClick={() => {}}>
-          <Plus size={16} />
-          Connect Provider
-        </Button>
+        {isAtLimit('integrations', connected.length) ? (
+          <Link to="/dashboard/settings" style={{ textDecoration: 'none' }}>
+            <Badge variant="error">
+              Upgrade to add more integrations (Limit: {limits.limits.integrations ?? '∞'})
+            </Badge>
+          </Link>
+        ) : (
+          <Button onClick={() => setShowProviderPicker(true)}>
+            <Plus size={16} />
+            Connect Provider
+          </Button>
+        )}
       </div>
 
       {connected.length > 0 ? (
@@ -301,7 +232,7 @@ export function Integrations() {
                 <div className={styles.cardHeader}>
                   <div
                     className={styles.providerDot}
-                    style={{ background: getColor(item.provider) }}
+                    style={{ background: getColor(item.provider, allProviders) }}
                   >
                     {item.provider.charAt(0)}
                   </div>
@@ -406,6 +337,14 @@ export function Integrations() {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          {selectedProvider?.id === 'custom' && !editingIntegrationId && (
+            <Input
+              label="Base URL"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://api.your-provider.com/v1"
+            />
+          )}
           <Input
             label="Display Name"
             value={displayName}
@@ -419,7 +358,14 @@ export function Integrations() {
             <ExternalLink size={14} />
             View setup instructions
           </a>
-          <Button fullWidth onClick={handleSaveModal} disabled={loading}>
+          <Button
+            fullWidth
+            onClick={handleSaveModal}
+            disabled={
+              saving ||
+              (selectedProvider?.id === 'custom' && !editingIntegrationId && !baseUrl.trim())
+            }
+          >
             {editingIntegrationId ? 'Save Changes' : 'Save & Connect'}
           </Button>
         </div>
@@ -488,12 +434,21 @@ client.chat.completions.create(
                   value={newKeyName}
                   onChange={(e) => setNewKeyName(e.target.value)}
                   placeholder="e.g. Production Server"
+                  disabled={isAtLimit('platform_keys', platformKeys.filter(k => k.isActive).length)}
                 />
               </div>
-              <Button fullWidth onClick={handleCreateKey} isLoading={isCreatingKey} loadingText="Generating…" disabled={!newKeyName.trim()}>
-                <Plus size={16} />
-                Generate New Key
-              </Button>
+              {isAtLimit('platform_keys', platformKeys.filter(k => k.isActive).length) ? (
+                <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                  <Link to="/dashboard/settings" style={{ textDecoration: 'none' }}>
+                    <Badge variant="error">Upgrade to generate more platform keys (Limit: {limits.limits.platform_keys ?? '∞'})</Badge>
+                  </Link>
+                </div>
+              ) : (
+                <Button fullWidth onClick={handleCreateKey} isLoading={isCreatingKey} loadingText="Generating…" disabled={!newKeyName.trim()}>
+                  <Plus size={16} />
+                  Generate New Key
+                </Button>
+              )}
 
               <div style={{ borderTop: '1px solid var(--color-border)', marginTop: 8, paddingTop: 12 }}>
                 {keysLoading ? (
@@ -567,13 +522,13 @@ client.chat.completions.create(
             )}
           </p>
           <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <Button variant="ghost" onClick={() => setDisconnectTarget(null)} disabled={disconnectingId !== null}>
+            <Button variant="ghost" onClick={() => setDisconnectTarget(null)} disabled={disconnectIntegration.isPending}>
               Cancel
             </Button>
             <Button
               variant="danger"
               onClick={handleConfirmDisconnect}
-              isLoading={disconnectingId !== null}
+              isLoading={disconnectIntegration.isPending}
               loadingText="Disconnecting…"
             >
               Disconnect
@@ -581,6 +536,113 @@ client.chat.completions.create(
           </div>
         </div>
       </Modal>
+      {/* PROVIDER PICKER MODAL — opens when the top-right button is clicked */}
+      <Modal
+        isOpen={showProviderPicker}
+        onClose={() => setShowProviderPicker(false)}
+        title="Select a Provider to Connect"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+          {allProviders.map((provider) => (
+            <button
+              key={provider.id}
+              onClick={() => {
+                setShowProviderPicker(false);
+                handleOpenModal({ id: provider.id, name: provider.name });
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                background: 'var(--color-tertiary)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 6,
+                color: 'var(--color-text-primary)',
+                fontSize: 14,
+                fontFamily: 'var(--font)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'background 120ms ease, border-color 120ms ease',
+                opacity: connected.find(c => c.provider.toLowerCase() === provider.id.toLowerCase()) ? 0.4 : 1,
+              }}
+              disabled={!!connected.find(c => c.provider.toLowerCase() === provider.id.toLowerCase())}
+            >
+              <span
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 6,
+                  background: provider.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#000',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  flexShrink: 0,
+                }}
+              >
+                {provider.name.charAt(0)}
+              </span>
+              <span style={{ flex: 1 }}>{provider.name}</span>
+              {connected.find(c => c.provider.toLowerCase() === provider.id.toLowerCase()) && (
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>Connected</span>
+              )}
+            </button>
+          ))}
+
+          {/* Custom / OpenAI-compatible provider — not in the ai_providers
+              table, so it's offered as a dedicated static option here. */}
+          <button
+            key="custom"
+            onClick={() => {
+              setShowProviderPicker(false);
+              handleOpenModal({ id: 'custom', name: 'Custom Provider' });
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 14px',
+              background: 'var(--color-tertiary)',
+              border: '1px solid var(--color-border)',
+              borderRadius: 6,
+              color: 'var(--color-text-primary)',
+              fontSize: 14,
+              fontFamily: 'var(--font)',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'background 120ms ease, border-color 120ms ease',
+            }}
+          >
+            <span
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 6,
+                background: 'var(--color-text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#000',
+                fontWeight: 700,
+                fontSize: 13,
+                flexShrink: 0,
+              }}
+            >
+              +
+            </span>
+            <span style={{ flex: 1 }}>
+              Custom Provider
+              <span style={{ display: 'block', fontSize: 11, color: 'var(--color-text-muted)' }}>
+                OpenAI-compatible
+              </span>
+            </span>
+          </button>
+        </div>
+      </Modal>
+
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Spinner } from '../../components/ui/Spinner/Spinner';
 import { signInWithGoogle } from '../../lib/auth';
+import { PrivateNoIndex } from '../../components/seo/PrivateNoIndex';
 import styles from '../../components/auth/AuthLayout.module.css';
 
 const benefits = [
@@ -13,11 +14,24 @@ const benefits = [
 export function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get('plan');
 
   const handleSignUp = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Google OAuth leaves this page and comes back via /auth/callback —
+      // localStorage is the only thing that survives that round trip.
+      // Callback.tsx checks for this and, once the user's org is ready,
+      // redirects into Billing with this plan pre-selected instead of the
+      // plain dashboard, so picking a plan on the pricing page actually
+      // leads somewhere instead of silently landing on the free tier.
+      if (selectedPlan) {
+        localStorage.setItem('pending_plan', selectedPlan);
+      } else {
+        localStorage.removeItem('pending_plan');
+      }
       await signInWithGoogle();
     } catch {
       setError('Failed to sign up. Please try again.');
@@ -27,15 +41,20 @@ export function SignUp() {
 
   return (
     <div className={styles.page}>
+      <PrivateNoIndex />
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.card}>
         <div className={styles.logoRow}>
           <div className={styles.logoMark}>II</div>
-          <span className={styles.logoText}>Inference Intelligence</span>
+          <span className={styles.logoText}>Ordisum</span>
         </div>
 
         <h1 className={styles.heading}>Get started for free</h1>
-        <p className={styles.subtext}>Join teams already tracking their AI ROI</p>
+        <p className={styles.subtext}>
+          {selectedPlan
+            ? `Sign up to continue with the ${selectedPlan.charAt(0).toUpperCase()}${selectedPlan.slice(1)} plan`
+            : 'Join teams already tracking their AI ROI'}
+        </p>
 
         {error && <div className={styles.errorBanner}>{error}</div>}
 

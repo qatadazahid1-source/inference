@@ -1,5 +1,7 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { sendAlertEmail } from '../utils/sendAlertEmail.js';
+import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -66,7 +68,7 @@ router.get('/', async (req, res) => {
 
 // POST /api/alert-rules — create a new rule
 // Accepts frontend-shape body: { name, condition, threshold, scope, channels, enabled }
-router.post('/', async (req, res) => {
+router.post('/', attachEntitlements, async (req, res) => {
   try {
     const { name, condition, threshold, scope, channels, enabled } = req.body;
 
@@ -76,6 +78,16 @@ router.post('/', async (req, res) => {
 
     const organization_id = await getUserOrgId(req.user.id);
 
+    // Enforce max_alerts limit
+    const { count, error: countErr } = await supabase
+      .from('alert_rules')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', organization_id);
+    if (countErr) throw countErr;
+    if (!req.entitlements.checkLimit('alert_rules', count)) {
+      const maxAlerts = req.entitlements.getLimit('alert_rules');
+      return res.status(403).json({ error: `Plan limit reached. You can only create up to ${maxAlerts} alert rules.` });
+    }
     const { data, error } = await supabase
       .from('alert_rules')
       .insert({
@@ -188,7 +200,7 @@ router.post('/check', async (req, res) => {
 
     const { data: rules, error: rulesError } = await supabase
       .from('alert_rules')
-      .select('id, name, condition_type, condition_value, scope, last_triggered_at')
+      .select('id, name, condition_type, condition_value, scope, channels, last_triggered_at')
       .eq('organization_id', organization_id)
       .eq('is_active', true);
 
@@ -215,6 +227,21 @@ router.post('/check', async (req, res) => {
           continue;
         }
       }
+
+        let emailRecipients = [];
+        if (rule.channels?.includes('email')) {
+          // Resolve email recipients once per rule if needed
+          const { data: org } = await supabase.from('organizations').select('billing_email').eq('id', organization_id).single();
+          if (org?.billing_email) {
+            emailRecipients.push(org.billing_email);
+          } else {
+            const { data: members } = await supabase.from('organization_members').select('user_id').eq('organization_id', organization_id).in('role', ['owner', 'admin']);
+            for (const m of members || []) {
+              const { data: { user } } = await supabase.auth.admin.getUserById(m.user_id);
+              if (user?.email) emailRecipients.push(user.email);
+            }
+          }
+        }
 
       if (rule.condition_type === 'budget_percent') {
         // Real spend this month
@@ -257,6 +284,17 @@ router.post('/check', async (req, res) => {
             .from('alert_rules')
             .update({ last_triggered_at: now.toISOString() })
             .eq('id', rule.id);
+            
+          for (const email of emailRecipients) {
+            await sendAlertEmail({
+              to: email,
+              subject: `[Ordisum] Alert: ${rule.name}`,
+              title: `Alert Triggered: ${rule.name}`,
+              message: `"${rule.name}" triggered: spend has reached ${percent.toFixed(1)}% of the total budget ($${spend.toFixed(2)} of $${totalBudget.toFixed(2)}).`,
+              severity,
+            });
+          }
+          
           triggered += 1;
         }
       } else if (rule.condition_type === 'daily_cost') {
@@ -284,6 +322,16 @@ router.post('/check', async (req, res) => {
             .from('alert_rules')
             .update({ last_triggered_at: now.toISOString() })
             .eq('id', rule.id);
+            
+          for (const email of emailRecipients) {
+            await sendAlertEmail({
+              to: email,
+              subject: `[Ordisum] Alert: ${rule.name}`,
+              title: `Alert Triggered: ${rule.name}`,
+              message: `"${rule.name}" triggered: today's spend is $${todaySpend.toFixed(2)}, at or above the $${Number(rule.condition_value).toFixed(2)} threshold.`,
+              severity,
+            });
+          }
           triggered += 1;
         }
       } else if (rule.condition_type === 'token_usage') {
@@ -311,6 +359,16 @@ router.post('/check', async (req, res) => {
             .from('alert_rules')
             .update({ last_triggered_at: now.toISOString() })
             .eq('id', rule.id);
+            
+          for (const email of emailRecipients) {
+            await sendAlertEmail({
+              to: email,
+              subject: `[Ordisum] Alert: ${rule.name}`,
+              title: `Alert Triggered: ${rule.name}`,
+              message: `"${rule.name}" triggered: today's usage is ${todayTokens.toLocaleString()} tokens, at or above the ${Number(rule.condition_value).toLocaleString()} threshold.`,
+              severity,
+            });
+          }
           triggered += 1;
         }
       } else if (rule.condition_type === 'error_rate') {
@@ -343,6 +401,16 @@ router.post('/check', async (req, res) => {
             .from('alert_rules')
             .update({ last_triggered_at: now.toISOString() })
             .eq('id', rule.id);
+            
+          for (const email of emailRecipients) {
+            await sendAlertEmail({
+              to: email,
+              subject: `[Ordisum] Alert: ${rule.name}`,
+              title: `Alert Triggered: ${rule.name}`,
+              message: `"${rule.name}" triggered: ${failed} failed request${failed === 1 ? '' : 's'} in the last hour, at or above the threshold of ${Number(rule.condition_value)}.`,
+              severity,
+            });
+          }
           triggered += 1;
         }
       } else if (rule.condition_type === 'cost_spike') {
@@ -386,6 +454,16 @@ router.post('/check', async (req, res) => {
             .from('alert_rules')
             .update({ last_triggered_at: now.toISOString() })
             .eq('id', rule.id);
+            
+          for (const email of emailRecipients) {
+            await sendAlertEmail({
+              to: email,
+              subject: `[Ordisum] Alert: ${rule.name}`,
+              title: `Alert Triggered: ${rule.name}`,
+              message: `"${rule.name}" triggered: today's spend ($${todaySpend.toFixed(2)}) is ${multiple.toFixed(1)}x yesterday's ($${yesterdaySpend.toFixed(2)}), above the ${Number(rule.condition_value)}x threshold.`,
+              severity,
+            });
+          }
           triggered += 1;
         }
       }

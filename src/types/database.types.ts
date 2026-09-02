@@ -53,7 +53,7 @@ export type Organization = {
   billing_email: string | null
   tax_id: string | null
   billing_address: Record<string, string> | null
-  stripe_customer_id: string | null
+  lemonsqueezy_customer_id: string | null
   is_active: boolean
   created_at: string
   updated_at: string
@@ -97,7 +97,17 @@ export type Plan = {
   features: Record<string, boolean>
   is_active: boolean
   created_at: string
+  lemonsqueezy_variant_id_monthly: string | null
+  lemonsqueezy_variant_id_annual: string | null
+  // Landing page display columns (added in migration 00007)
+  tagline: string | null
+  is_popular: boolean
+  cta_text: string | null
+  cta_variant: string | null
+  sort_order: number
+  display_features: Array<{ text: string; included: boolean }> | null
 }
+
 
 export type Subscription = {
   id: string
@@ -109,7 +119,7 @@ export type Subscription = {
   current_period_end: string
   trial_ends_at: string | null
   cancelled_at: string | null
-  stripe_subscription_id: string | null
+  lemonsqueezy_subscription_id: string | null
   price_override: number | null
   created_at: string
   updated_at: string
@@ -125,7 +135,7 @@ export type Invoice = {
   status: InvoiceStatus
   description: string | null
   pdf_url: string | null
-  stripe_invoice_id: string | null
+  lemonsqueezy_order_id: string | null
   paid_at: string | null
   due_date: string | null
   created_at: string
@@ -140,7 +150,7 @@ export type PaymentMethod = {
   expiry_month: number | null
   expiry_year: number | null
   is_default: boolean
-  stripe_pm_id: string | null
+  lemonsqueezy_subscription_id: string | null
   created_at: string
 }
 

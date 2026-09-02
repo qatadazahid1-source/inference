@@ -2,9 +2,8 @@ import { DocPage } from './types'
 
 export const teamsPage: DocPage = {
   slug: 'teams',
-  title: 'Team Management',
-  description:
-    'Invite team members, assign roles, and set per-department budget controls.',
+  title: 'Teams',
+  description: 'Manage teams and projects for cost attribution.',
 
   sections: [
     {

@@ -193,7 +193,7 @@ CREATE TABLE public.alerts (
 
 -- ----------------------------------------------------------------
 -- TABLE: api_keys
---   Developer API keys for Inference Intelligence public API.
+--   Developer API keys for Ordisum public API.
 -- ----------------------------------------------------------------
 /*
 CREATE TABLE public.api_keys (

@@ -5,9 +5,13 @@ import { Badge } from '../../../components/ui/Badge/Badge';
 import { Modal } from '../../../components/ui/Modal/Modal';
 
 import type { Budget } from '../../../types/dashboard.types';
-import { DashboardService } from '../../../api/services/dashboard.service';
-import { useDataPolling } from '../../../hooks/useDataPolling';
 import { useAuth } from '../../../hooks/useAuth';
+import {
+  useBudgets,
+  useCreateBudget,
+  useUpdateBudget,
+  useDeleteBudget,
+} from '../../../hooks/queries/useBudgets';
 import styles from './BudgetManager.module.css';
 
 const scopeVariants: Record<string, 'success' | 'warning' | 'error' | 'neutral' | 'purple'> = {
@@ -30,27 +34,20 @@ const defaultForm = {
 
 export function BudgetManager() {
   const { user } = useAuth();
+  const authReady = !!user?.id;
   const [showCreate, setShowCreate] = useState(false);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [editingBudgetId, setEditingBudgetId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...defaultForm });
-  const [budgets, setBudgets] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchBudgets = async () => {
-    if (!user?.id) return;
-    try {
-      const data = await DashboardService.getBudgets(user.id);
-      setBudgets(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const budgetsQuery = useBudgets(authReady);
+  const budgets = budgetsQuery.data ?? [];
+  const isLoading = budgetsQuery.isPending;
 
-  useDataPolling(fetchBudgets, 5000);
+  const createBudget = useCreateBudget();
+  const updateBudget = useUpdateBudget();
+  const deleteBudget = useDeleteBudget();
 
   const handleCreate = () => {
     setEditingBudgetId(null);
@@ -80,10 +77,9 @@ export function BudgetManager() {
 
     try {
       setDeletingId(budgetId);
-      await DashboardService.deleteBudget(budgetId);
-      // Update local state immediately so the UI reflects the deletion
-      // without waiting on the next poll cycle.
-      setBudgets((prev) => prev.filter((b) => b.id !== budgetId));
+      // The mutation optimistically removes the card from the cached list, so
+      // the UI reflects the deletion immediately without waiting on the poll.
+      await deleteBudget.mutateAsync(budgetId);
     } catch (err) {
       console.error('Failed to delete budget:', err);
       alert('Failed to delete budget. See console for details.');
@@ -107,14 +103,13 @@ export function BudgetManager() {
       };
 
       if (editingBudgetId) {
-        await DashboardService.updateBudget(editingBudgetId, payload);
+        await updateBudget.mutateAsync({ budgetId: editingBudgetId, budget: payload });
       } else {
-        await DashboardService.createBudget(payload);
+        await createBudget.mutateAsync(payload);
       }
 
       setShowCreate(false);
       setEditingBudgetId(null);
-      fetchBudgets();
     } catch (err) {
       console.error('Failed to save budget:', err);
       alert(`Failed to ${editingBudgetId ? 'update' : 'create'} budget. See console for details.`);

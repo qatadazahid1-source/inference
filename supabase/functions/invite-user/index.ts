@@ -38,21 +38,31 @@ serve(async (req) => {
       })
     }
 
-    // Check if user exists
-    const { data: existingMember } = await supabase
-      .from('organization_members')
-      .select('id, status')
-      .eq('organization_id', organizationId)
-      .eq('user_id', user.id) // can check by joining to users table
-      .single()
+    // Check if user exists by getting the user_id for the email
+    const { data: inviteeData } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
 
-    if (existingMember?.status === 'active') {
-      // Already a member
-      return new Response(JSON.stringify({ error: 'User is already a member' }), {
-        status: 409,
-        headers: { 'Content-Type': 'application/json' },
-      })
+    if (inviteeData) {
+      // Check if they are already in the organization
+      const { data: existingMember } = await supabase
+        .from('organization_members')
+        .select('id, status')
+        .eq('organization_id', organizationId)
+        .eq('user_id', inviteeData.id)
+        .maybeSingle()
+
+      if (existingMember?.status === 'active') {
+        return new Response(JSON.stringify({ error: 'User is already a member' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
     }
+
+    // Removed the secondary `if (existingMember?.status === 'active')` as it's now handled above
 
     // Generate invitation token
     const tokenBytes = new Uint8Array(32)
@@ -99,12 +109,12 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'Inference Intelligence <team@inferenceintelligence.com>',
+          from: 'Ordisum <team@ordisum.com>',
           to: [email],
           subject: `You've been invited to join ${orgName}`,
           html: `
             <h2>You've been invited!</h2>
-            <p>${inviterName} has invited you to join <strong>${orgName}</strong> on Inference Intelligence.</p>
+            <p>${inviterName} has invited you to join <strong>${orgName}</strong> on Ordisum.</p>
             <p>Click the link below to accept the invitation:</p>
             <a href="${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/auth/signup?token=${invitationToken}"
                style="display: inline-block; padding: 12px 24px; background: #16a34a; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">

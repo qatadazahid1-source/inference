@@ -3,15 +3,14 @@ import { DocPage } from './types'
 export const apiAuthPage: DocPage = {
   slug: 'api-auth',
   title: 'API Authentication',
-  description:
-    'Authenticate with the Inference Intelligence API using API keys or OAuth tokens.',
+  description: 'Authenticate requests to the Ordisum API and Gateway.',
 
   sections: [
     {
       id: 'overview',
       heading: 'Overview',
       body:
-        'The Inference Intelligence API uses Bearer token authentication. ' +
+        'The Ordisum API uses Bearer token authentication. ' +
         'All requests must include a valid API key in the Authorization header. ' +
         'API keys are scoped to your workspace and carry the permissions of the ' +
         'user who created them.',
@@ -44,7 +43,7 @@ export II_API_KEY="ii_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"`,
       code: {
         filename: 'Example API request',
         language: 'bash',
-        code: `curl https://api.inferenceintelligence.com/v1/costs/summary \\
+        code: `curl https://api.ordisum.com/v1/costs/summary \\
   -H "Authorization: Bearer $II_API_KEY" \\
   -H "Content-Type: application/json"`,
       },
@@ -55,7 +54,7 @@ export II_API_KEY="ii_live_xxxxxxxxxxxxxxxxxxxxxxxxxxxx"`,
       code: {
         filename: 'api-client.ts',
         language: 'typescript',
-        code: `const BASE_URL = 'https://api.inferenceintelligence.com/v1'
+        code: `const BASE_URL = 'https://api.ordisum.com/v1'
 
 async function fetchCostSummary() {
   const response = await fetch(\`\${BASE_URL}/costs/summary\`, {

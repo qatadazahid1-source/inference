@@ -1,15 +1,30 @@
 import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertTriangle, AlertCircle, Info, Check, X, Plus, Trash2 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { Badge } from '../../../components/ui/Badge/Badge';
 import { Button } from '../../../components/ui/Button/Button';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { Input } from '../../../components/ui/Input/Input';
-import { DashboardService, AlertData, AlertRuleData } from '../../../api/services/dashboard.service';
+import type { AlertRuleData } from '../../../api/services/dashboard.service';
+import {
+  useAlerts,
+  useAlertRules,
+  useMarkAlertRead,
+  useDismissAlert,
+  useToggleAlertRule,
+  useCreateAlertRule,
+  useUpdateAlertRule,
+  useDeleteAlertRule,
+  useCheckAlertRules,
+} from '../../../hooks/queries/useAlerts';
+import { queryKeys } from '../../../hooks/queries/queryKeys';
 import { useAuth } from '../../../hooks/useAuth';
 import { supabase } from '../../../services/supabase';
 import type { Alert } from '../../../types/dashboard.types';
 import styles from './Alerts.module.css';
+import { useEntitlements } from '../../../context/EntitlementsContext';
 
 type FilterKey = 'all' | 'budget' | 'anomaly' | 'security' | 'billing' | 'system';
 
@@ -85,84 +100,64 @@ const allChannels = ['in_app', 'email', 'slack', 'sms'];
 
 export function Alerts() {
   const { user } = useAuth();
+  const { limits, isAtLimit } = useEntitlements();
+  const queryClient = useQueryClient();
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [createOpen, setCreateOpen] = useState(false);
   const [newRule, setNewRule] = useState<NewRule>(defaultNewRule);
-  const [rules, setRules] = useState<AlertRuleData[]>([]);
-  const [rulesLoading, setRulesLoading] = useState(true);
-  const [isSavingRule, setIsSavingRule] = useState(false);
   // null = "Create Alert Rule" modal; a rule id = editing that existing rule
   const [editingRuleId, setEditingRuleId] = useState<string | null>(null);
   // id of the rule pending delete confirmation, or null if no confirm dialog is open
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
-  const [isDeletingRule, setIsDeletingRule] = useState(false);
-  const [alerts, setAlerts] = useState<(AlertData & { isRead?: boolean })[]>([]);
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAlerts = async () => {
-    if (!user?.id) return;
-    try {
-      const fetchedAlerts = await DashboardService.getAlerts(user.id);
-      
-      setAlerts((prev) => {
-        // Only include fetched alerts that haven't been dismissed
-        const activeAlerts = fetchedAlerts.filter(fa => !dismissedIds.has(fa.id));
-        return activeAlerts.map(fa => {
-          const existing = prev.find(p => p.id === fa.id);
-          return { ...fa, isRead: existing ? existing.isRead : fa.isRead };
-        });
-      });
-    } catch (err) {
-      console.error('Failed to fetch alerts', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Gate the queries on auth being ready — mirrors the previous
+  // `if (!user?.id) return;` guards inside the old fetch functions.
+  const authReady = !!user?.id;
 
-  const fetchRules = async () => {
-    try {
-      const fetchedRules = await DashboardService.getAlertRules();
-      setRules(fetchedRules);
-    } catch (err) {
-      console.error('Failed to fetch alert rules', err);
-    } finally {
-      setRulesLoading(false);
-    }
-  };
+  // Server state now lives in React Query. `isPending` stays true until the
+  // first successful fetch, matching the old `isLoading`/`rulesLoading`
+  // (initialized true, set false in the fetch `finally`).
+  const alertsQuery = useAlerts(authReady);
+  const rulesQuery = useAlertRules(authReady);
+
+  const alerts = alertsQuery.data ?? [];
+  const rules = rulesQuery.data ?? [];
+  const isLoading = alertsQuery.isPending;
+  const rulesLoading = rulesQuery.isPending;
+
+  // Mutations — optimistic cache updates, revert-on-failure and invalidation
+  // all live inside the hooks (src/hooks/queries/useAlerts.ts).
+  const markAlertReadMutation = useMarkAlertRead();
+  const dismissAlertMutation = useDismissAlert();
+  const toggleRuleMutation = useToggleAlertRule();
+  const createRuleMutation = useCreateAlertRule();
+  const updateRuleMutation = useUpdateAlertRule();
+  const deleteRuleMutation = useDeleteAlertRule();
+  const checkAlertRulesMutation = useCheckAlertRules();
+
+  const isSavingRule = createRuleMutation.isPending || updateRuleMutation.isPending;
+  const isDeletingRule = deleteRuleMutation.isPending;
 
   // One-time on page load: evaluate all active rules against real current
-  // data (no background scheduler exists — this is the on-demand check),
-  // then refresh both alerts and rules so any newly triggered alert shows
-  // up immediately and last_triggered_at is reflected.
+  // data (no background scheduler exists — this is the on-demand check). The
+  // mutation's onSettled invalidates both the alerts and alert-rules queries,
+  // so any newly triggered alert and updated last_triggered_at show up as soon
+  // as the check completes.
   useEffect(() => {
-    if (!user?.id) return;
-
-    let isMounted = true;
-
-    DashboardService.checkAlertRules()
-      .catch((err) => console.error('Failed to check alert rules', err))
-      .finally(() => {
-        if (!isMounted) return;
-        fetchAlerts();
-        fetchRules();
-      });
-
-    return () => {
-      isMounted = false;
-    };
+    if (!authReady) return;
+    checkAlertRulesMutation.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Supabase Realtime subscription — replaces the 5-second polling above.
-  // When a new alert is inserted or updated in the alerts table (e.g. by
-  // POST /api/alert-rules/check on the backend), this fires fetchAlerts
-  // immediately so the UI updates without waiting for the next poll tick.
-  // RLS (confirmed active on the alerts table) ensures the subscription
-  // only delivers rows for the authenticated user's own organization —
-  // no cross-org data leaks through the real-time channel.
+  // Supabase Realtime subscription — preserved exactly as before. React Query
+  // manages fetching/mutations, NOT realtime. When a row in the alerts table
+  // changes (e.g. by POST /api/alert-rules/check on the backend), invalidate
+  // the alerts query so React Query refetches the authoritative list rather
+  // than patching from the payload. RLS (confirmed active on the alerts table)
+  // scopes the channel to the authenticated user's own organization — no
+  // cross-org data leaks through the real-time channel.
   useEffect(() => {
-    if (!user?.id) return;
+    if (!authReady) return;
 
     const channel = supabase
       .channel('alerts-realtime')
@@ -170,10 +165,7 @@ export function Alerts() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'alerts' },
         () => {
-          // A change happened — re-fetch the full list rather than trying
-          // to patch state from the payload, so the UI stays consistent
-          // with what the server actually has (including read-status, etc.)
-          fetchAlerts();
+          queryClient.invalidateQueries({ queryKey: queryKeys.alerts.all });
         }
       )
       .subscribe();
@@ -196,59 +188,23 @@ export function Alerts() {
   }, [activeFilter, alerts]);
 
   const handleMarkRead = (id: string) => {
-    setAlerts((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, isRead: true } : a)),
-    );
-
-    DashboardService.markAlertRead(id).catch((err) => {
-      console.error('Failed to mark alert as read', err);
-      // Revert on failure
-      setAlerts((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, isRead: false } : a)),
-      );
-    });
+    // Fire-and-forget: the hook applies the optimistic `isRead` flip and
+    // reverts on failure. Intentionally not awaited (non-blocking UX).
+    markAlertReadMutation.mutate(id);
   };
 
   const handleDismiss = (id: string) => {
-    const removedAlert = alerts.find((a) => a.id === id);
-
-    setDismissedIds(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-    setAlerts((prev) => prev.filter((a) => a.id !== id));
-
-    DashboardService.dismissAlert(id).catch((err) => {
-      console.error('Failed to dismiss alert', err);
-      // Revert: un-dismiss and restore the alert in the list
-      setDismissedIds(prev => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      if (removedAlert) {
-        setAlerts((prev) => [...prev, removedAlert]);
-      }
-    });
+    // Fire-and-forget: the hook optimistically removes the alert and restores
+    // it on failure. Intentionally not awaited (non-blocking UX).
+    dismissAlertMutation.mutate(id);
   };
 
   const handleToggleRule = (id: string) => {
     const targetRule = rules.find((r) => r.id === id);
     if (!targetRule) return;
-    const nextEnabled = !targetRule.enabled;
-
-    setRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, enabled: nextEnabled } : r)),
-    );
-
-    DashboardService.toggleAlertRule(id, nextEnabled).catch((err) => {
-      console.error('Failed to toggle alert rule', err);
-      // Revert on failure
-      setRules((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, enabled: !nextEnabled } : r)),
-      );
-    });
+    // Fire-and-forget: the hook optimistically flips `enabled` and reverts on
+    // failure. Intentionally not awaited (non-blocking UX).
+    toggleRuleMutation.mutate({ ruleId: id, enabled: !targetRule.enabled });
   };
 
   // Saves the modal: creates a new rule when editingRuleId is null,
@@ -271,22 +227,19 @@ export function Alerts() {
       channels: newRule.channels.filter((ch) => ch === 'in_app'),
     };
 
-    setIsSavingRule(true);
+    // Awaited so the modal only closes on success; the hooks invalidate the
+    // rule list so the created/updated rule is reflected from the server.
     try {
       if (editingRuleId) {
-        const updated = await DashboardService.updateAlertRule(editingRuleId, payload);
-        setRules((prev) => prev.map((r) => (r.id === editingRuleId ? updated : r)));
+        await updateRuleMutation.mutateAsync({ ruleId: editingRuleId, rule: payload });
       } else {
-        const created = await DashboardService.createAlertRule({ ...payload, enabled: true });
-        setRules((prev) => [created, ...prev]);
+        await createRuleMutation.mutateAsync({ ...payload, enabled: true });
       }
       setCreateOpen(false);
       setEditingRuleId(null);
       setNewRule(defaultNewRule);
     } catch (err) {
       console.error('Failed to save alert rule', err);
-    } finally {
-      setIsSavingRule(false);
     }
   };
 
@@ -309,33 +262,19 @@ export function Alerts() {
     setCreateOpen(true);
   };
 
-  // Deletes a rule after the confirm dialog. Removes it from the list
-  // optimistically; restores it if the backend call fails.
+  // Deletes a rule after the confirm dialog. The hook optimistically removes
+  // it (restoring on failure); we await so the dialog only closes on success.
   const handleConfirmDelete = async () => {
     if (!deleteTargetId) return;
     const id = deleteTargetId;
-    const removedRule = rules.find((r) => r.id === id);
-    const removedIndex = rules.findIndex((r) => r.id === id);
 
-    setIsDeletingRule(true);
     try {
-      await DashboardService.deleteAlertRule(id);
-      setRules((prev) => prev.filter((r) => r.id !== id));
+      await deleteRuleMutation.mutateAsync(id);
       setDeleteTargetId(null);
     } catch (err) {
       console.error('Failed to delete alert rule', err);
-      // Keep the confirm dialog open so the user can see something went
-      // wrong and retry, rather than silently failing.
-      if (removedRule && removedIndex !== -1) {
-        setRules((prev) => {
-          if (prev.some((r) => r.id === id)) return prev;
-          const next = [...prev];
-          next.splice(removedIndex, 0, removedRule);
-          return next;
-        });
-      }
-    } finally {
-      setIsDeletingRule(false);
+      // Keep the confirm dialog open so the user can see something went wrong
+      // and retry. The hook's onError already restored the rule in the list.
     }
   };
 
@@ -357,10 +296,18 @@ export function Alerts() {
             <span className={styles.unreadBadge}>{unreadCount}</span>
           )}
         </div>
-        <Button onClick={handleOpenCreate}>
-          <Plus size={16} />
-          Create Alert Rule
-        </Button>
+        {isAtLimit('alert_rules', rules.length) ? (
+          <Link to="/dashboard/settings" style={{ textDecoration: 'none' }}>
+            <Badge variant="error">
+              Upgrade to add more rules (Limit: {limits.limits.alert_rules ?? '∞'})
+            </Badge>
+          </Link>
+        ) : (
+          <Button onClick={handleOpenCreate}>
+            <Plus size={16} />
+            Create Alert Rule
+          </Button>
+        )}
       </div>
 
       <div className={styles.filterBar}>
@@ -458,12 +405,12 @@ export function Alerts() {
                       {rule.condition === 'model_latency'
                         ? `${rule.threshold}ms`
                         : rule.condition === 'error_rate'
-                        ? `${rule.threshold} failures/hr`
-                        : rule.condition === 'token_usage'
-                        ? `${Number(rule.threshold).toLocaleString()} tokens/day`
-                        : rule.condition === 'cost_spike'
-                        ? `${rule.threshold}x`
-                        : `${rule.threshold}%`}
+                          ? `${rule.threshold} failures/hr`
+                          : rule.condition === 'token_usage'
+                            ? `${Number(rule.threshold).toLocaleString()} tokens/day`
+                            : rule.condition === 'cost_spike'
+                              ? `${rule.threshold}x`
+                              : `${rule.threshold}%`}
                     </td>
                     <td>{rule.scope}</td>
                     <td>
@@ -551,10 +498,10 @@ export function Alerts() {
               newRule.condition === 'error_rate'
                 ? 'Threshold (failures per hour)'
                 : newRule.condition === 'token_usage'
-                ? 'Threshold (tokens per day)'
-                : newRule.condition === 'cost_spike'
-                ? 'Threshold (multiplier vs yesterday)'
-                : 'Threshold'
+                  ? 'Threshold (tokens per day)'
+                  : newRule.condition === 'cost_spike'
+                    ? 'Threshold (multiplier vs yesterday)'
+                    : 'Threshold'
             }
             type="number"
             value={newRule.threshold}
@@ -563,10 +510,10 @@ export function Alerts() {
               newRule.condition === 'error_rate'
                 ? 'e.g. 5'
                 : newRule.condition === 'token_usage'
-                ? 'e.g. 100000'
-                : newRule.condition === 'cost_spike'
-                ? 'e.g. 2 (= 2x yesterday)'
-                : 'e.g. 80'
+                  ? 'e.g. 100000'
+                  : newRule.condition === 'cost_spike'
+                    ? 'e.g. 2 (= 2x yesterday)'
+                    : 'e.g. 80'
             }
           />
 

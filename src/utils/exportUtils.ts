@@ -1,3 +1,7 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+
 /**
  * Export data to a JSON file and trigger browser download
  */
@@ -50,4 +54,34 @@ export const exportToCSV = (data: any[], filename: string) => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+};
+
+/**
+ * Export data to an XLSX file and trigger browser download
+ */
+export const exportToXLSX = (data: any[], filename: string) => {
+  if (data.length === 0) return;
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Report');
+  XLSX.writeFile(workbook, `${filename}.xlsx`);
+};
+
+/**
+ * Export data to a PDF file and trigger browser download
+ */
+export const exportToPDF = (data: any[], filename: string) => {
+  if (data.length === 0) return;
+  const doc = new jsPDF();
+  const headers = Object.keys(data[0]);
+  const rows = data.map(row => headers.map(h => row[h]));
+
+  autoTable(doc, {
+    head: [headers],
+    body: rows,
+    styles: { fontSize: 8 },
+    margin: { top: 20 },
+  });
+
+  doc.save(`${filename}.pdf`);
 };

@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -31,8 +32,12 @@ async function getUserOrgId(userId) {
 // Unlike GET /api/analytics above (which aggregates), this returns individual
 // request-level records so the UI can show a real log table instead of an
 // empty state.
-router.get('/logs', async (req, res) => {
+router.get('/logs', attachEntitlements, async (req, res) => {
   try {
+    if (!req.entitlements.hasFeature('analytics')) {
+      return res.status(403).json({ error: 'Analytics feature is not available on your plan.' });
+    }
+
     const organization_id = await getUserOrgId(req.user.id);
     const limit = Math.min(Number(req.query.limit) || 100, 500);
 
@@ -54,8 +59,12 @@ router.get('/logs', async (req, res) => {
 });
 
 // GET /api/analytics
-router.get('/', async (req, res) => {
+router.get('/', attachEntitlements, async (req, res) => {
   try {
+    if (!req.entitlements.hasFeature('analytics')) {
+      return res.status(403).json({ error: 'Analytics feature is not available on your plan.' });
+    }
+
     const organization_id = await getUserOrgId(req.user.id);
     const { period = '30d' } = req.query; // '7d', '30d', 'all'
 
@@ -84,6 +93,11 @@ router.get('/', async (req, res) => {
     let totalLatency = 0;
     let latencyCount = 0;
     const providerCosts = {};
+    // Per-model aggregation (cost/requests/tokens). The raw logs already carry
+    // `model`, `cost_usd` and `total_tokens`, so this reuses the same stored
+    // values as the provider breakdown — no separate pricing logic. Powers the
+    // "Cost by Model" chart, which previously duplicated the provider data.
+    const modelStats = {};
     // costOverTime now tracks per-provider cost per day, not just a single
     // total — e.g. { '2026-06-27': { total: 12.5, groq: 8.0, openai: 4.5 } }.
     // This lets the frontend draw one line per connected provider instead
@@ -107,6 +121,17 @@ router.get('/', async (req, res) => {
       // Provider breakdown (overall, for the pie/bar charts — unchanged)
       providerCosts[log.provider] = (providerCosts[log.provider] || 0) + cost;
 
+      // Per-model breakdown — reuses the same stored cost/token values, so the
+      // "Cost by Model" chart shows real per-model spend, requests and tokens
+      // instead of the provider-level numbers it was falling back to.
+      const modelKey = log.model || 'unknown';
+      if (!modelStats[modelKey]) {
+        modelStats[modelKey] = { total_cost: 0, requests: 0, tokens: 0 };
+      }
+      modelStats[modelKey].total_cost += cost;
+      modelStats[modelKey].requests += 1;
+      modelStats[modelKey].tokens += Number(log.total_tokens) || 0;
+
       // Time series breakdown — now per provider per day
       const dateKey = log.logged_at.split('T')[0];
       const provider = log.provider || 'unknown';
@@ -124,6 +149,12 @@ router.get('/', async (req, res) => {
     // Format for frontend
     const providerData = Object.entries(providerCosts).map(([name, value]) => ({ name, value }));
     const providers = Array.from(providersSeen);
+
+    // Real per-model breakdown (cost + requests + tokens), sorted by spend so
+    // the "Cost by Model" chart shows the biggest models first.
+    const modelData = Object.entries(modelStats)
+      .map(([model, stats]) => ({ model, ...stats }))
+      .sort((a, b) => b.total_cost - a.total_cost);
 
     // Each row: { date, cost, <provider1>: x, <provider2>: y, ... } — cost
     // stays as the total for backward compatibility with anything still
@@ -145,6 +176,7 @@ router.get('/', async (req, res) => {
       avgLatency,
       providerData,
       providers,
+      modelData,
       timeSeriesData
     });
 

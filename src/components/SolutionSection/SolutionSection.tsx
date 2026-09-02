@@ -40,7 +40,7 @@ export default function SolutionSection() {
     <section ref={ref as React.RefObject<HTMLElement>} className={`${styles.section} fade-in-up`}>
       <div className={styles.inner}>
         <h2 className={styles.heading}>
-          Inference Intelligence gives you{' '}
+          Ordisum gives you{' '}
           <span className={styles.accent}>complete visibility</span>{' '}
           — in minutes.
         </h2>

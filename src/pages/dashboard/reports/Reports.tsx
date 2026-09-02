@@ -1,13 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { FileText, Download, Trash2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { Button } from '../../../components/ui/Button/Button';
 import { Badge } from '../../../components/ui/Badge/Badge';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { Spinner } from '../../../components/ui/Spinner/Spinner';
-import { DashboardService } from '../../../api/services/dashboard.service';
+import {
+  useReports,
+  useGenerateReport,
+  useReportSnapshot,
+  useDeleteReport,
+} from '../../../hooks/queries/useReports';
 import { useAuth } from '../../../hooks/useAuth';
-import { exportToCSV } from '../../../utils/exportUtils';
+import { exportToCSV, exportToPDF, exportToXLSX } from '../../../utils/exportUtils';
 
 import type { Report } from '../../../types/dashboard.types';
 import styles from './Reports.module.css';
@@ -41,27 +46,19 @@ export function Reports() {
   const [schedule, setSchedule] = useState(false);
   const [frequency, setFrequency] = useState<typeof frequencies[number]>('weekly');
 
-  const [allReports, setAllReports] = useState<Report[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const fetchReports = useCallback(async () => {
-    if (!user?.id) return;
-    try {
-      const data = await DashboardService.getReports();
-      setAllReports(data || []);
-    } catch (err) {
-      console.error('Failed to fetch reports:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id]);
+  const authReady = !!user?.id;
+  const reportsQuery = useReports(authReady);
+  const allReports = reportsQuery.data ?? [];
+  const isLoading = reportsQuery.isPending;
 
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+  const generateReport = useGenerateReport();
+  const reportSnapshot = useReportSnapshot();
+  const deleteReport = useDeleteReport();
+
+  const isGenerating = generateReport.isPending;
 
   const filteredReports = activeTab === 'all'
     ? allReports
@@ -97,12 +94,11 @@ export function Reports() {
       return;
     }
 
-    setIsGenerating(true);
     try {
       // Note: recurring/frequency are saved to the report record, but there
       // is no background scheduler yet to actually re-generate this report
       // automatically on that cadence. This generates the report once, now.
-      await DashboardService.generateReport({
+      await generateReport.mutateAsync({
         name: formName.trim(),
         type: formType,
         format: formFormat,
@@ -113,21 +109,18 @@ export function Reports() {
         recurring: schedule,
         frequency: schedule ? frequency : undefined,
       });
-      await fetchReports();
       resetForm();
       setShowModal(false);
     } catch (err) {
       console.error('Failed to generate report:', err);
       alert('Something went wrong generating the report. Please try again.');
-    } finally {
-      setIsGenerating(false);
     }
   }
 
   async function handleDownload(report: Report) {
     setDownloadingId(report.id);
     try {
-      const { data_snapshot } = await DashboardService.getReportSnapshot(report.id);
+      const { data_snapshot } = await reportSnapshot.mutateAsync(report.id);
 
       if (data_snapshot?.isEmpty) {
         const proceed = window.confirm(
@@ -139,7 +132,7 @@ export function Reports() {
         }
       }
 
-      if (report.format === 'CSV' || report.format === 'XLSX') {
+      if (report.format === 'CSV') {
         const rows = (data_snapshot?.rows || []).map((r: any) => ({
           Date: r.logged_at,
           Provider: r.provider,
@@ -150,52 +143,26 @@ export function Reports() {
           CostUSD: r.cost_usd,
         }));
         exportToCSV(rows, report.name.replace(/\s+/g, '_'));
+      } else if (report.format === 'XLSX') {
+        const rows = (data_snapshot?.rows || []).map((r: any) => ({
+          Date: r.logged_at,
+          Provider: r.provider,
+          Model: r.model,
+          InputTokens: r.input_tokens,
+          OutputTokens: r.output_tokens,
+          TotalTokens: r.total_tokens,
+          CostUSD: r.cost_usd,
+        }));
+        exportToXLSX(rows, report.name.replace(/\s+/g, '_'));
       } else {
-        // PDF: build a simple text-based summary from the snapshot totals
-        // and per-provider/model breakdown.
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-        const margin = 15;
-        let y = margin;
-
-        pdf.setFontSize(18);
-        pdf.text(report.name, margin, y);
-        y += 8;
-        pdf.setFontSize(10);
-        pdf.setTextColor(120);
-        pdf.text(`Type: ${report.type} · Generated: ${new Date(data_snapshot?.generatedAt || Date.now()).toLocaleString()}`, margin, y);
-        y += 12;
-
-        const totals = data_snapshot?.totals || {};
-        pdf.setFontSize(13);
-        pdf.setTextColor(0);
-        pdf.text('Summary', margin, y);
-        y += 7;
-        pdf.setFontSize(10);
-
-        if (data_snapshot?.isEmpty) {
-          pdf.setTextColor(180, 80, 0);
-          pdf.text('No usage data matched the selected filters (date range / providers) for this report.', margin, y);
-          pdf.setTextColor(0);
-          y += 10;
-        }
-
-        pdf.text(`Total Requests: ${totals.totalRequests ?? 0}`, margin, y); y += 6;
-        pdf.text(`Total Tokens: ${(totals.totalTokens ?? 0).toLocaleString()}`, margin, y); y += 6;
-        pdf.text(`Total Cost: $${(totals.totalCost ?? 0).toFixed(4)}`, margin, y); y += 10;
-
-        const byProvider = data_snapshot?.byProvider || {};
-        if (Object.keys(byProvider).length > 0) {
-          pdf.setFontSize(13);
-          pdf.text('By Provider', margin, y);
-          y += 7;
-          pdf.setFontSize(10);
-          Object.entries(byProvider).forEach(([name, stats]: [string, any]) => {
-            pdf.text(`${name}: ${stats.requests} requests, ${stats.tokens.toLocaleString()} tokens, $${stats.cost.toFixed(4)}`, margin, y);
-            y += 6;
-          });
-        }
-
-        pdf.save(`${report.name.replace(/\s+/g, '_')}.pdf`);
+        const rows = (data_snapshot?.rows || []).map((r: any) => ({
+          Date: new Date(r.logged_at).toLocaleString(),
+          Provider: r.provider,
+          Model: r.model,
+          'Total Tokens': r.total_tokens,
+          'Cost USD': `$${Number(r.cost_usd).toFixed(4)}`,
+        }));
+        exportToPDF(rows, report.name.replace(/\s+/g, '_'));
       }
     } catch (err) {
       console.error('Failed to download report:', err);
@@ -211,8 +178,7 @@ export function Reports() {
 
     setDeletingId(report.id);
     try {
-      await DashboardService.deleteReport(report.id);
-      setAllReports((prev) => prev.filter((r) => r.id !== report.id));
+      await deleteReport.mutateAsync(report.id);
     } catch (err) {
       console.error('Failed to delete report:', err);
       alert('Could not delete this report. Please try again.');

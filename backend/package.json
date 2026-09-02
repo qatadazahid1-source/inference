@@ -1,7 +1,7 @@
 {
   "name": "inference-intelligence-backend",
   "version": "1.0.0",
-  "description": "Backend API for Inference Intelligence",
+  "description": "Backend API for Ordisum",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
@@ -9,13 +9,16 @@
     "dev": "nodemon src/index.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "@supabase/supabase-js": "^2.43.4",
     "axios": "^1.7.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^8.5.2",
+    "openai": "^7.4.0",
     "otplib": "^12.0.1",
+    "playwright": "^1.62.1",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

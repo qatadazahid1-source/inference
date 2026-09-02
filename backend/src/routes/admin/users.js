@@ -37,18 +37,54 @@ router.get('/', async (req, res) => {
 
       const orgIds = [...new Set((members || []).map(m => m.organization_id).filter(Boolean))];
       let orgsById = new Map();
+      let subscriptionsByOrg = new Map();
+      let plansById = new Map();
       if (orgIds.length) {
         const { data: orgs, error: orgErr } = await supabase
           .from('organizations')
-          .select('id, name, slug, is_active')
+          .select('id, name, slug, is_active, trial_ends_at')
           .in('id', orgIds);
         if (orgErr) console.warn('[admin/users] Failed to fetch organizations:', orgErr);
         orgsById = new Map((orgs || []).map(o => [o.id, o]));
+
+        const { data: subscriptions, error: subErr } = await supabase
+          .from('subscriptions')
+          .select('organization_id, status, plan_id, trial_ends_at')
+          .in('organization_id', orgIds)
+          .in('status', ['active', 'trialing']);
+        if (subErr) console.warn('[admin/users] Failed to fetch subscriptions:', subErr);
+
+        const planIds = [...new Set((subscriptions || []).map(s => s.plan_id).filter(Boolean))];
+        if (planIds.length) {
+          const { data: plans, error: planErr } = await supabase
+            .from('plans')
+            .select('id, name')
+            .in('id', planIds);
+          if (planErr) console.warn('[admin/users] Failed to fetch plans:', planErr);
+          plansById = new Map((plans || []).map(p => [p.id, p]));
+        }
+
+        for (const sub of subscriptions || []) {
+          subscriptionsByOrg.set(sub.organization_id, {
+            ...sub,
+            plan_name: sub.plan_id ? (plansById.get(sub.plan_id)?.name || 'Unknown Plan') : 'No Plan'
+          });
+        }
       }
 
       for (const m of members || []) {
         const list = membersByUser.get(m.user_id) || [];
-        list.push({ ...m, organizations: orgsById.get(m.organization_id) || null });
+        const org = orgsById.get(m.organization_id) || null;
+        let subscription = subscriptionsByOrg.get(m.organization_id) || null;
+
+        if (!subscription && org?.trial_ends_at) {
+          const tEnd = new Date(org.trial_ends_at);
+          if (tEnd.getTime() > Date.now()) {
+            subscription = { status: 'trialing', plan_name: 'Free Trial', trial_ends_at: org.trial_ends_at };
+          }
+        }
+
+        list.push({ ...m, organizations: org, subscription });
         membersByUser.set(m.user_id, list);
       }
     }
@@ -66,6 +102,7 @@ router.get('/', async (req, res) => {
         is_active: u.is_active,
         // Take first membership (most users belong to one org)
         organization: memberships[0]?.organizations ?? null,
+        subscription: memberships[0]?.subscription ?? null,
         role: memberships[0]?.role ?? null,
         joined_at: memberships[0]?.joined_at ?? null,
         org_count: memberships.length,
@@ -103,19 +140,60 @@ router.get('/:id', async (req, res) => {
 
     const orgIds = [...new Set((memberships || []).map(m => m.organization_id).filter(Boolean))];
     let orgsById = new Map();
+    let subscriptionsByOrg = new Map();
+    let plansById = new Map();
     if (orgIds.length) {
       const { data: orgs, error: orgErr } = await supabase
         .from('organizations')
-        .select('id, name, slug, is_active')
+        .select('id, name, slug, is_active, trial_ends_at')
         .in('id', orgIds);
       if (orgErr) console.warn('[admin/users] Failed to fetch organizations:', orgErr);
       orgsById = new Map((orgs || []).map(o => [o.id, o]));
+
+      const { data: subscriptions, error: subErr } = await supabase
+        .from('subscriptions')
+        .select('id, status, billing_cycle, current_period_start, current_period_end, trial_ends_at, cancelled_at, plan_id, created_at, organization_id')
+        .in('organization_id', orgIds)
+        .order('created_at', { ascending: false });
+      if (subErr) console.warn('[admin/users] Failed to fetch subscriptions:', subErr);
+
+      const planIds = [...new Set((subscriptions || []).map(s => s.plan_id).filter(Boolean))];
+      if (planIds.length) {
+        const { data: plans, error: planErr } = await supabase
+          .from('plans')
+          .select('id, name, slug, price_monthly, price_annual')
+          .in('id', planIds);
+        if (planErr) console.warn('[admin/users] Failed to fetch plans:', planErr);
+        plansById = new Map((plans || []).map(p => [p.id, p]));
+      }
+
+      for (const sub of subscriptions || []) {
+        if (!subscriptionsByOrg.has(sub.organization_id)) {
+          subscriptionsByOrg.set(sub.organization_id, {
+            ...sub,
+            plans: sub.plan_id ? (plansById.get(sub.plan_id) || null) : null
+          });
+        }
+      }
     }
 
-    const organization_members = (memberships || []).map(m => ({
-      ...m,
-      organizations: orgsById.get(m.organization_id) || null
-    }));
+    const organization_members = (memberships || []).map(m => {
+      const org = orgsById.get(m.organization_id) || null;
+      let subscription = subscriptionsByOrg.get(m.organization_id) || null;
+
+      if (!subscription && org?.trial_ends_at) {
+        const tEnd = new Date(org.trial_ends_at);
+        if (tEnd.getTime() > Date.now()) {
+          subscription = { status: 'trialing', plans: { name: 'Free Trial' }, trial_ends_at: org.trial_ends_at };
+        }
+      }
+
+      return {
+        ...m,
+        organizations: org,
+        subscription
+      };
+    });
 
     // NOTE: api_usage_logs has no user_id column — usage is only tracked at
     // the organization level in this schema, not per individual user. As a

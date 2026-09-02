@@ -166,19 +166,20 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 18px;
-  background: #16a34a;
-  border: none;
-  border-radius: var(--radius);
-  color: #fff;
-  font-size: 14px;
+  padding: 8px 16px;
+  background: var(--silver);
+  border: 1px solid var(--silver);
+  border-radius: var(--radius-sm);
+  color: var(--color-bg);
+  font-size: 13px;
   font-weight: 500;
+  font-family: var(--font);
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 150ms ease, transform 150ms ease;
 }
 
-.btnPrimary:hover:not(:disabled) { background: #15803d; }
-.btnPrimary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btnPrimary:hover:not(:disabled) { background: var(--silver2); border-color: var(--silver2); transform: translateY(-1px); }
+.btnPrimary:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .btnSecondary {
   display: inline-flex;

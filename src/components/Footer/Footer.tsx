@@ -78,7 +78,7 @@ const Footer: React.FC = () => {
               <span className={styles.logoIcon}>
                 <span className={styles.logoInner} />
               </span>
-              Inference Intelligence
+              Ordisum
             </a>
             <p className={styles.tagline}>
               Every AI invoice, reconciled into one clear number.
@@ -121,7 +121,7 @@ const Footer: React.FC = () => {
 
         <div className={styles.bottom}>
           <p className={styles.copyright}>
-            © {new Date().getFullYear()} Inference Intelligence. All rights reserved.
+            © {new Date().getFullYear()} Ordisum. All rights reserved.
           </p>
         </div>
       </div>

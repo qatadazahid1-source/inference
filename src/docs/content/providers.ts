@@ -2,8 +2,8 @@ import { DocPage } from './types'
 
 export const providersPage: DocPage = {
   slug: 'providers',
-  title: 'Connecting Providers',
-  description: 'How to connect OpenAI, Anthropic, Google Gemini, Azure, AWS Bedrock, and more.',
+  title: 'Supported Providers',
+  description: 'See every AI provider Ordisum tracks cost for, and how to connect each.',
 
   sections: [
     {
@@ -28,7 +28,7 @@ export const providersPage: DocPage = {
       heading: 'How Connection Works',
       body:
         'Each provider connection uses a read-only API key that you provide. ' +
-        'Inference Intelligence calls the provider\'s official usage or billing API — ' +
+        'Ordisum calls the provider\'s official usage or billing API — ' +
         'the same endpoints the provider exposes for their own dashboard.\n\n' +
         'No proxy, no middleware, no code changes. ' +
         'We never send traffic through our servers.',
@@ -36,7 +36,7 @@ export const providersPage: DocPage = {
         type: 'info',
         title: 'Read-only access',
         text:
-          'All API keys used by Inference Intelligence require read-only permissions at minimum. ' +
+          'All API keys used by Ordisum require read-only permissions at minimum. ' +
           'Never use admin keys. We only read cost and usage data.',
       },
     },
@@ -46,7 +46,7 @@ export const providersPage: DocPage = {
       body:
         '1. Go to platform.openai.com/api_keys\n' +
         '2. Create a new key with the "Billing" read permission\n' +
-        '3. Copy and paste it into Inference Intelligence\n' +
+        '3. Copy and paste it into Ordisum\n' +
         '4. Wait 5 minutes for data to populate',
       callout: {
         type: 'tip',
@@ -62,7 +62,7 @@ export const providersPage: DocPage = {
       body:
         '1. Go to console.anthropic.com/settings/keys\n' +
         '2. Create a key — no special scopes needed, read-only is default\n' +
-        '3. Paste into Inference Intelligence\n' +
+        '3. Paste into Ordisum\n' +
         '4. Anthropic usage data updates every 5 minutes',
     },
     {
@@ -71,14 +71,14 @@ export const providersPage: DocPage = {
       body:
         '1. Go to aistudio.google.com/app/apikey\n' +
         '2. Create a new API key with no restrictions (or restrict to your domain)\n' +
-        '3. Paste into Inference Intelligence\n' +
+        '3. Paste into Ordisum\n' +
         '4. For cost data, ensure billing is enabled on your Google Cloud project',
       callout: {
         type: 'warning',
         title: 'Gemini pricing model',
         text:
           'Google charges for tokens based on input and output size. ' +
-          'Inference Intelligence reads the official Cloud Billing export, ' +
+          'Ordisum reads the official Cloud Billing export, ' +
           'which may have up to a 24-hour delay vs. the AI Studio usage dashboard.',
       },
     },
@@ -88,7 +88,7 @@ export const providersPage: DocPage = {
       body:
         '1. Go to portal.azure.com → AI Services → Keys and Endpoint\n' +
         '2. Copy the Key and Endpoint values\n' +
-        '3. Paste both into Inference Intelligence\n' +
+        '3. Paste both into Ordisum\n' +
         '4. Azure is available to all Azure AI customers at no additional cost',
       callout: {
         type: 'info',
@@ -105,8 +105,8 @@ export const providersPage: DocPage = {
         '1. In AWS Console, go to IAM → Users → Create User\n' +
         '2. Attach the ReadOnlyAccess and BedrockReadOnly managed policies\n' +
         '3. Create an access key (Access Key ID + Secret Access Key)\n' +
-        '4. Paste both into Inference Intelligence\n' +
-        '5. Inference Intelligence will discover which Bedrock models you have enabled',
+        '4. Paste both into Ordisum\n' +
+        '5. Ordisum will discover which Bedrock models you have enabled',
       callout: {
         type: 'info',
         title: 'Cross-region inference',

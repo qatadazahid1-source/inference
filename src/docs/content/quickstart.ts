@@ -3,14 +3,14 @@ import { DocPage } from './types'
 export const quickstartPage: DocPage = {
   slug: 'quickstart',
   title: 'Quickstart',
-  description: 'Get Inference Intelligence running in under 5 minutes. No code changes required.',
+  description: 'Get Ordisum tracking your AI spend in minutes — no SDK required.',
 
   sections: [
     {
       id: 'sign-up',
       heading: 'Step 1 — Sign Up',
       body:
-        'Create a free account at app.inferenceintelligence.com. ' +
+        'Create a free account at app.ordisum.com. ' +
         'You will be prompted to create your first workspace. ' +
         'A workspace maps to a single organization or team.',
       callout: {
@@ -39,18 +39,28 @@ AWS Bedrock  → AWS Console → Bedrock → Model access`,
       },
     },
     {
-      id: 'verify-data',
-      heading: 'Step 3 — Verify Your Data',
+      id: 'make-first-request',
+      heading: 'Step 3 — Make Your First Request',
       body:
-        'After connecting, wait about 5 minutes for the first data sync. ' +
-        'Go to the Dashboard to see your total spend, provider breakdown, and trend charts.',
+        'Instead of calling OpenAI or Anthropic directly, point your SDK to our Gateway URL ' +
+        'and use your Ordisum platform key. We handle the rest.',
+      code: {
+        language: 'bash',
+        code: `curl https://api.inference-intelligence.com/v1/chat/completions \\
+  -H "Authorization: Bearer ii_live_your_platform_key_here" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "model": "gpt-4o",
+    "messages": [{"role": "user", "content": "Hello world!"}]
+  }'`,
+      },
       callout: {
         type: 'tip',
-        title: 'No data after 5 minutes?',
-        text:
-          'Check that your provider account has at least some usage in the last 30 days. ' +
-          'New accounts with zero API calls will show an empty dashboard. ' +
-          'See Troubleshooting if the status dot shows red.',
+        title: 'Instant Telemetry',
+        text: [
+          'By routing your AI traffic through Ordisum, you get real-time tracking of every token and cost without any SDK integration.',
+          'Your API keys for OpenAI, Anthropic, etc. are securely stored in our dashboard. We append them automatically when forwarding requests.',
+        ].join('\n\n'),
       },
     },
     {

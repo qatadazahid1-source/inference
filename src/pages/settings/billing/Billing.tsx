@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { CreditCard, Check, Download } from 'lucide-react';
 
 import { Button } from '../../../components/ui/Button/Button';
@@ -6,9 +6,23 @@ import { Badge } from '../../../components/ui/Badge/Badge';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { Skeleton } from '../../../components/ui/Skeleton/Skeleton';
 import { useToast } from '../../../components/ui/Toast/Toast';
-import { supabase } from '../../../lib/supabase';
-import { getPlans, getSubscription, getInvoices, getPaymentMethods, createCheckoutSession } from '../../../services/billing';
-import type { Plan, Invoice, PaymentMethod, Subscription } from '../../../types/database.types';
+import { createCheckoutSession } from '../../../services/billing';
+import {
+  useOrganizationDetail,
+  useUpdateOrganization,
+  type BillingAddress,
+} from '../../../hooks/queries/useOrganization';
+import {
+  usePlans,
+  useSubscription,
+  useInvoices,
+  usePaymentMethods,
+  useOrganizationAccess,
+  usePaymentMethodUrl,
+  useCancelSubscription,
+  useResumeSubscription,
+} from '../../../hooks/queries/useBilling';
+import type { Invoice } from '../../../types/database.types';
 import styles from './Billing.module.css';
 
 const statusVariant: Record<Invoice['status'], 'success' | 'warning' | 'error' | 'neutral'> = {
@@ -18,76 +32,81 @@ const statusVariant: Record<Invoice['status'], 'success' | 'warning' | 'error' |
   refunded: 'neutral',
 };
 
-interface BillingAddress {
-  legalName?: string;
-  street?: string;
-  city?: string;
-  state?: string;
-  zip?: string;
-  country?: string;
-}
-
-async function authedFetch(path: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No session');
-  const res = await fetch(path, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}`, ...(options.headers || {}) },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-  return body;
+function messageFrom(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
 }
 
 export function Billing() {
   const { addToast } = useToast();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [canEdit, setCanEdit] = useState(false);
+  // ---------------------------------------------------------------------------
+  // Server state (React Query). Organization detail (id / canEdit / tax_id /
+  // billing_address) is read via the C7 hook; the billing reads come from the
+  // C10 useBilling hooks. See useBilling.ts for the Axios-vs-Supabase split.
+  // ---------------------------------------------------------------------------
+  const { data: orgDetail, isLoading: orgLoading } = useOrganizationDetail();
+
+  const orgId = (orgDetail?.id as string | undefined) ?? null;
+  const canEdit = !!orgDetail?.canEdit;
+
+  const { data: subscription = null, isLoading: subLoading } = useSubscription(orgId);
+  const { data: plans = [], isLoading: plansLoading } = usePlans();
+  const { data: invoices = [], isLoading: invoicesLoading } = useInvoices(orgId);
+  const { data: paymentMethods = [], isLoading: pmLoading } = usePaymentMethods(orgId);
+  // Trial/access state is only relevant when there is no active subscription;
+  // gate the query so it never runs (and never 404s the UI) otherwise.
+  const { data: trialAccess = null } = useOrganizationAccess(
+    !!orgId && !subLoading && !subscription,
+  );
+
+  // ---------------------------------------------------------------------------
+  // Mutations
+  // ---------------------------------------------------------------------------
+  const paymentMethodUrl = usePaymentMethodUrl();
+  const cancelSubscription = useCancelSubscription();
+  const resumeSubscription = useResumeSubscription();
+  const updateOrganization = useUpdateOrganization();
+
+  // ---------------------------------------------------------------------------
+  // Local UI state
+  // ---------------------------------------------------------------------------
   const [taxId, setTaxId] = useState('');
   const [address, setAddress] = useState<BillingAddress>({});
-  const [isSavingBilling, setIsSavingBilling] = useState(false);
-
-  const [subscription, setSubscription] = useState<(Subscription & { plan: Plan | null }) | null>(null);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [checkoutLoadingPlanId, setCheckoutLoadingPlanId] = useState<string | null>(null);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const org = await authedFetch('/api/organization');
-      setOrgId(org.data.id);
-      setCanEdit(!!org.data.canEdit);
-      setTaxId(org.data.tax_id ?? '');
-      setAddress((org.data.billing_address as BillingAddress) ?? {});
-
-      const [subRes, plansRes, invoicesRes, pmRes] = await Promise.all([
-        getSubscription(org.data.id),
-        getPlans(),
-        getInvoices(org.data.id, { limit: 20 }),
-        getPaymentMethods(org.data.id),
-      ]);
-
-      if (subRes.error) throw new Error(subRes.error);
-      setSubscription(subRes.data);
-      setPlans(plansRes.data ?? []);
-      setInvoices(invoicesRes.data ?? []);
-      setPaymentMethods(pmRes.data ?? []);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to load billing info', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [addToast]);
-
+  // Seed the editable billing-info form once from the fetched org detail.
+  // A ref guard prevents a later cache refetch/invalidation from clobbering
+  // in-progress edits; the save mutation returns the persisted values anyway.
+  const seededRef = useRef(false);
   useEffect(() => {
-    load();
-  }, [load]);
+    if (seededRef.current || !orgDetail?.id) return;
+    setTaxId((orgDetail.tax_id as string | undefined) ?? '');
+    setAddress((orgDetail.billing_address as BillingAddress | undefined) ?? {});
+    seededRef.current = true;
+  }, [orgDetail]);
+
+  const isLoading =
+    orgLoading || (!!orgId && (subLoading || plansLoading || invoicesLoading || pmLoading));
+
+  // Returning from Lemon Squeezy Checkout redirects here with ?success=true
+  // (redirect_url in create-checkout-session), or the user just closes the
+  // checkout tab on their own — Lemon Squeezy has no cancel_url concept, so
+  // ?cancelled=true is only reachable if it's ever added back deliberately.
+  // Show a toast and strip the param so a page refresh doesn't re-show it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'true') {
+      addToast('Subscription updated — this can take a few seconds to reflect below', 'success');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('cancelled') === 'true') {
+      addToast('Checkout cancelled — no changes were made', 'error');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleUpgrade = useCallback(async (planId: string) => {
     if (!orgId) return;
@@ -97,37 +116,86 @@ export function Billing() {
       if (error || !url) throw new Error(error || 'Could not start checkout');
       window.location.href = url;
     } catch (err) {
-      // Known issue: create-checkout-session currently uses mode: 'payment'
-      // instead of mode: 'subscription' for recurring prices, which Stripe
-      // rejects. That's tracked separately as a Payment System bug fix —
-      // surfacing the real error here rather than masking it.
-      addToast(err instanceof Error ? err.message : 'Checkout failed', 'error');
+      // Surfacing the real checkout error here (e.g. a plan missing its
+      // Lemon Squeezy variant ID) rather than masking it with a generic
+      // "something went wrong" message.
+      addToast(messageFrom(err, 'Checkout failed'), 'error');
     } finally {
       setCheckoutLoadingPlanId(null);
     }
   }, [orgId, subscription, addToast]);
 
-  const handleSaveBillingInfo = useCallback(async () => {
-    setIsSavingBilling(true);
+  // Arriving here with ?autoupgrade=<slug> means the user picked a plan on
+  // the public pricing page before signing up (see PricingSection.tsx →
+  // SignUp.tsx → Callback.tsx / Onboarding.tsx, which carry the choice
+  // through via localStorage since it can't survive the OAuth redirect any
+  // other way). Once plans have loaded, kick off checkout for that plan
+  // automatically instead of dropping them on a plain billing page with no
+  // indication anything happened.
+  const autoUpgradeTriggered = useRef(false);
+  useEffect(() => {
+    if (autoUpgradeTriggered.current || !orgId || plans.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('autoupgrade');
+    if (!slug) return;
+
+    const plan = plans.find((p) => p.slug === slug);
+    window.history.replaceState({}, '', window.location.pathname);
+    autoUpgradeTriggered.current = true;
+
+    if (!plan) {
+      addToast(`Couldn't find the "${slug}" plan — pick one below instead`, 'error');
+      return;
+    }
+    handleUpgrade(plan.id);
+  }, [orgId, plans, handleUpgrade, addToast]);
+
+  const handleManagePaymentMethod = useCallback(async () => {
     try {
-      await authedFetch('/api/organization', {
-        method: 'PATCH',
-        body: JSON.stringify({ tax_id: taxId, billing_address: address }),
-      });
+      const url = await paymentMethodUrl.mutateAsync();
+      window.location.href = url;
+    } catch (err) {
+      addToast(messageFrom(err, 'Could not open payment method page'), 'error');
+    }
+  }, [paymentMethodUrl, addToast]);
+
+  const handleCancelSubscription = useCallback(async (immediate: boolean) => {
+    try {
+      await cancelSubscription.mutateAsync({ immediate });
+      addToast(
+        immediate ? 'Subscription cancelled' : 'Subscription will end at the close of this billing period',
+        'success',
+      );
+      setCancelModalOpen(false);
+    } catch (err) {
+      addToast(messageFrom(err, 'Failed to cancel subscription'), 'error');
+    }
+  }, [cancelSubscription, addToast]);
+
+  const handleResumeSubscription = useCallback(async () => {
+    try {
+      await resumeSubscription.mutateAsync();
+      addToast('Subscription resumed', 'success');
+    } catch (err) {
+      addToast(messageFrom(err, 'Failed to resume subscription'), 'error');
+    }
+  }, [resumeSubscription, addToast]);
+
+  const handleSaveBillingInfo = useCallback(async () => {
+    try {
+      await updateOrganization.mutateAsync({ tax_id: taxId, billing_address: address });
       addToast('Billing information saved', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to save billing information', 'error');
-    } finally {
-      setIsSavingBilling(false);
+      addToast(messageFrom(err, 'Failed to save billing information'), 'error');
     }
-  }, [taxId, address, addToast]);
+  }, [taxId, address, updateOrganization, addToast]);
 
   const defaultPaymentMethod = paymentMethods.find((pm) => pm.is_default) ?? paymentMethods[0] ?? null;
 
   const usedFeatureList: string[] = subscription?.plan
     ? Object.entries(subscription.plan.features ?? {})
-        .filter(([, v]) => v)
-        .map(([k]) => k.replace(/_/g, ' '))
+      .filter(([, v]) => v)
+      .map(([k]) => k.replace(/_/g, ' '))
     : [];
 
   if (isLoading) {
@@ -150,8 +218,12 @@ export function Billing() {
       <div className={styles.planCard}>
         <div className={styles.planHeader}>
           <div>
-            <div className={styles.planName}>{subscription?.plan?.name ?? 'No active plan'}</div>
+            <div className={styles.planName}>
+              {subscription?.plan?.name ?? (trialAccess?.source === 'trial' ? 'Free Trial' : 'No active plan')}
+            </div>
             {subscription && <Badge variant="purple">{subscription.status}</Badge>}
+            {!subscription && trialAccess?.source === 'trial' && <Badge variant="warning">trial</Badge>}
+            {!subscription && trialAccess?.source === 'none' && <Badge variant="error">expired</Badge>}
           </div>
           {subscription?.plan && (
             <div style={{ textAlign: 'right' }}>
@@ -163,7 +235,19 @@ export function Billing() {
               <div className={styles.planDetail}>
                 {subscription.status === 'trialing' && subscription.trial_ends_at
                   ? `Trial ends: ${new Date(subscription.trial_ends_at).toLocaleDateString()}`
-                  : `Next renewal: ${new Date(subscription.current_period_end).toLocaleDateString()}`}
+                  : subscription.status === 'cancelled' && subscription.cancelled_at
+                    ? `Access until: ${new Date(subscription.cancelled_at).toLocaleDateString()}`
+                    : `Next renewal: ${new Date(subscription.current_period_end).toLocaleDateString()}`}
+              </div>
+            </div>
+          )}
+          {!subscription && trialAccess?.source === 'trial' && trialAccess.trialEndsAt && (
+            <div style={{ textAlign: 'right' }}>
+              <div className={styles.planDetail}>
+                {trialAccess.daysLeft} day{trialAccess.daysLeft === 1 ? '' : 's'} left
+              </div>
+              <div className={styles.planDetail}>
+                Ends {new Date(trialAccess.trialEndsAt).toLocaleDateString()}
               </div>
             </div>
           )}
@@ -180,10 +264,62 @@ export function Billing() {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
           {canEdit && <Button onClick={() => setUpgradeModalOpen(true)}>Upgrade Plan</Button>}
+          {canEdit && subscription && subscription.status !== 'cancelled' && (
+            <Button variant="ghost" onClick={() => setCancelModalOpen(true)}>
+              Cancel Subscription
+            </Button>
+          )}
+          {canEdit && subscription?.status === 'cancelled' && subscription.cancelled_at && new Date(subscription.cancelled_at) > new Date() && (
+            <Button variant="secondary" isLoading={resumeSubscription.isPending} onClick={handleResumeSubscription}>
+              Resume Subscription
+            </Button>
+          )}
         </div>
       </div>
+
+      <Modal isOpen={cancelModalOpen} onClose={() => setCancelModalOpen(false)} title="Cancel Subscription" size="small">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+            Choose how you'd like to cancel:
+          </p>
+          <button
+            type="button"
+            onClick={() => handleCancelSubscription(false)}
+            disabled={cancelSubscription.isPending}
+            style={{
+              textAlign: 'left', padding: 16, borderRadius: 8, border: '1px solid var(--color-border)',
+              background: 'var(--color-card)', cursor: 'pointer', color: 'var(--color-text-primary)',
+            }}
+          >
+            <div style={{ fontWeight: 'var(--fw-semibold)' as string, marginBottom: 4 }}>
+              Cancel at end of billing period
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              {subscription
+                ? `Keep access until ${new Date(subscription.current_period_end).toLocaleDateString()}, then it won't renew.`
+                : "Keep access until the current period ends, then it won't renew."}
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleCancelSubscription(true)}
+            disabled={cancelSubscription.isPending}
+            style={{
+              textAlign: 'left', padding: 16, borderRadius: 8, border: '1px solid #ef4444',
+              background: 'rgba(239, 68, 68, 0.06)', cursor: 'pointer', color: 'var(--color-text-primary)',
+            }}
+          >
+            <div style={{ fontWeight: 'var(--fw-semibold)' as string, marginBottom: 4, color: '#ef4444' }}>
+              Cancel immediately
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+              Access ends right now, even if you've already paid for time remaining in this period.
+            </div>
+          </button>
+        </div>
+      </Modal>
 
       <h2 className={styles.sectionTitle}>Payment Method</h2>
       <div className={styles.card}>
@@ -202,6 +338,20 @@ export function Billing() {
             </div>
           </div>
           {defaultPaymentMethod && <Badge variant="success">Default</Badge>}
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <Button
+            variant="secondary"
+            size="sm"
+            isLoading={paymentMethodUrl.isPending}
+            onClick={handleManagePaymentMethod}
+          >
+            {defaultPaymentMethod ? 'Update Payment Method' : 'Add Payment Method'}
+          </Button>
+          <p style={{ marginTop: 8, fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+            Opens Lemon Squeezy's secure page — your card details are never
+            stored on our servers.
+          </p>
         </div>
       </div>
 
@@ -335,7 +485,7 @@ export function Billing() {
         </div>
         {canEdit && (
           <div style={{ marginTop: 24 }}>
-            <Button isLoading={isSavingBilling} onClick={handleSaveBillingInfo}>Save Billing Information</Button>
+            <Button isLoading={updateOrganization.isPending} onClick={handleSaveBillingInfo}>Save Billing Information</Button>
           </div>
         )}
       </div>

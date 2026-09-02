@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
 import { KPICard } from '../../../components/dashboard/KPICard/KPICard';
-import { DashboardService, DashboardOverview, CostOverTime, ModelAnalytics, ApiUsageLog } from '../../../api/services/dashboard.service';
-import { useDataPolling } from '../../../hooks/useDataPolling';
-import { useAuth } from '../../../hooks/useAuth';
+import type { CostOverTime, ModelAnalytics } from '../../../api/services/dashboard.service';
+import { useAnalytics, useApiUsage } from '../../../hooks/queries/useDashboard';
 import styles from './Overview.module.css';
 
 const chartColors = {
@@ -16,51 +14,57 @@ const chartColors = {
   text: '#64748b',
 };
 
+// Palette used to color one line per provider in the Cost Over Time chart.
+// Providers are supplied dynamically by the backend (whichever the org
+// actually has usage for), so lines are assigned colors by index rather than
+// hardcoding openai/anthropic/google.
+const providerLineColors = [
+  '#22c55e', '#14b8a6', '#10b981', '#3b82f6', '#a855f7',
+  '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16',
+];
+
+// Prettify a raw provider key (e.g. "google_ai") for chart legend labels.
+function formatProviderName(provider: string): string {
+  return provider
+    .split(/[_\s]+/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
 export function Overview() {
-  const { user } = useAuth();
-  const [chartData, setChartData] = useState<CostOverTime[]>([]);
-  const [usageLogs, setUsageLogs] = useState<ApiUsageLog[]>([]);
-  const [topModels, setTopModels] = useState<ModelAnalytics[]>([]);
-  const [overview, setOverview] = useState<DashboardOverview | null>(null);
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Server state now flows through React Query. `useAnalytics` fetches
+  // /api/analytics once (polling every 5s) and derives the overview KPIs,
+  // cost-over-time series, and top-models data. `useApiUsage` fetches the
+  // recent activity logs. Auth + error normalization come from the shared
+  // axiosClient (Phase A).
+  const analyticsQuery = useAnalytics(30);
+  const usageQuery = useApiUsage(10);
 
-  const fetchData = async () => {
-    if (!user?.id) return;
-    try {
-      setError(null);
-      const [overviewData, costData, modelsData, usageData] = await Promise.all([
-        DashboardService.getOverview(user.id),
-        DashboardService.getCostOverTime(user.id, 30),
-        DashboardService.getModelAnalytics(user.id),
-        DashboardService.getApiUsage(user.id, 10),
-      ]);
-      setOverview(overviewData);
-      setChartData(costData);
-      setTopModels(modelsData);
-      setUsageLogs(usageData);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const overview = analyticsQuery.data?.overview ?? null;
+  const chartData: CostOverTime[] = analyticsQuery.data?.costOverTime ?? [];
+  const topModels: ModelAnalytics[] = analyticsQuery.data?.modelAnalytics ?? [];
+  // Providers the org actually has usage for — drives one chart line each,
+  // instead of three hardcoded openai/anthropic/google series.
+  const providers: string[] = analyticsQuery.data?.providers ?? [];
+  const usageLogs = usageQuery.data ?? [];
 
-  useDataPolling(fetchData, 5000);
+  // Preserve the original UX: show the loading screen only on the initial load
+  // (before any overview data exists), and surface the first error message.
+  const isLoading = analyticsQuery.isLoading || usageQuery.isLoading;
+  const error = analyticsQuery.error ?? usageQuery.error;
 
   const formatCurrency = (val: number) => `$${val.toFixed(2)}`;
 
   const kpiData = overview ? [
     { label: 'Total Spend (30d)', value: formatCurrency(overview.totalSpend), trend: 0, trendDirection: 'up' as const, icon: 'DollarSign' },
-    { label: 'API Requests', value: overview.totalRequests.toString(), trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
+    { label: 'API Requests', value: overview.totalRequests.toLocaleString(), trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
     { label: 'Avg Latency', value: `${overview.avgLatency}ms`, trend: 0, trendDirection: 'down' as const, icon: 'Zap' },
-    { label: 'Time Saved', value: `${overview.timeSavedHours.toFixed(1)}h`, trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
+    { label: 'Total Tokens', value: overview.totalTokens.toLocaleString(), trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
   ] : [
     { label: 'Total Spend (30d)', value: '$0.00', trend: 0, trendDirection: 'up' as const, icon: 'DollarSign' },
     { label: 'API Requests', value: '0', trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
     { label: 'Avg Latency', value: '0ms', trend: 0, trendDirection: 'down' as const, icon: 'Zap' },
-    { label: 'Time Saved', value: '0.0h', trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
+    { label: 'Total Tokens', value: '0', trend: 0, trendDirection: 'up' as const, icon: 'Activity' },
   ];
 
   if (isLoading && !overview) {
@@ -68,7 +72,7 @@ export function Overview() {
   }
 
   if (error) {
-    return <div style={{ color: '#ef4444', padding: '2rem' }}>Error loading data: {error}</div>;
+    return <div style={{ color: '#ef4444', padding: '2rem' }}>Error loading data: {error.message}</div>;
   }
 
   return (
@@ -90,7 +94,7 @@ export function Overview() {
                 <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
                 <Tooltip
                   contentStyle={{
-                    background: '#1a2529',
+                    background: 'var(--color-card-hover)',
                     border: '1px solid rgba(64,80,85,0.5)',
                     borderRadius: 6,
                     fontSize: 13,
@@ -98,9 +102,17 @@ export function Overview() {
                   labelStyle={{ color: '#f8fafc' }}
                 />
                 <Legend />
-                <Line type="monotone" dataKey="openai" stroke={chartColors.green} strokeWidth={2} dot={false} name="OpenAI" />
-                <Line type="monotone" dataKey="anthropic" stroke={chartColors.teal} strokeWidth={2} dot={false} name="Anthropic" />
-                <Line type="monotone" dataKey="google" stroke={chartColors.emerald} strokeWidth={2} dot={false} name="Google AI" />
+                {providers.map((provider, i) => (
+                  <Line
+                    key={provider}
+                    type="monotone"
+                    dataKey={provider}
+                    stroke={providerLineColors[i % providerLineColors.length]}
+                    strokeWidth={2}
+                    dot={false}
+                    name={formatProviderName(provider)}
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -120,13 +132,13 @@ export function Overview() {
                 <YAxis type="category" dataKey="model" tick={{ fontSize: 11, fill: chartColors.text }} width={110} />
                 <Tooltip
                   contentStyle={{
-                    background: '#1a2529',
+                    background: 'var(--color-card-hover)',
                     border: '1px solid rgba(64,80,85,0.5)',
                     borderRadius: 6,
                     fontSize: 13,
                   }}
                 />
-                <Bar dataKey="cost" fill={chartColors.green} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="total_cost" fill={chartColors.green} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

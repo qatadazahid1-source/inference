@@ -21,7 +21,7 @@ export default function ComparisonSection() {
             <thead>
               <tr>
                 <th>Feature</th>
-                <th className={styles.us}>Inference Intelligence</th>
+                <th className={styles.us}>Ordisum</th>
                 <th>CloudZero</th>
                 <th>Apptio</th>
               </tr>

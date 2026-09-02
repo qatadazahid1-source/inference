@@ -45,14 +45,24 @@ export function OrganizationsPage() {
     { 
       header: 'Subscription', 
       accessorKey: 'plan_name',
-      cell: (_: string, row: any) => (
-        <div>
-          <div>{row.plan_name}</div>
-          <span className={`${styles.badge} ${row.subscription_status === 'active' ? styles.badgeActive : row.subscription_status === 'trialing' ? styles.badgeTrialing : ''}`}>
-            {row.subscription_status}
-          </span>
-        </div>
-      )
+      cell: (_: string, row: any) => {
+        const daysLeft = row.trial_ends_at
+          ? Math.ceil((new Date(row.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : null;
+        return (
+          <div>
+            <div>{row.plan_name}</div>
+            <span className={`${styles.badge} ${row.subscription_status === 'active' ? styles.badgeActive : row.subscription_status === 'trialing' ? styles.badgeTrialing : ''}`}>
+              {row.subscription_status}
+            </span>
+            {row.subscription_status === 'trialing' && daysLeft !== null && (
+              <div style={{ fontSize: 11, color: daysLeft <= 3 ? '#ef4444' : 'var(--color-text-tertiary)', marginTop: 3 }}>
+                {daysLeft >= 0 ? `${daysLeft}d left` : 'expired'}
+              </div>
+            )}
+          </div>
+        );
+      }
     },
     { 
       header: 'Monthly Spend', 

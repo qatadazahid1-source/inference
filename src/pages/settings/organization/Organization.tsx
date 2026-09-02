@@ -5,6 +5,12 @@ import { Card } from '../../../components/ui/Card/Card';
 import { Skeleton } from '../../../components/ui/Skeleton/Skeleton';
 import { useToast } from '../../../components/ui/Toast/Toast';
 import { supabase } from '../../../lib/supabase';
+import {
+  useOrganizationDetail,
+  useUpdateOrganization,
+  useUpdateOrganizationLogo,
+} from '../../../hooks/queries/useOrganization';
+import { ApiError } from '../../../lib/axios';
 import styles from './Organization.module.css';
 
 const industries = [
@@ -22,79 +28,65 @@ interface OrgFormState {
   primaryColor: string;
 }
 
-async function authedFetch(path: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No session');
-  const res = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-      ...(options.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-  return body;
+function messageFrom(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
 }
 
 export function Organization() {
   const { addToast } = useToast();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [canEdit, setCanEdit] = useState(false);
+  // Server state (GET /api/organization) via React Query.
+  const { data: org, isLoading, isError, error } = useOrganizationDetail();
+
+  // Mutations (PATCH /api/organization, POST /api/organization/logo).
+  const updateOrg = useUpdateOrganization();
+  const updateLogo = useUpdateOrganizationLogo();
+
+  // Local UI state.
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const [isSavingGeneral, setIsSavingGeneral] = useState(false);
-
   const [form, setForm] = useState<OrgFormState>({
     name: '', industry: '', companySize: '', website: '', primaryColor: '#22c55e',
   });
 
-  const loadOrg = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await authedFetch('/api/organization');
-      setForm({
-        name: data.name ?? '',
-        industry: data.industry ?? '',
-        companySize: data.company_size ?? '',
-        website: data.website ?? '',
-        primaryColor: data.primary_color ?? '#22c55e',
-      });
-      setLogoUrl(data.logo_url ?? null);
-      setCanEdit(!!data.canEdit);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to load organization', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [addToast]);
+  const canEdit = !!org?.canEdit;
 
+  // Hydrate the editable form + logo preview from the fetched org detail.
   useEffect(() => {
-    loadOrg();
-  }, [loadOrg]);
+    if (!org) return;
+    setForm({
+      name: (org.name as string) ?? '',
+      industry: (org.industry as string) ?? '',
+      companySize: (org.company_size as string) ?? '',
+      website: (org.website as string) ?? '',
+      primaryColor: (org.primary_color as string) ?? '#22c55e',
+    });
+    setLogoUrl((org.logo_url as string | null) ?? null);
+  }, [org]);
+
+  // Surface load failures without blocking render of the (empty) form.
+  useEffect(() => {
+    if (isError) {
+      addToast(messageFrom(error, 'Failed to load organization'), 'error');
+    }
+  }, [isError, error, addToast]);
 
   const handleSaveGeneral = useCallback(async () => {
-    setIsSavingGeneral(true);
     try {
-      await authedFetch('/api/organization', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          name: form.name,
-          industry: form.industry,
-          company_size: form.companySize,
-          website: form.website,
-        }),
+      await updateOrg.mutateAsync({
+        name: form.name,
+        industry: form.industry,
+        company_size: form.companySize,
+        website: form.website,
       });
       addToast('Organization details updated', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to save', 'error');
-    } finally {
-      setIsSavingGeneral(false);
+      addToast(messageFrom(err, 'Failed to save'), 'error');
     }
-  }, [form, addToast]);
+  }, [form, updateOrg, addToast]);
 
   const handleLogoUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,6 +94,9 @@ export function Organization() {
 
     setIsUploadingLogo(true);
     try {
+      // Valid Supabase-direct Storage upload — intentionally NOT routed through
+      // the backend REST API. Only the resolved public URL is persisted via the
+      // authenticated /api/organization/logo endpoint below.
       const ext = file.name.split('.').pop() || 'png';
       const path = `logos/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from('user-content').upload(path, file, { upsert: true });
@@ -110,32 +105,26 @@ export function Organization() {
       const { data: urlData } = supabase.storage.from('user-content').getPublicUrl(path);
       if (!urlData?.publicUrl) throw new Error('Could not resolve uploaded logo URL');
 
-      await authedFetch('/api/organization/logo', {
-        method: 'POST',
-        body: JSON.stringify({ logo_url: urlData.publicUrl }),
-      });
+      await updateLogo.mutateAsync(urlData.publicUrl);
 
       setLogoUrl(urlData.publicUrl);
       addToast('Logo updated', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to upload logo', 'error');
+      addToast(messageFrom(err, 'Failed to upload logo'), 'error');
     } finally {
       setIsUploadingLogo(false);
       e.target.value = '';
     }
-  }, [addToast]);
+  }, [updateLogo, addToast]);
 
   const handleSaveColor = useCallback(async () => {
     try {
-      await authedFetch('/api/organization', {
-        method: 'PATCH',
-        body: JSON.stringify({ primary_color: form.primaryColor }),
-      });
+      await updateOrg.mutateAsync({ primary_color: form.primaryColor });
       addToast('Branding updated', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to save branding', 'error');
+      addToast(messageFrom(err, 'Failed to save branding'), 'error');
     }
-  }, [form.primaryColor, addToast]);
+  }, [form.primaryColor, updateOrg, addToast]);
 
   if (isLoading) {
     return (
@@ -211,7 +200,7 @@ export function Organization() {
           </div>
 
           {canEdit && (
-            <Button style={{ marginTop: 24 }} isLoading={isSavingGeneral} onClick={handleSaveGeneral}>
+            <Button style={{ marginTop: 24 }} isLoading={updateOrg.isPending} onClick={handleSaveGeneral}>
               Save Changes
             </Button>
           )}
@@ -264,7 +253,7 @@ export function Organization() {
           </div>
 
           {canEdit && (
-            <Button style={{ marginTop: 24 }} onClick={handleSaveColor}>
+            <Button style={{ marginTop: 24 }} isLoading={updateOrg.isPending} onClick={handleSaveColor}>
               Save Branding
             </Button>
           )}

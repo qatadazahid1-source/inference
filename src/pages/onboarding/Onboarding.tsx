@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button/Button';
 import { Input } from '../../components/ui/Input/Input';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
+import { PrivateNoIndex } from '../../components/seo/PrivateNoIndex';
 import styles from './Onboarding.module.css';
 
 const roles = ['Developer', 'Manager', 'Founder', 'Other'];
@@ -44,9 +45,7 @@ export function Onboarding() {
     try {
       setIsSubmitting(true);
 
-      // Save everything to user_metadata (this simplifies things and works well without needing backend inserts to profiles table immediately,
-      // though we should also try to insert into organizations and ai_settings if possible).
-      
+      // Save everything to user_metadata
       const { error: metadataError } = await supabase.auth.updateUser({
         data: {
           onboarding_completed: true,
@@ -61,13 +60,8 @@ export function Onboarding() {
 
       if (metadataError) throw metadataError;
 
-      // Also persist to `onboarding_progress` — this is the source of truth
-      // that ProtectedRoute/AuthContext should check on every login. Relying
-      // on auth metadata alone was causing users to get bounced back to
-      // onboarding even after completing it, because the local session cache
-      // doesn't always reflect updateUser() immediately after a full reload.
-      // Note: this row already exists (created by the handle_new_auth_user
-      // trigger at signup), so this is always an UPDATE, never an insert.
+      // Also persist to `onboarding_progress` — source of truth that
+      // ProtectedRoute/AuthContext checks on every login.
       if (user?.id) {
         const { error: progressError } = await supabase
           .from('onboarding_progress')
@@ -85,43 +79,74 @@ export function Onboarding() {
         }
       }
 
-      // Insert AI settings if provided
-      if (provider) {
-        await supabase.from('ai_settings').insert({
-          user_id: user?.id ?? '',
-          provider: provider,
-          api_key: apiKey || null,
-          model_preference: modelPrefs || null
-        });
-      }
-
       // Update organization table if possible
       if (companyName) {
-        // Find existing or create new
         const { data: orgs } = await supabase.from('organizations').select('id').eq('user_id', user?.id ?? '').limit(1);
         if (orgs && orgs.length > 0) {
           await supabase.from('organizations').update({
-            company_name: companyName,
+            name: companyName,
             company_size: companySize,
-            industry: industry
+            industry,
           }).eq('id', orgs[0].id);
         } else {
           await supabase.from('organizations').insert({
             user_id: user?.id,
             name: companyName,
-            company_name: companyName,
             company_size: companySize,
-            industry: industry
+            industry,
           });
         }
       }
 
-      // Refresh the page to trigger ProtectedRoute logic with new metadata
-      window.location.href = '/dashboard';
+      // Persist the AI provider API key if the user supplied one during onboarding.
+      // We call the backend (which encrypts it with AES-256-GCM) rather than
+      // writing to Supabase directly, so the encryption logic stays centralised.
+      if (provider && apiKey) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+          if (token) {
+            await fetch('/api/api-keys', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                provider: provider.toLowerCase().replace(/\s+/g, '_'),
+                display_name: `${provider} (onboarding)`,
+                api_key: apiKey,
+              }),
+            });
+          }
+        } catch (keyErr) {
+          // Non-fatal: key save failure should not block onboarding completion.
+          console.warn('Failed to save provider API key during onboarding:', keyErr);
+        }
+      }
+
+      // Refresh the page to trigger ProtectedRoute logic with new metadata.
+      // If they arrived here from a pricing-page plan selection (see
+      // SignUp.tsx), send them straight into that plan's checkout instead
+      // of the plain dashboard — full page reload (not react-router
+      // navigate) to match the existing ProtectedRoute-refresh behavior.
+      const pendingPlan = localStorage.getItem('pending_plan');
+      if (pendingPlan) {
+        localStorage.removeItem('pending_plan');
+        window.location.href = `/settings/billing?autoupgrade=${pendingPlan}`;
+      } else {
+        window.location.href = '/dashboard';
+      }
     } catch (err) {
       console.error('Failed to complete onboarding:', err);
-      // Fallback redirect
-      window.location.href = '/dashboard';
+      // Fallback redirect — still honor a pending plan if one exists
+      const pendingPlan = localStorage.getItem('pending_plan');
+      if (pendingPlan) {
+        localStorage.removeItem('pending_plan');
+        window.location.href = `/settings/billing?autoupgrade=${pendingPlan}`;
+      } else {
+        window.location.href = '/dashboard';
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -143,6 +168,7 @@ export function Onboarding() {
 
   return (
     <div className={styles.page}>
+      <PrivateNoIndex />
       <div className={styles.container}>
         {/* Progress Bar */}
         <div className={styles.progressBar}>

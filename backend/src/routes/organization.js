@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -119,6 +120,77 @@ router.post('/logo', async (req, res) => {
     console.error('[organization] logo error:', err.message, err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// Subscription statuses that count as "paying" access, separate from trial.
+// past_due is included deliberately as a short grace period rather than
+// cutting access off the moment a renewal payment fails — that failure is
+// already surfaced as an alert (see lemonsqueezy-webhook.js) so the org
+// isn't left unaware, but access isn't yanked instantly either.
+const PAID_ACCESS_STATUSES = ['active', 'trialing', 'past_due'];
+
+// GET /api/organization/access — used by DashboardLayout to gate dashboard
+// routes. Deliberately its own lightweight endpoint rather than folding
+// this into GET / — the dashboard needs this on every load and doesn't
+// need the rest of the org record.
+router.get('/access', async (req, res) => {
+  try {
+    const membership = await getUserMembership(req.user.id);
+
+    const [{ data: org, error: orgError }, { data: subscription }] = await Promise.all([
+      supabase.from('organizations').select('id, trial_ends_at').eq('id', membership.organization_id).single(),
+      supabase
+        .from('subscriptions')
+        .select('status, cancelled_at')
+        .eq('organization_id', membership.organization_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (orgError) throw orgError;
+
+    if (subscription && PAID_ACCESS_STATUSES.includes(subscription.status)) {
+      return res.json({ data: { hasAccess: true, source: 'subscription', subscriptionStatus: subscription.status } });
+    }
+
+    // Scheduled ("end of billing period") cancellation: Lemon Squeezy sets
+    // status to 'cancelled' immediately when this is scheduled, with
+    // cancelled_at holding the future date access actually ends — not the
+    // moment they clicked cancel. Access should continue until then.
+    if (subscription?.status === 'cancelled' && subscription.cancelled_at && new Date(subscription.cancelled_at) > new Date()) {
+      return res.json({
+        data: {
+          hasAccess: true,
+          source: 'subscription',
+          subscriptionStatus: 'cancelled',
+          cancelledAt: subscription.cancelled_at,
+        },
+      });
+    }
+
+    const trialEndsAt = org.trial_ends_at ? new Date(org.trial_ends_at) : null;
+    const trialActive = trialEndsAt ? trialEndsAt.getTime() > Date.now() : false;
+    const daysLeft = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000))) : 0;
+
+    res.json({
+      data: {
+        hasAccess: trialActive,
+        source: trialActive ? 'trial' : 'none',
+        trialEndsAt: org.trial_ends_at,
+        daysLeft,
+      },
+    });
+  } catch (err) {
+    console.error('[organization] access check error:', err.message, err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/organization/entitlements — return current system limits for UI enforcement
+router.get('/entitlements', attachEntitlements, (req, res) => {
+  const { limits, usage, features, rate_limits, model_access } = req.entitlements;
+  res.json({ data: { limits, usage, features, rate_limits, model_access } });
 });
 
 export default router;

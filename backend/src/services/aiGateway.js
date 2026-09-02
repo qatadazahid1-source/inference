@@ -285,6 +285,48 @@ export async function callProviderAndLog({
       inputTokens = aiRes.data.meta?.tokens?.input_tokens ?? 0;
       outputTokens = aiRes.data.meta?.tokens?.output_tokens ?? 0;
 
+    } else if (provider === 'custom') {
+      // Custom / OpenAI-compatible provider: the customer supplied their own
+      // API base URL when connecting the integration. It was stored in
+      // ai_integrations.metadata.base_url. Only this branch needs it, so the
+      // metadata read is scoped here and leaves every other provider path
+      // (and getDecryptedApiKey) untouched.
+      const { data: integrationRow, error: metadataError } = await supabase
+        .from('ai_integrations')
+        .select('metadata')
+        .eq('id', integration_id)
+        .eq('organization_id', organization_id)
+        .single();
+
+      if (metadataError || !integrationRow) {
+        throw new Error(`Could not load custom provider configuration for integration ${integration_id}.`);
+      }
+
+      const rawBaseUrl = integrationRow.metadata?.base_url;
+      if (!rawBaseUrl || typeof rawBaseUrl !== 'string') {
+        throw new Error('This custom provider integration is missing a base URL. Reconnect it with a valid OpenAI-compatible base URL.');
+      }
+
+      // Strip any trailing slash so we never build "…//chat/completions".
+      const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+
+      const aiRes = await axios.post(
+        `${baseUrl}/chat/completions`,
+        { model, messages: normalizedMessages },
+        { headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, timeout: 60000 }
+      );
+
+      // Fail loudly on a non-OpenAI-compatible response instead of silently
+      // returning empty content / zero tokens (which would mis-bill).
+      const choiceContent = aiRes.data?.choices?.[0]?.message?.content;
+      if (choiceContent === undefined || choiceContent === null) {
+        throw new Error('Custom provider returned an unexpected response shape (missing choices[0].message.content). It must be OpenAI chat-completions compatible.');
+      }
+
+      responseText = choiceContent;
+      inputTokens = aiRes.data.usage?.prompt_tokens ?? 0;
+      outputTokens = aiRes.data.usage?.completion_tokens ?? 0;
+
     } else {
       // Caller is responsible for translating this into the right HTTP
       // response shape for its own API contract (internal vs OpenAI-style).

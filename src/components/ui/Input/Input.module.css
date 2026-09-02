@@ -29,7 +29,7 @@
 
 .input:focus {
   border-color: var(--color-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-green) 15%, transparent);
 }
 
 .inputError {

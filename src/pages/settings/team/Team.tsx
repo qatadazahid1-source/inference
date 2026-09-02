@@ -1,14 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Avatar } from '../../../components/ui/Avatar/Avatar';
 import { Badge } from '../../../components/ui/Badge/Badge';
 import { Button } from '../../../components/ui/Button/Button';
 import { Input } from '../../../components/ui/Input/Input';
 import { Skeleton } from '../../../components/ui/Skeleton/Skeleton';
 import { useToast } from '../../../components/ui/Toast/Toast';
-import { supabase } from '../../../lib/supabase';
-import { getOrganizationMembers, updateMemberRole, removeMember } from '../../../services/organizations';
-import { getInvitations, inviteUser, cancelInvitation } from '../../../services/team';
-import type { Invitation, OrganizationMember } from '../../../types/database.types';
+import { useOrganizationDetail } from '../../../hooks/queries/useOrganization';
+import {
+  useTeamMembers,
+  useTeamInvitations,
+  useUpdateMemberRole,
+  useRemoveMember,
+  useCancelInvitation,
+  useInviteUsers,
+} from '../../../hooks/queries/useTeam';
+import type { OrganizationMember } from '../../../types/database.types';
 import styles from './Team.module.css';
 
 const roles = ['owner', 'admin', 'manager', 'analyst', 'viewer'] as const;
@@ -33,10 +39,6 @@ interface InviteRow {
   role: string;
 }
 
-type MemberRow = OrganizationMember & {
-  user?: { email: string; full_name: string; avatar_url: string | null };
-};
-
 function timeAgo(iso: string | null): string {
   if (!iso) return 'Never';
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -46,55 +48,34 @@ function timeAgo(iso: string | null): string {
   return `${days}d ago`;
 }
 
-async function authedFetch(path: string) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No session');
-  const res = await fetch(path, { headers: { Authorization: `Bearer ${session.access_token}` } });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-  return body;
+function messageFrom(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
 }
 
 export function Team() {
   const { addToast } = useToast();
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [orgId, setOrgId] = useState<string | null>(null);
-  const [canEdit, setCanEdit] = useState(false);
-  const [members, setMembers] = useState<MemberRow[]>([]);
-  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const orgQuery = useOrganizationDetail();
+  const orgId = orgQuery.data?.id ?? null;
+  const canEdit = !!orgQuery.data?.canEdit;
+
+  const membersQuery = useTeamMembers(orgId);
+  const invitationsQuery = useTeamInvitations(orgId);
+
+  const members = membersQuery.data ?? [];
+  const invitations = invitationsQuery.data ?? [];
+
+  const updateMemberRoleMutation = useUpdateMemberRole();
+  const removeMemberMutation = useRemoveMember();
+  const cancelInvitationMutation = useCancelInvitation();
+  const inviteUsersMutation = useInviteUsers();
 
   const [inviteRows, setInviteRows] = useState<InviteRow[]>([{ id: 1, email: '', role: 'viewer' }]);
   const [nextId, setNextId] = useState(2);
-  const [isSendingInvites, setIsSendingInvites] = useState(false);
 
-  const loadAll = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data: org } = await authedFetch('/api/organization');
-      setOrgId(org.id);
-      setCanEdit(!!org.canEdit);
-
-      const [membersRes, invitesRes] = await Promise.all([
-        getOrganizationMembers(org.id),
-        getInvitations(org.id),
-      ]);
-
-      if (membersRes.error) throw new Error(membersRes.error);
-      if (invitesRes.error) throw new Error(invitesRes.error);
-
-      setMembers(membersRes.data ?? []);
-      setInvitations(invitesRes.data ?? []);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to load team', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [addToast]);
-
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+  const isLoading =
+    orgQuery.isPending ||
+    (!!orgId && (membersQuery.isPending || invitationsQuery.isPending));
 
   function addRow() {
     if (inviteRows.length >= 5) return;
@@ -118,54 +99,49 @@ export function Team() {
       return;
     }
 
-    setIsSendingInvites(true);
     try {
-      const results = await Promise.all(validRows.map((r) => inviteUser(orgId, r.email, r.role)));
-      const failed = results.filter((r) => r.error);
+      const { sent, failed } = await inviteUsersMutation.mutateAsync({
+        orgId,
+        invites: validRows.map((r) => ({ email: r.email, role: r.role })),
+      });
       if (failed.length > 0) {
         addToast(`${failed.length} invitation(s) failed: ${failed[0].error}`, 'error');
       } else {
-        addToast(`${validRows.length} invitation(s) sent`, 'success');
+        addToast(`${sent} invitation(s) sent`, 'success');
       }
       setInviteRows([{ id: 1, email: '', role: 'viewer' }]);
       setNextId(2);
-      await loadAll();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to send invitations', 'error');
-    } finally {
-      setIsSendingInvites(false);
+      addToast(messageFrom(err, 'Failed to send invitations'), 'error');
     }
-  }, [orgId, inviteRows, addToast, loadAll]);
+  }, [orgId, inviteRows, addToast, inviteUsersMutation]);
 
   const handleCancelInvite = useCallback(async (id: string) => {
-    const { error } = await cancelInvitation(id);
-    if (error) {
-      addToast(error, 'error');
-      return;
+    try {
+      await cancelInvitationMutation.mutateAsync(id);
+      addToast('Invitation cancelled', 'success');
+    } catch (err) {
+      addToast(messageFrom(err, 'Failed to cancel invitation'), 'error');
     }
-    setInvitations((prev) => prev.filter((i) => i.id !== id));
-    addToast('Invitation cancelled', 'success');
-  }, [addToast]);
+  }, [addToast, cancelInvitationMutation]);
 
   const handleRoleChange = useCallback(async (memberId: string, role: string) => {
-    const { error } = await updateMemberRole(memberId, role as OrganizationMember['role']);
-    if (error) {
-      addToast(error, 'error');
-      return;
+    try {
+      await updateMemberRoleMutation.mutateAsync({ memberId, role: role as OrganizationMember['role'] });
+      addToast('Role updated', 'success');
+    } catch (err) {
+      addToast(messageFrom(err, 'Failed to update role'), 'error');
     }
-    setMembers((prev) => prev.map((m) => (m.id === memberId ? { ...m, role: role as OrganizationMember['role'] } : m)));
-    addToast('Role updated', 'success');
-  }, [addToast]);
+  }, [addToast, updateMemberRoleMutation]);
 
   const handleRemoveMember = useCallback(async (memberId: string) => {
-    const { error } = await removeMember(memberId);
-    if (error) {
-      addToast(error, 'error');
-      return;
+    try {
+      await removeMemberMutation.mutateAsync(memberId);
+      addToast('Member removed', 'success');
+    } catch (err) {
+      addToast(messageFrom(err, 'Failed to remove member'), 'error');
     }
-    setMembers((prev) => prev.filter((m) => m.id !== memberId));
-    addToast('Member removed', 'success');
-  }, [addToast]);
+  }, [addToast, removeMemberMutation]);
 
   if (isLoading) {
     return (
@@ -349,7 +325,7 @@ export function Team() {
               </button>
             )}
             <div style={{ marginTop: 20 }}>
-              <Button isLoading={isSendingInvites} onClick={handleSendInvites}>Send Invitations</Button>
+              <Button isLoading={inviteUsersMutation.isPending} onClick={handleSendInvites}>Send Invitations</Button>
             </div>
           </div>
         </section>

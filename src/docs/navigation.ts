@@ -22,7 +22,7 @@ export const docsNavigation: NavSection[] = [
   {
     title: 'Features',
     items: allPages
-      .filter(p => ['dashboard', 'budget-alerts', 'roi-calculator-doc', 'providers'].includes(p.slug))
+      .filter(p => ['dashboard', 'budget-alerts', 'roi-calculator', 'providers'].includes(p.slug))
       .map(p => ({ label: p.title, path: `/docs/${p.slug}` })),
   },
   {

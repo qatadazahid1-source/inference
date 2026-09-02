@@ -1,5 +1,5 @@
 -- ============================================================================
--- Inference Intelligence — Supabase Database Schema
+-- Ordisum — Supabase Database Schema
 -- ============================================================================
 -- Run this entire file in the Supabase SQL Editor (Project → SQL Editor)
 -- or paste it into a new Supabase migration.

@@ -3,8 +3,7 @@ import { DocPage } from './types'
 export const roiCalculatorDocPage: DocPage = {
   slug: 'roi-calculator',
   title: 'ROI Calculator',
-  description:
-    'Understand how the ROI Calculator works and how to interpret your results.',
+  description: 'How the ROI Calculator turns spend into a business case.',
 
   sections: [
     {

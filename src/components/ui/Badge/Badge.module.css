@@ -9,8 +9,8 @@
 }
 
 .success {
-  background: var(--color-green-muted);
-  color: var(--color-green);
+  background: rgba(34, 197, 94, 0.10);
+  color: var(--color-success);
 }
 
 .warning {

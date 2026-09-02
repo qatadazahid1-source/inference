@@ -41,7 +41,7 @@ export function Forbidden403() {
         
         <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Access Denied</h1>
         <p style={{ color: 'var(--color-text-secondary)', marginBottom: 32, lineHeight: 1.6 }}>
-          You do not have permission to view the Platform Admin Panel. This area is restricted to Inference Intelligence operators.
+          You do not have permission to view the Platform Admin Panel. This area is restricted to Ordisum operators.
         </p>
 
         <button 

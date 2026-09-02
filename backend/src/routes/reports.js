@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -81,8 +82,11 @@ async function buildReportSnapshot(organization_id, { dateRangeStart, dateRangeE
 }
 
 // GET /api/reports
-router.get('/', async (req, res) => {
+router.get('/', attachEntitlements, async (req, res) => {
   try {
+    if (!req.entitlements.hasFeature('reports')) {
+      return res.status(403).json({ error: 'Reports feature is not available on your plan.' });
+    }
     const organization_id = await getUserOrgId(req.user.id);
 
     const { data, error } = await supabase
@@ -142,7 +146,11 @@ router.get('/:id/snapshot', async (req, res) => {
 });
 
 // POST /api/reports — generate a new report with a real data snapshot
-router.post('/', async (req, res) => {
+router.post('/', attachEntitlements, async (req, res) => {
+  if (!req.entitlements.hasFeature('reports')) {
+    return res.status(403).json({ error: 'Reports feature is not available on your plan.' });
+  }
+
   const { name, type, format, dateRangeStart, dateRangeEnd, providers, teams, recurring, frequency } = req.body;
 
   if (!name || !type || !format) {
@@ -223,8 +231,11 @@ router.post('/', async (req, res) => {
 });
 
 // DELETE /api/reports/:id
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', attachEntitlements, async (req, res) => {
   try {
+    if (!req.entitlements.hasFeature('reports')) {
+      return res.status(403).json({ error: 'Reports feature is not available on your plan.' });
+    }
     const organization_id = await getUserOrgId(req.user.id);
 
     const { error } = await supabase

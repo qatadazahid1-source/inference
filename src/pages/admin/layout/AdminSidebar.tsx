@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DollarSign, Building2, BarChart2, Activity,
-  Users, PiggyBank, Plug, FileText, ArrowLeft, Link2,
+  Users, PiggyBank, Plug, FileText, ArrowLeft, Link as LinkIcon, Tag, FileCode, Server, Bot, Newspaper,
 } from 'lucide-react';
 import styles from './AdminSidebar.module.css';
 
@@ -20,8 +20,13 @@ const navItems: NavItem[] = [
   { label: 'Users',         path: '/admin/users',         icon: <Users size={18} /> },
   { label: 'Budgets',       path: '/admin/budgets',       icon: <PiggyBank size={18} /> },
   { label: 'Integrations',  path: '/admin/integrations',  icon: <Plug size={18} /> },
+  { label: 'AI Providers',  path: '/admin/providers',     icon: <Server size={18} /> },
   { label: 'Reports',       path: '/admin/reports',       icon: <FileText size={18} /> },
-  { label: 'Site Links',    path: '/admin/site-links',    icon: <Link2 size={18} /> },
+  { label: 'Site Links',       path: '/admin/site-links',       icon: <LinkIcon size={18} /> },
+  { label: 'Landing Pricing',  path: '/admin/landing-pricing',  icon: <Tag size={18} /> },
+  { label: 'AI Pricing Agent', path: '/admin/pricing-agent',    icon: <Bot size={18} /> },
+  { label: 'Content Pages',    path: '/admin/pages',            icon: <FileCode size={18} /> },
+  { label: 'Blog',             path: '/admin/blog',             icon: <Newspaper size={18} /> },
 ];
 
 export function AdminSidebar() {

@@ -37,7 +37,7 @@ export default function DocsSidebar({ activePath }: Props) {
           <span className={styles.brandDots} aria-hidden="true">
             <span /><span /><span /><span />
           </span>
-          <span className={styles.brandText}>Inference Intelligence</span>
+          <span className={styles.brandText}>Ordisum</span>
         </Link>
 
         <div className={styles.searchWrap}>

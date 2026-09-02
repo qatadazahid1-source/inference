@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, History, X, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Plus, History, X, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
 import { adminService, type ModelPricing, type PricingAuditLog } from '../../../api/services/admin.service';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card/Card';
 import { DataTable } from '../../../components/ui/DataTable/DataTable';
@@ -15,6 +15,9 @@ export function ModelPricingPage() {
   const [showEditModal, setShowEditModal] = useState<ModelPricing | null>(null);
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState<{ action: string, message: string, onConfirm: () => void } | null>(null);
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [customProviders, setCustomProviders] = useState([{ providerName: '', url: '' }]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const fetchPricing = async () => {
     try {
@@ -105,6 +108,75 @@ export function ModelPricingPage() {
     });
   };
 
+  const handleSyncCustomUrls = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSyncing(true);
+    try {
+      const validProviders = customProviders.filter(p => p.providerName.trim() !== '' && p.url.trim() !== '');
+      if (validProviders.length === 0) {
+        alert('Please add at least one valid provider and URL.');
+        setIsSyncing(false);
+        return;
+      }
+
+      const result = await adminService.syncCustomUrlsPricing(validProviders);
+      
+      let alertMsg = '';
+      
+      // If nothing was updated or inserted
+      if (result.updatedCount === 0 && result.insertedCount === 0) {
+        alertMsg += 'Results are same so nothing is changed.\n\n';
+        result.providerResults.forEach(pr => {
+          if (pr.unchanged > 0) {
+            alertMsg += `${pr.providerName} ${pr.unchanged} models are unchanged.\n`;
+          }
+        });
+      } else {
+        alertMsg += `Sync Complete!\n\nOverall: Updated: ${result.updatedCount}, New: ${result.insertedCount}\n\n`;
+        result.providerResults.forEach(pr => {
+          if (pr.unchanged > 0) {
+            alertMsg += `${pr.providerName} ${pr.unchanged} models are unchanged.\n`;
+          }
+          if (pr.updated > 0) {
+            alertMsg += `${pr.providerName} ${pr.updated} models are updated.\n`;
+          }
+          if (pr.newModels > 0) {
+            alertMsg += `${pr.providerName} ${pr.newModels} models are added as new.\n`;
+          }
+        });
+      }
+
+      if (result.failedProviders && result.failedProviders.length > 0) {
+        alertMsg += `\nFailed Providers: ${result.failedProviders.map(p => p.providerName).join(', ')}`;
+      }
+      
+      alert(alertMsg);
+      setShowSyncModal(false);
+      setCustomProviders([{ providerName: '', url: '' }]);
+      fetchPricing();
+    } catch (err) {
+      console.error('Sync failed', err);
+      alert('Failed to sync pricing: ' + (err as any).message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleAddCustomProvider = () => {
+    setCustomProviders([...customProviders, { providerName: '', url: '' }]);
+  };
+
+  const handleCustomProviderChange = (index: number, field: 'providerName' | 'url', value: string) => {
+    const updated = [...customProviders];
+    updated[index][field] = value;
+    setCustomProviders(updated);
+  };
+
+  const handleRemoveCustomProvider = (index: number) => {
+    const updated = customProviders.filter((_, i) => i !== index);
+    setCustomProviders(updated);
+  };
+
   const columns = [
     { header: 'Provider', accessorKey: 'provider' },
     { header: 'Model', accessorKey: 'model' },
@@ -159,6 +231,14 @@ export function ModelPricingPage() {
           <p className={styles.subtitle}>Manage global API costs for all organizations.</p>
         </div>
         <div className={styles.actions}>
+          <button 
+            className={styles.btnSecondary} 
+            onClick={() => setShowSyncModal(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <RefreshCw size={16} /> 
+            Sync Pricing from URLs
+          </button>
           <button className={styles.btnSecondary} onClick={handleFetchAuditLog}>
             <History size={16} /> Audit Log
           </button>
@@ -275,6 +355,74 @@ export function ModelPricingPage() {
               <button className={styles.btnSecondary} onClick={() => setShowConfirmModal(null)}>Cancel</button>
               <button className={styles.btnPrimary} style={{ background: '#ef4444' }} onClick={showConfirmModal.onConfirm}>Confirm</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* SYNC FROM CUSTOM URLS MODAL */}
+      {showSyncModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent} style={{ maxWidth: 600 }}>
+            <div className={styles.modalHeader}>
+              <h2>Sync Pricing from URLs (AI Agent)</h2>
+              <button className={styles.closeBtn} onClick={() => setShowSyncModal(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSyncCustomUrls}>
+              <div className={styles.modalBody} style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                <p style={{ marginBottom: 15, fontSize: 14, color: 'var(--color-text-secondary)' }}>
+                  Add the provider names and their official pricing URLs. The AI agent will visit these URLs, extract the pricing for all models found, and update the database automatically.
+                </p>
+                
+                {customProviders.map((provider, index) => (
+                  <div key={index} style={{ display: 'flex', gap: 10, marginBottom: 15, alignItems: 'flex-start' }}>
+                    <div className={styles.formGroup} style={{ flex: 1, marginBottom: 0 }}>
+                      <input 
+                        type="text" 
+                        placeholder="Provider Name (e.g. OpenAI)" 
+                        value={provider.providerName}
+                        onChange={(e) => handleCustomProviderChange(index, 'providerName', e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className={styles.formGroup} style={{ flex: 2, marginBottom: 0 }}>
+                      <input 
+                        type="url" 
+                        placeholder="Pricing URL (e.g. https://openai.com/api/pricing/)" 
+                        value={provider.url}
+                        onChange={(e) => handleCustomProviderChange(index, 'url', e.target.value)}
+                        required
+                      />
+                    </div>
+                    {customProviders.length > 1 && (
+                      <button 
+                        type="button" 
+                        className={styles.btnDanger}
+                        style={{ padding: '8px', height: '38px', marginTop: '2px' }}
+                        onClick={() => handleRemoveCustomProvider(index)}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                
+                <button 
+                  type="button" 
+                  className={styles.btnSecondary}
+                  onClick={handleAddCustomProvider}
+                  style={{ width: '100%', marginTop: 10, display: 'flex', justifyContent: 'center', gap: 8 }}
+                >
+                  <Plus size={16} /> Add More
+                </button>
+              </div>
+              <div className={styles.modalFooter}>
+                <button type="button" className={styles.btnSecondary} onClick={() => setShowSyncModal(false)} disabled={isSyncing}>Cancel</button>
+                <button type="submit" className={styles.btnPrimary} disabled={isSyncing} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {isSyncing && <RefreshCw size={16} className={styles.spin} />}
+                  {isSyncing ? 'Scraping and Syncing...' : 'Start Sync'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

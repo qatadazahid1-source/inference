@@ -9,11 +9,15 @@ import { supabase } from '../index.js';
  * priced there must not be billed at a made-up rate. Callers are
  * responsible for blocking the request when this returns null (see
  * aiGateway.js, which checks this BEFORE calling the provider).
+ *
+ * Also returns `access_tier` so callers can reject requests if the org's
+ * plan does not include the required tier. Unknown models (no row) will
+ * receive null and must be rejected with ENTITLEMENT_MODEL_NOT_ALLOWED.
  */
 export async function getPricingForModel(provider, modelName) {
   const { data, error } = await supabase
     .from('model_pricing')
-    .select('input_cost_per_1k, output_cost_per_1k')
+    .select('input_cost_per_1k, output_cost_per_1k, access_tier')
     .eq('provider', provider)
     .eq('model', modelName)
     .eq('is_active', true)
@@ -33,6 +37,7 @@ export async function getPricingForModel(provider, modelName) {
 
   return {
     input_cost_per_1k: Number(data.input_cost_per_1k),
-    output_cost_per_1k: Number(data.output_cost_per_1k)
+    output_cost_per_1k: Number(data.output_cost_per_1k),
+    access_tier: data.access_tier || 'basic',
   };
 }

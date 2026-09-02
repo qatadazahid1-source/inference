@@ -39,21 +39,31 @@ function UserDetailModal({
   onStatusToggle: (uid: string, val: boolean) => Promise<void>;
 }) {
   const [user, setUser] = useState<any>(null);
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [givingPlanForOrg, setGivingPlanForOrg] = useState<string | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState('');
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'annual'>('monthly');
   const [confirmAction, setConfirmAction] = useState<null | { label: string; onConfirm: () => void }>(null);
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
-    adminService.getUserDetail(userId)
-      .then(u => {
+    Promise.all([
+      adminService.getUserDetail(userId),
+      adminService.getLandingPlans().catch(() => [])
+    ])
+      .then(([u, plans]) => {
         if (cancelled) return;
         setUser(u);
+        const activePlans = plans.filter((p: any) => p.is_active);
+        setAvailablePlans(activePlans);
+        if (activePlans.length > 0) setSelectedPlanId(activePlans[0].id);
         setIsLoading(false);
       })
       .catch(err => {
-        console.error('[UserDetailModal] Failed to load user detail:', err);
+        console.error('[UserDetailModal] Failed to load data:', err);
         if (cancelled) return;
         setUser(null);
         setIsLoading(false);
@@ -69,6 +79,21 @@ function UserDetailModal({
       setUser(updated);
     } catch (err) {
       console.error('[UserDetailModal] Role change failed:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleGivePlanSubmit = async (orgId: string) => {
+    if (!selectedPlanId) return;
+    setIsSaving(true);
+    try {
+      await adminService.givePlan(orgId, selectedPlanId, selectedCycle);
+      const updated = await adminService.getUserDetail(userId);
+      setUser(updated);
+      setGivingPlanForOrg(null);
+    } catch (err) {
+      console.error('[UserDetailModal] Give plan failed:', err);
     } finally {
       setIsSaving(false);
     }
@@ -216,6 +241,111 @@ function UserDetailModal({
 
               <div className={styles.divider} />
 
+              {/* Subscriptions & Billing */}
+              <div className={styles.detailSection}>
+                <p className={styles.detailSectionTitle}>Subscriptions & Billing</p>
+                {(user.organization_members || []).length === 0 ? (
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>No organizations to display subscriptions for.</p>
+                ) : (
+                  user.organization_members.map((m: any) => {
+                    const orgId = m.organizations?.id;
+                    const isGivingPlan = givingPlanForOrg === orgId;
+                    return (
+                      <div key={orgId} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 0', borderBottom: '1px solid var(--color-border)' }}>
+                        <div style={{ fontSize: 14, color: 'var(--color-text-primary)', fontWeight: 500 }}>{m.organizations?.name}</div>
+                        
+                        {!isGivingPlan ? (
+                          <div style={{ background: 'var(--color-bg-secondary)', padding: '12px 14px', borderRadius: '8px', fontSize: 13, border: '1px solid var(--color-border-subtle)' }}>
+                            {m.subscription ? (
+                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 12 }}>
+                                <div>
+                                  <div style={{ color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Plan</div>
+                                  <div style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>{m.subscription.plans?.name || 'Unknown Plan'}</div>
+                                </div>
+                                <div>
+                                  <div style={{ color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Status</div>
+                                  <div style={{ 
+                                    color: m.subscription.status === 'trialing' ? '#f59e0b' : 
+                                           m.subscription.status === 'active' ? '#22c55e' : '#ef4444', 
+                                    fontWeight: 500,
+                                    textTransform: 'capitalize' 
+                                  }}>
+                                    {m.subscription.status}
+                                  </div>
+                                </div>
+                                {m.subscription.trial_ends_at && (
+                                  <div>
+                                    <div style={{ color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Trial Ends</div>
+                                    <div style={{ color: 'var(--color-text-primary)' }}>{formatDate(m.subscription.trial_ends_at)}</div>
+                                  </div>
+                                )}
+                                {m.subscription.current_period_end && !m.subscription.trial_ends_at && (
+                                  <div>
+                                    <div style={{ color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>Next Billing</div>
+                                    <div style={{ color: 'var(--color-text-primary)' }}>{formatDate(m.subscription.current_period_end)}</div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div style={{ color: 'var(--color-text-muted)', fontStyle: 'italic', marginBottom: 12 }}>No active subscription or free trial.</div>
+                            )}
+                            <button
+                              className={styles.btnSecondary}
+                              onClick={() => setGivingPlanForOrg(orgId)}
+                              style={{ width: 'fit-content' }}
+                              disabled={isSaving}
+                            >
+                              <DollarSign size={14} /> Give Plan
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ background: 'var(--color-bg-secondary)', padding: '12px 14px', borderRadius: '8px', fontSize: 13, border: '1px solid var(--color-border-primary)' }}>
+                            <div style={{ fontWeight: 500, marginBottom: 12 }}>Manually Assign Plan</div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                              <div>
+                                <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--color-text-muted)' }}>Select Plan</label>
+                                <select 
+                                  className={styles.select} 
+                                  value={selectedPlanId} 
+                                  onChange={e => setSelectedPlanId(e.target.value)}
+                                  disabled={isSaving}
+                                  style={{ width: '100%' }}
+                                >
+                                  {availablePlans.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div>
+                                <label style={{ display: 'block', fontSize: 12, marginBottom: 4, color: 'var(--color-text-muted)' }}>Billing Cycle</label>
+                                <select 
+                                  className={styles.select} 
+                                  value={selectedCycle} 
+                                  onChange={e => setSelectedCycle(e.target.value as any)}
+                                  disabled={isSaving}
+                                  style={{ width: '100%' }}
+                                >
+                                  <option value="monthly">Monthly</option>
+                                  <option value="annual">Annual</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                              <button className={styles.btnSecondary} onClick={() => setGivingPlanForOrg(null)} disabled={isSaving}>Cancel</button>
+                              <button className={styles.btnPrimary} onClick={() => handleGivePlanSubmit(orgId)} disabled={isSaving || !selectedPlanId || availablePlans.length === 0}>
+                                Activate
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              <div className={styles.divider} />
+
               {/* Account status toggle */}
               <div className={styles.detailSection}>
                 <p className={styles.detailSectionTitle}>Account Status</p>
@@ -352,8 +482,27 @@ export function AdminUsersPage() {
     {
       header: 'Organization',
       accessorKey: 'organization',
-      cell: (org: any) => org ? (
-        <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{org.name}</span>
+      cell: (org: any, row: any) => org ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span style={{ fontSize: 13, color: 'var(--color-text-primary)', fontWeight: 500 }}>{org.name}</span>
+          {row.subscription ? (
+             <span style={{
+                 display: 'inline-flex',
+                 alignItems: 'center',
+                 fontSize: 11,
+                 padding: '2px 8px',
+                 borderRadius: 999,
+                 width: 'fit-content',
+                 color: row.subscription.status === 'trialing' ? '#f59e0b' : '#3b82f6',
+                 background: row.subscription.status === 'trialing' ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)',
+                 fontWeight: 500
+             }}>
+                 {row.subscription.plan_name || 'Active Plan'} {row.subscription.status === 'trialing' && '(Trial)'}
+             </span>
+          ) : (
+             <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>No Active Plan</span>
+          )}
+        </div>
       ) : <span style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>—</span>,
     },
     {

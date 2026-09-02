@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
 const router = express.Router();
 
@@ -39,7 +40,42 @@ router.get('/', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    res.json(budgets || []);
+
+    // Compute current_spend live from the SAME authoritative usage source that
+    // the analytics endpoint uses (api_usage_logs.cost_usd), rather than
+    // trusting the stored `current_spend` column (which is only maintained by a
+    // legacy ROI migration that reads a different `usage_logs` table and can go
+    // stale). This mirrors the admin budgets route so both views agree.
+    const now = new Date();
+    const periodStart = {
+      monthly:   new Date(now.getFullYear(), now.getMonth(), 1),
+      quarterly: new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1),
+      annual:    new Date(now.getFullYear(), 0, 1),
+    };
+    // Fetch from the earliest boundary any budget could need (year start),
+    // then bucket per budget period below — one query for the whole org.
+    const { data: usageData, error: usageErr } = await supabase
+      .from('api_usage_logs')
+      .select('cost_usd, logged_at')
+      .eq('organization_id', organization_id)
+      .gte('logged_at', periodStart.annual.toISOString());
+    if (usageErr) throw usageErr;
+
+    const usage = usageData || [];
+    const spendSince = (start) =>
+      usage.reduce(
+        (acc, row) =>
+          new Date(row.logged_at) >= start ? acc + Number(row.cost_usd || 0) : acc,
+        0,
+      );
+
+    const enriched = (budgets || []).map((b) => {
+      const start = periodStart[b.period] || periodStart.monthly;
+      const spend = spendSince(start);
+      return { ...b, current_spend: parseFloat(spend.toFixed(4)) };
+    });
+
+    res.json(enriched);
   } catch (err) {
     console.error('[budgets] GET error:', err.message, err);
     res.status(500).json({ error: 'Failed to fetch budgets' });
@@ -47,10 +83,21 @@ router.get('/', async (req, res) => {
 });
 
 // POST /api/budgets
-router.post('/', async (req, res) => {
+router.post('/', attachEntitlements, async (req, res) => {
   try {
     const organization_id = await getUserOrgId(req.user.id);
     const { name, total_budget, period = 'monthly', alert_at_50, alert_at_75, alert_at_90, alert_at_100, hard_limit } = req.body;
+
+    // Enforce budget_rules limit
+    const { count, error: countErr } = await supabase
+      .from('budgets')
+      .select('*', { count: 'exact', head: true })
+      .eq('organization_id', organization_id);
+    if (countErr) throw countErr;
+    if (!req.entitlements.checkLimit('budget_rules', count)) {
+      const maxRules = req.entitlements.getLimit('budget_rules');
+      return res.status(403).json({ error: `Plan limit reached. You can only create up to ${maxRules} budget rules.` });
+    }
 
     const { data, error } = await supabase
       .from('budgets')
@@ -149,7 +196,7 @@ router.delete('/:id', async (req, res) => {
       .eq('organization_id', organization_id); // Ensure scoping
 
     if (error) throw error;
-    res.json({ success: true });
+    res.status(204).send();
   } catch (err) {
     console.error('[budgets] DELETE error:', err.message, err);
     res.status(500).json({ error: 'Failed to delete budget' });

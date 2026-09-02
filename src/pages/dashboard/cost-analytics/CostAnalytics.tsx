@@ -3,9 +3,7 @@ import {
   LineChart, Line, PieChart, Pie, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend, Cell,
 } from 'recharts';
-import { DashboardService, CostOverTime, ModelAnalytics, ApiUsageLog } from '../../../api/services/dashboard.service';
-import { useDataPolling } from '../../../hooks/useDataPolling';
-import { useAuth } from '../../../hooks/useAuth';
+import { useAnalytics, useApiUsage } from '../../../hooks/queries/useDashboard';
 import { exportToCSV } from '../../../utils/exportUtils';
 import styles from './CostAnalytics.module.css';
 
@@ -43,18 +41,12 @@ function formatSmartCurrency(amount: number): string {
 }
 
 export function CostAnalytics() {
-  const { user } = useAuth();
   type SortKey = 'date' | 'provider' | 'model' | 'inputTokens' | 'outputTokens' | 'totalTokens' | 'costUsd';
   type SortDir = 'asc' | 'desc';
-  
+
   const [activeTab, setActiveTab] = useState<string>('30D');
   const [sortKey, setSortKey] = useState<SortKey>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
-
-  const [dailySpend, setDailySpend] = useState<CostOverTime[]>([]);
-  const [topModels, setTopModels] = useState<ModelAnalytics[]>([]);
-  const [usageLogsWithDates, setUsageLogsWithDates] = useState<ApiUsageLog[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   const getDays = () => {
     switch (activeTab) {
@@ -66,34 +58,28 @@ export function CostAnalytics() {
     }
   };
 
-  const fetchData = async () => {
-    if (!user?.id) return;
-    try {
-      const days = getDays();
-      const [costData, modelsData, usageData] = await Promise.all([
-        DashboardService.getCostOverTime(user.id, days),
-        DashboardService.getModelAnalytics(user.id),
-        DashboardService.getApiUsage(user.id, 500),
-      ]);
-      setDailySpend(costData);
-      setTopModels(modelsData);
-      setUsageLogsWithDates(usageData);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Reuse the shared Overview analytics query (single /api/analytics fetch,
+  // derived into overview/cost-over-time/model shapes) and the recent usage
+  // logs query. Both poll every 5s via React Query's refetchInterval,
+  // preserving the previous useDataPolling(5000) behavior without duplicate
+  // network calls.
+  const { data: analytics, isLoading: analyticsLoading } = useAnalytics(getDays());
+  const { data: usageLogs = [], isLoading: logsLoading } = useApiUsage(500);
 
-  useDataPolling(fetchData, 5000);
+  const dailySpend = analytics?.costOverTime ?? [];
+  const topModels = analytics?.modelAnalytics ?? [];
+  const usageLogsWithDates = usageLogs;
+  const isLoading = analyticsLoading || logsLoading;
 
-  // Group topModels by model for the pie chart
+  // "Cost by Provider" pie uses the backend's real per-provider totals
+  // (`providerData`). Previously this reused the per-model list, so a chart
+  // labeled "by Provider" was actually showing model-level values.
   const providerCostData = useMemo(() => {
-    return topModels.map(tm => ({
-      name: tm.model,
-      value: tm.total_cost
+    return (analytics?.providerData ?? []).map((p) => ({
+      name: p.name,
+      value: p.value,
     }));
-  }, [topModels]);
+  }, [analytics?.providerData]);
 
   // Derive which providers actually have data in the daily chart, instead
   // of assuming a fixed set (openai/anthropic/google) — a connected
@@ -113,7 +99,7 @@ export function CostAnalytics() {
   const totalSpend = dailySpend.reduce((acc, curr) => acc + (curr.daily_cost || 0), 0);
   const avgDailyCost = dailySpend.length ? totalSpend / dailySpend.length : 0;
   const highestDay = dailySpend.length ? Math.max(...dailySpend.map(d => d.daily_cost || 0)) : 0;
-  
+
   const totalTokens = usageLogsWithDates.reduce((acc, log) => acc + log.total_tokens, 0);
   const costPer1k = totalTokens > 0 ? (totalSpend / totalTokens) * 1000 : 0;
 
@@ -209,7 +195,7 @@ export function CostAnalytics() {
               <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
               <Tooltip
                 contentStyle={{
-                  background: '#1a2529',
+                  background: 'var(--color-card-hover)',
                   border: '1px solid rgba(64,80,85,0.5)',
                   borderRadius: 6,
                   fontSize: 13,
@@ -264,7 +250,7 @@ export function CostAnalytics() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    background: '#1a2529',
+                    background: 'var(--color-card-hover)',
                     border: '1px solid rgba(64,80,85,0.5)',
                     borderRadius: 6,
                     fontSize: 13,
@@ -290,7 +276,7 @@ export function CostAnalytics() {
                 <YAxis type="category" dataKey="model" tick={{ fontSize: 11, fill: chartColors.text }} width={120} />
                 <Tooltip
                   contentStyle={{
-                    background: '#1a2529',
+                    background: 'var(--color-card-hover)',
                     border: '1px solid rgba(64,80,85,0.5)',
                     borderRadius: 6,
                     fontSize: 13,

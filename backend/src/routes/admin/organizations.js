@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
     // PostgREST embedded-join schema-cache issues seen elsewhere)
     const { data: subscriptions, error: subErr } = await supabase
       .from('subscriptions')
-      .select('organization_id, status, plan_id')
+      .select('organization_id, status, plan_id, trial_ends_at, current_period_end, cancelled_at')
       .in('status', ['active', 'trialing']);
 
     if (subErr) console.warn('[admin/organizations] Failed to fetch subscriptions:', subErr);
@@ -69,6 +69,8 @@ router.get('/', async (req, res) => {
         total_members: counts?.total_members || 0,
         plan_name: plan?.name || 'No Plan',
         subscription_status: sub?.status || 'none',
+        trial_ends_at: sub?.trial_ends_at || null,
+        current_period_end: sub?.current_period_end || null,
         monthly_spend: totalSpend
       };
     });
@@ -129,7 +131,7 @@ router.get('/:id', async (req, res) => {
     // embedded-join schema-cache issue as above.
     const { data: rawSubscription, error: subDetailErr } = await supabase
       .from('subscriptions')
-      .select('id, status, billing_cycle, current_period_end, plan_id')
+      .select('id, status, billing_cycle, current_period_start, current_period_end, trial_ends_at, cancelled_at, plan_id, created_at')
       .eq('organization_id', id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -140,7 +142,7 @@ router.get('/:id', async (req, res) => {
     if (subscription?.plan_id) {
       const { data: plan, error: planErr } = await supabase
         .from('plans')
-        .select('name, slug')
+        .select('name, slug, price_monthly, price_annual')
         .eq('id', subscription.plan_id)
         .maybeSingle();
       if (planErr) console.warn('[admin/organizations] Failed to fetch plan:', planErr);
@@ -195,6 +197,86 @@ router.put('/:id/status', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/organizations] PUT /status error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── POST /api/admin/organizations/:id/give-plan ─────────────────────────────
+// Manually assign an active subscription plan to an organization
+router.post('/:id/give-plan', async (req, res) => {
+  const { id } = req.params;
+  const { plan_id, billing_cycle } = req.body; // billing_cycle = 'monthly' | 'annual'
+
+  if (!plan_id || !billing_cycle) {
+    return res.status(400).json({ error: 'plan_id and billing_cycle are required.' });
+  }
+
+  try {
+    const now = new Date();
+    const periodEnd = new Date(now);
+    if (billing_cycle === 'annual') {
+      periodEnd.setFullYear(now.getFullYear() + 1);
+    } else {
+      periodEnd.setMonth(now.getMonth() + 1);
+    }
+
+    // First check if a subscription already exists for this org
+    const { data: existing, error: fetchErr } = await supabase
+      .from('subscriptions')
+      .select('id')
+      .eq('organization_id', id)
+      .maybeSingle();
+
+    if (fetchErr) throw fetchErr;
+
+    const payload = {
+      organization_id: id,
+      plan_id,
+      status: 'active',
+      billing_cycle,
+      current_period_start: now.toISOString(),
+      current_period_end: periodEnd.toISOString(),
+      trial_ends_at: null, // Clear trial when a paid plan is given manually
+      cancelled_at: null,
+      lemonsqueezy_subscription_id: 'manual_' + Date.now() // Fake ID for manual sub
+    };
+
+    let result;
+    if (existing) {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .update(payload)
+        .eq('id', existing.id)
+        .select()
+        .single();
+      if (error) throw error;
+      result = data;
+    } else {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .insert([payload])
+        .select()
+        .single();
+      if (error) throw error;
+      result = data;
+    }
+
+    // Also clear trial_ends_at on organization if present
+    await supabase.from('organizations').update({ trial_ends_at: null }).eq('id', id);
+
+    await supabase.from('audit_logs').insert({
+      organization_id: id,
+      user_id: req.user.id,
+      action: 'org_plan_assigned',
+      resource_type: 'subscription',
+      resource_id: result.id,
+      new_values: { plan_id, billing_cycle },
+      ip_address: req.ip || null
+    });
+
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('[admin/organizations] POST /give-plan error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

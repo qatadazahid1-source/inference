@@ -55,7 +55,7 @@ const ConversionElements: React.FC = () => {
       {showCookie && (
         <div className={styles.cookieBanner}>
           <p className={styles.cookieText}>
-            We use cookies to improve your experience. By using Inference Intelligence, you agree to our use of cookies.
+            We use cookies to improve your experience. By using Ordisum, you agree to our use of cookies.
           </p>
           <button className={styles.cookieBtn} onClick={acceptCookies}>
             Accept

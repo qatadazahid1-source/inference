@@ -1,41 +1,31 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '../../../components/ui/Button/Button';
 import { Badge } from '../../../components/ui/Badge/Badge';
 import { Card } from '../../../components/ui/Card/Card';
 import { Skeleton } from '../../../components/ui/Skeleton/Skeleton';
 import { useToast } from '../../../components/ui/Toast/Toast';
-import { supabase } from '../../../lib/supabase';
+import { ApiError } from '../../../lib/axios';
+import {
+  useTwoFactorStatus,
+  useSecuritySessions,
+  useLoginHistory,
+  useStart2FA,
+  useVerify2FA,
+  useDisable2FA,
+  useRegenerateBackupCodes,
+  useRevokeSession,
+  useRevokeAllOtherSessions,
+  type LoginHistoryEntry,
+} from '../../../hooks/queries/useSecurity';
 import styles from './Security.module.css';
 
-interface Session {
-  id: string;
-  device_name: string | null;
-  browser: string | null;
-  os: string | null;
-  location: string | null;
-  ip_address: string | null;
-  last_active_at: string;
-  is_current: boolean;
-}
-
-interface LoginEntry {
-  id: string;
-  created_at: string;
-  device: string | null;
-  location: string | null;
-  ip_address: string | null;
-  status: 'success' | 'failed' | 'blocked';
-}
-
-const PAGE_SIZE = 5;
-
-const statusBadgeVariant: Record<LoginEntry['status'], 'success' | 'warning' | 'error'> = {
+const statusBadgeVariant: Record<LoginHistoryEntry['status'], 'success' | 'warning' | 'error'> = {
   success: 'success',
   blocked: 'warning',
   failed: 'error',
 };
 
-const statusLabel: Record<LoginEntry['status'], string> = {
+const statusLabel: Record<LoginHistoryEntry['status'], string> = {
   success: 'Success',
   blocked: 'Suspicious',
   failed: 'Failed',
@@ -52,165 +42,123 @@ function timeAgo(iso: string): string {
   return `${days}d ago`;
 }
 
-async function authedFetch(path: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('No session');
-  const res = await fetch(path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.access_token}`,
-      ...(options.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(body.error || `Request failed (${res.status})`);
-  return body;
+function messageFrom(err: unknown, fallback: string): string {
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
 }
 
 export function Security() {
   const { addToast } = useToast();
 
-  const [isLoading, setIsLoading] = useState(true);
+  // Server state via React Query
+  const twoFactorQuery = useTwoFactorStatus();
+  const sessionsQuery = useSecuritySessions();
+  const loginHistoryQuery = useLoginHistory();
 
-  // 2FA state
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  // Mutations
+  const start2FA = useStart2FA();
+  const verify2FA = useVerify2FA();
+  const disable2FA = useDisable2FA();
+  const regenerateBackupCodes = useRegenerateBackupCodes();
+  const revokeSession = useRevokeSession();
+  const revokeAllOthers = useRevokeAllOtherSessions();
+
+  // Local UI state (setup flow + one-time secrets)
   const [isEnabling, setIsEnabling] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [verificationCode, setVerificationCode] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
-  const [backupCodesRemaining, setBackupCodesRemaining] = useState(0);
-  const [is2FABusy, setIs2FABusy] = useState(false);
 
-  // Sessions state
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const twoFAEnabled = twoFactorQuery.data?.isEnabled ?? false;
+  const backupCodesRemaining = twoFactorQuery.data?.backupCodesRemaining ?? 0;
+  const sessions = sessionsQuery.data ?? [];
 
-  // Login history state
-  const [loginHistory, setLoginHistory] = useState<LoginEntry[]>([]);
-  const [historyTotal, setHistoryTotal] = useState(0);
-  const [historyOffset, setHistoryOffset] = useState(0);
+  const loginHistory = useMemo(
+    () => (loginHistoryQuery.data?.pages ?? []).flatMap((page) => page.entries),
+    [loginHistoryQuery.data],
+  );
 
-  const loadAll = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const [twofa, sessionsRes, historyRes] = await Promise.all([
-        authedFetch('/api/security/2fa'),
-        authedFetch('/api/security/sessions'),
-        authedFetch(`/api/security/login-history?limit=${PAGE_SIZE}&offset=0`),
-      ]);
-      setTwoFAEnabled(twofa.data.isEnabled);
-      setBackupCodesRemaining(twofa.data.backupCodesRemaining ?? 0);
-      setSessions(sessionsRes.data ?? []);
-      setLoginHistory(historyRes.data ?? []);
-      setHistoryTotal(historyRes.total ?? 0);
-      setHistoryOffset(PAGE_SIZE);
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to load security settings', 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [addToast]);
+  const isLoading =
+    twoFactorQuery.isLoading || sessionsQuery.isLoading || loginHistoryQuery.isLoading;
 
-  useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+  const is2FABusy =
+    start2FA.isPending ||
+    verify2FA.isPending ||
+    disable2FA.isPending ||
+    regenerateBackupCodes.isPending;
 
   const handleEnable2FA = useCallback(async () => {
-    setIs2FABusy(true);
     try {
-      const { data } = await authedFetch('/api/security/2fa/start', { method: 'POST' });
+      const data = await start2FA.mutateAsync();
       setQrCode(data.qrCodeDataUrl);
       setIsEnabling(true);
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to start 2FA setup', 'error');
-    } finally {
-      setIs2FABusy(false);
+      addToast(messageFrom(err, 'Failed to start 2FA setup'), 'error');
     }
-  }, [addToast]);
+  }, [start2FA, addToast]);
 
   const handleVerifyCode = useCallback(async () => {
     if (verificationCode.length !== 6) return;
-    setIs2FABusy(true);
     try {
-      const { data } = await authedFetch('/api/security/2fa/verify', {
-        method: 'POST',
-        body: JSON.stringify({ code: verificationCode }),
-      });
-      setTwoFAEnabled(true);
+      const data = await verify2FA.mutateAsync(verificationCode);
       setIsEnabling(false);
       setQrCode(null);
       setBackupCodes(data.backupCodes);
-      setBackupCodesRemaining(data.backupCodes.length);
       setVerificationCode('');
       addToast('Two-factor authentication enabled', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Invalid code', 'error');
-    } finally {
-      setIs2FABusy(false);
+      addToast(messageFrom(err, 'Invalid code'), 'error');
     }
-  }, [verificationCode, addToast]);
+  }, [verificationCode, verify2FA, addToast]);
 
   const handleDisable2FA = useCallback(async () => {
-    setIs2FABusy(true);
     try {
-      await authedFetch('/api/security/2fa/disable', { method: 'POST' });
-      setTwoFAEnabled(false);
+      await disable2FA.mutateAsync();
       setBackupCodes([]);
-      setBackupCodesRemaining(0);
       addToast('Two-factor authentication disabled', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to disable 2FA', 'error');
-    } finally {
-      setIs2FABusy(false);
+      addToast(messageFrom(err, 'Failed to disable 2FA'), 'error');
     }
-  }, [addToast]);
+  }, [disable2FA, addToast]);
 
   const handleRegenerateBackup = useCallback(async () => {
-    setIs2FABusy(true);
     try {
-      const { data } = await authedFetch('/api/security/2fa/backup-codes/regenerate', { method: 'POST' });
-      setBackupCodes(data.backupCodes);
-      setBackupCodesRemaining(data.backupCodes.length);
+      const codes = await regenerateBackupCodes.mutateAsync();
+      setBackupCodes(codes);
       addToast('Backup codes regenerated', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to regenerate backup codes', 'error');
-    } finally {
-      setIs2FABusy(false);
+      addToast(messageFrom(err, 'Failed to regenerate backup codes'), 'error');
     }
-  }, [addToast]);
+  }, [regenerateBackupCodes, addToast]);
 
   const handleRevokeSession = useCallback(async (id: string) => {
     try {
-      await authedFetch(`/api/security/sessions/${id}/revoke`, { method: 'POST' });
-      setSessions((prev) => prev.filter((s) => s.id !== id));
+      await revokeSession.mutateAsync(id);
       addToast('Session revoked', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to revoke session', 'error');
+      addToast(messageFrom(err, 'Failed to revoke session'), 'error');
     }
-  }, [addToast]);
+  }, [revokeSession, addToast]);
 
   const handleRevokeAllOthers = useCallback(async () => {
     try {
-      await authedFetch('/api/security/sessions/revoke-all', { method: 'POST' });
-      setSessions((prev) => prev.filter((s) => s.is_current));
+      await revokeAllOthers.mutateAsync();
       addToast('All other sessions revoked', 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to revoke sessions', 'error');
+      addToast(messageFrom(err, 'Failed to revoke sessions'), 'error');
     }
-  }, [addToast]);
+  }, [revokeAllOthers, addToast]);
 
   const handleLoadMore = useCallback(async () => {
     try {
-      const { data, total } = await authedFetch(`/api/security/login-history?limit=${PAGE_SIZE}&offset=${historyOffset}`);
-      setLoginHistory((prev) => [...prev, ...data]);
-      setHistoryTotal(total);
-      setHistoryOffset((prev) => prev + PAGE_SIZE);
+      await loginHistoryQuery.fetchNextPage();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to load more history', 'error');
+      addToast(messageFrom(err, 'Failed to load more history'), 'error');
     }
-  }, [historyOffset, addToast]);
+  }, [loginHistoryQuery, addToast]);
 
-  const hasMoreHistory = historyOffset < historyTotal;
+  const hasMoreHistory = loginHistoryQuery.hasNextPage;
 
   if (isLoading) {
     return (
@@ -392,6 +340,7 @@ export function Security() {
                 variant="secondary"
                 size="sm"
                 disabled={sessions.filter((s) => !s.is_current).length === 0}
+                isLoading={revokeAllOthers.isPending}
                 onClick={handleRevokeAllOthers}
               >
                 Revoke All Other Sessions
@@ -440,8 +389,13 @@ export function Security() {
             </div>
 
             {hasMoreHistory && (
-              <button type="button" className={styles.loadMore} onClick={handleLoadMore}>
-                Load more
+              <button
+                type="button"
+                className={styles.loadMore}
+                disabled={loginHistoryQuery.isFetchingNextPage}
+                onClick={handleLoadMore}
+              >
+                {loginHistoryQuery.isFetchingNextPage ? 'Loading…' : 'Load more'}
               </button>
             )}
           </>

@@ -6,6 +6,77 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui
 import { DataTable } from '../../../components/ui/DataTable/DataTable';
 import styles from './OrganizationDetail.module.css';
 
+function daysUntil(dateStr: string): number {
+  const diffMs = new Date(dateStr).getTime() - Date.now();
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function renderSubscriptionDetails(subscription: any) {
+  if (!subscription) {
+    return (
+      <div>
+        <strong>Subscription:</strong>{' '}
+        <span className={`${styles.badge} ${styles.badgeNoPlan}`}>No Plan</span>
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 6 }}>
+          This organization has no subscription record — likely never completed checkout.
+        </div>
+      </div>
+    );
+  }
+
+  const { status, plans: plan, billing_cycle, current_period_end, trial_ends_at, cancelled_at } = subscription;
+  const price = billing_cycle === 'annual' ? plan?.price_annual : plan?.price_monthly;
+
+  const badgeClass =
+    status === 'trialing' ? styles.badgeTrialing :
+    status === 'active' ? styles.badgeActive :
+    status === 'cancelled' ? styles.badgeCancelled :
+    styles.badgeNoPlan;
+
+  const trialDaysLeft = trial_ends_at ? daysUntil(trial_ends_at) : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div>
+        <strong>Plan:</strong> {plan?.name || 'Unknown'}{' '}
+        <span className={`${styles.badge} ${badgeClass}`}>{status}</span>
+      </div>
+
+      {price !== undefined && price !== null && (
+        <div><strong>Price:</strong> ${price}/{billing_cycle === 'annual' ? 'yr' : 'mo'} ({billing_cycle})</div>
+      )}
+
+      {status === 'trialing' && trial_ends_at && (
+        <div style={{
+          fontSize: 13,
+          color: trialDaysLeft !== null && trialDaysLeft <= 3 ? '#ef4444' : 'var(--color-text-secondary)',
+          fontWeight: trialDaysLeft !== null && trialDaysLeft <= 3 ? 600 : 400,
+        }}>
+          Free trial ends {formatDate(trial_ends_at)}
+          {trialDaysLeft !== null && (trialDaysLeft >= 0 ? ` (${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left)` : ' (expired — awaiting downgrade or conversion)')}
+        </div>
+      )}
+
+      {status === 'active' && current_period_end && (
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+          Renews {formatDate(current_period_end)}
+        </div>
+      )}
+
+      {status === 'cancelled' && (
+        <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
+          Cancelled {cancelled_at ? formatDate(cancelled_at) : ''}
+          {current_period_end && ` — access until ${formatDate(current_period_end)}`}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function OrganizationDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [orgData, setOrgData] = useState<any>(null);
@@ -111,10 +182,7 @@ export function OrganizationDetailPage() {
               <div><strong>Industry:</strong> {orgData.industry || 'N/A'}</div>
               <div><strong>Billing Email:</strong> {orgData.billing_email || 'N/A'}</div>
               <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)' }} />
-              <div>
-                <strong>Current Plan:</strong> {orgData.subscription?.plans?.name || 'No Plan'} 
-                {orgData.subscription && ` (${orgData.subscription.status})`}
-              </div>
+              {renderSubscriptionDetails(orgData.subscription)}
             </div>
           </CardContent>
         </Card>

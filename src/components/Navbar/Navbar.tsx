@@ -37,7 +37,7 @@ const Navbar: React.FC = () => {
       <div className={styles.inner}>
         <Link to="/" className={styles.logo}>
           <span className={styles.logoMark}>i∞</span>
-          Inference Intelligence
+          Ordisum
         </Link>
 
         <ul className={styles.links}>

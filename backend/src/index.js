@@ -9,6 +9,7 @@ import publicRouter from './routes/public.js';
 import profileRouter from './routes/profile.js';
 import securityRouter from './routes/security.js';
 import organizationRouter from './routes/organization.js';
+import billingRouter from './routes/billing.js';
 import proxyRouter from './routes/proxy.js';
 import analyticsRouter from './routes/analytics.js';
 import adminRouter from './routes/admin.js';
@@ -27,13 +28,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load env vars from root directory
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Supabase Setup
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseServiceKey) {
@@ -48,42 +50,45 @@ export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 // Middlewares
-app.use(cors());
+app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
 
-// Auth Middleware: Verify Supabase JWT
 export const requireAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    return res.status(401).json({ error: 'No authorization header' });
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid authorization header' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token with Supabase
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+
+    // Check if the user is active in the users table
+    const { data: dbUser, error: dbError } = await supabase
+      .from('users')
+      .select('is_active')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (dbError) {
+      console.warn('[requireAuth] Failed to verify user active status:', dbError.message);
+      // Fail open on DB error as per plan
+    } else if (dbUser && !dbUser.is_active) {
+      return res.status(401).json({ error: 'Account deactivated' });
+    }
+
+    req.user = user;
+    next();
+  } catch (err) {
+    console.error('[requireAuth] Error:', err.message);
+    res.status(500).json({ error: 'Authentication failed' });
   }
-
-  const token = authHeader.split(' ')[1];
-  if (!token) {
-    return res.status(401).json({ error: 'Invalid authorization header' });
-  }
-
-  const { data, error } = await supabase.auth.getUser(token);
-  
-  if (error || !data.user) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-
-  // Enforce account deactivation platform-wide. Without this check, an
-  // admin deactivating a user in the Admin Panel would only be cosmetic —
-  // the user's existing session would keep working on every API route.
-  const { data: dbUser, error: dbUserError } = await supabase
-    .from('users')
-    .select('is_active')
-    .eq('id', data.user.id)
-    .maybeSingle();
-
-  if (!dbUserError && dbUser && dbUser.is_active === false) {
-    return res.status(403).json({ error: 'This account has been deactivated. Contact your administrator.' });
-  }
-
-  req.user = data.user;
-  next();
 };
 
 // Auth Middleware: Verify a Platform Key (ii_sk_live_...) for the public
@@ -145,6 +150,7 @@ app.use('/api/api-keys', requireAuth, apiKeysRouter);
 app.use('/api/profile', requireAuth, profileRouter);
 app.use('/api/security', requireAuth, securityRouter);
 app.use('/api/organization', requireAuth, organizationRouter);
+app.use('/api/billing', requireAuth, billingRouter);
 app.use('/api/proxy', requireAuth, proxyLimiter, proxyRouter);
 app.use('/api/analytics', requireAuth, analyticsRouter);
 app.use('/api/admin', requireAuth, adminRouter);

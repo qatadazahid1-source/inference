@@ -3,8 +3,7 @@ import { DocPage } from './types'
 export const apiEndpointsPage: DocPage = {
   slug: 'api-endpoints',
   title: 'API Endpoints',
-  description:
-    'Complete reference for all available Inference Intelligence API endpoints.',
+  description: 'Full reference for the Ordisum API.',
 
   sections: [
     {
@@ -12,7 +11,7 @@ export const apiEndpointsPage: DocPage = {
       heading: 'Base URL',
       code: {
         language: 'bash',
-        code: `https://api.inferenceintelligence.com/v1`,
+        code: `https://api.ordisum.com/v1`,
       },
     },
     {
@@ -83,7 +82,7 @@ export const apiEndpointsPage: DocPage = {
   "error": {
     "code": "INSUFFICIENT_PERMISSIONS",
     "message": "Your API key does not have the read:budgets scope.",
-    "docs_url": "https://inferenceintelligence.com/docs/api-auth"
+    "docs_url": "https://ordisum.com/docs/api-auth"
   },
   "meta": {
     "request_id": "req_xxxxxxxxxxxx",

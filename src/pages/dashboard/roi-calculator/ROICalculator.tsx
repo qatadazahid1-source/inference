@@ -1,9 +1,10 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useAnalytics } from '../../../hooks/queries/useDashboard';
 import styles from './ROICalculator.module.css';
 
 const chartColors = {
@@ -28,22 +29,53 @@ function sanitizeNumericInput(raw: string): number {
 }
 
 export function ROICalculator() {
+  // Actual measured AI spend for the org over the last 30 days. This is the
+  // authoritative usage/cost source (same `/api/analytics` `totalCost` the rest
+  // of the dashboard uses) — NOT a duplicated cost calculation.
+  const { data: analytics } = useAnalytics(30);
+  const measuredSpend = analytics?.overview.totalSpend ?? null;
+
   const [hourlyRate, setHourlyRate] = useState(50);
   const [hoursPerWeek, setHoursPerWeek] = useState(20);
   const [numEmployees, setNumEmployees] = useState(10);
-  const [aiCost, setAiCost] = useState(1200);
+  // "AI Cost per month" is a user-editable input, but its default is seeded
+  // from real measured usage rather than a hardcoded number. `null` means the
+  // field has not yet been seeded/touched, so the effect below can fill it in
+  // once real analytics arrive. Once the user edits it, `aiCostEdited` latches
+  // and we stop overwriting their value.
+  const [aiCost, setAiCost] = useState<number | null>(null);
+  const aiCostEdited = useRef(false);
   const [errorReduction, setErrorReduction] = useState(500);
   const [isExporting, setIsExporting] = useState(false);
   const resultCardRef = useRef<HTMLDivElement>(null);
 
+  // Seed the AI-cost field from real measured spend the first time analytics
+  // resolve, unless the user has already typed their own value. Rounded to
+  // whole dollars to match the numeric input.
+  useEffect(() => {
+    if (aiCostEdited.current) return;
+    if (measuredSpend !== null && measuredSpend > 0) {
+      setAiCost(Math.round(measuredSpend));
+    }
+  }, [measuredSpend]);
+
+  // Effective cost used across the calculation/UI: the (possibly user-edited)
+  // value, or the measured spend while state is still seeding, or 0.
+  const effectiveAiCost = aiCost ?? (measuredSpend !== null ? Math.round(measuredSpend) : 0);
+
+  const handleAiCostChange = (raw: string) => {
+    aiCostEdited.current = true;
+    setAiCost(Math.max(0, sanitizeNumericInput(raw)));
+  };
+
   const results = useMemo(() => {
     const timeValue = hoursPerWeek * hourlyRate * 4.33 * numEmployees;
     const totalValue = timeValue + errorReduction;
-    const netGain = totalValue - aiCost;
-    const roiPercent = aiCost > 0 ? Math.round((netGain / aiCost) * 100) : 0;
+    const netGain = totalValue - effectiveAiCost;
+    const roiPercent = effectiveAiCost > 0 ? Math.round((netGain / effectiveAiCost) * 100) : 0;
     const annualProjected = netGain * 12;
     return { timeValue, totalValue, netGain, roiPercent, annualProjected };
-  }, [hourlyRate, hoursPerWeek, numEmployees, aiCost, errorReduction]);
+  }, [hourlyRate, hoursPerWeek, numEmployees, effectiveAiCost, errorReduction]);
 
   const monthlyProjection = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => ({
@@ -59,7 +91,7 @@ export function ROICalculator() {
       // Render the result card (ROI %, breakdown grid, chart) into a canvas
       // at 2x scale for crisp text/lines on screens with higher DPI.
       const canvas = await html2canvas(resultCardRef.current, {
-        backgroundColor: '#0e1619',
+        backgroundColor: 'var(--color-bg)',
         scale: 2,
         useCORS: true,
       });
@@ -140,9 +172,12 @@ export function ROICalculator() {
                 className={styles.input}
                 type="number"
                 min={0}
-                value={String(aiCost)}
-                onChange={(e) => setAiCost(Math.max(0, sanitizeNumericInput(e.target.value)))}
+                value={String(effectiveAiCost)}
+                onChange={(e) => handleAiCostChange(e.target.value)}
               />
+              {!aiCostEdited.current && measuredSpend !== null && measuredSpend > 0 && (
+                <span className={styles.hint}>Seeded from your measured 30-day AI spend</span>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -176,7 +211,7 @@ export function ROICalculator() {
               </div>
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Monthly AI Cost</div>
-                <div className={styles.breakdownValue}>${aiCost.toLocaleString()}</div>
+                <div className={styles.breakdownValue}>${effectiveAiCost.toLocaleString()}</div>
               </div>
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Net Monthly Gain</div>
@@ -196,7 +231,7 @@ export function ROICalculator() {
                   <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
                   <Tooltip
                     contentStyle={{
-                      background: '#1a2529',
+                      background: 'var(--color-card-hover)',
                       border: '1px solid rgba(64,80,85,0.5)',
                       borderRadius: 6,
                       fontSize: 13,

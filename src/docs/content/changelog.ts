@@ -3,8 +3,7 @@ import { DocPage } from './types'
 export const changelogPage: DocPage = {
   slug: 'changelog',
   title: 'Changelog',
-  description:
-    'New features, improvements, and bug fixes in Inference Intelligence.',
+  description: "What's new in Ordisum.",
 
   sections: [
     {
