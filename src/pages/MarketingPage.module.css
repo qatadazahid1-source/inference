@@ -1,0 +1,518 @@
+/* ==========================================================================
+   MarketingPage.module.css
+   Premium, monochrome SaaS layout for CMS-driven marketing pages
+   (features / pricing / security). Uses global CSS custom properties.
+   ========================================================================== */
+
+.page {
+    min-height: 100vh;
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Shared containers ─────────────────────────────────────────────────── */
+.container {
+    width: 100%;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.containerNarrow {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px;
+    text-align: center;
+}
+
+/* ── State screens (loading / not-found / error) ───────────────────────── */
+.stateWrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 120px 24px;
+    gap: 16px;
+}
+
+.stateText {
+    color: var(--color-text-secondary);
+    font-size: 15px;
+    margin: 0;
+}
+
+.eyebrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin: 0;
+}
+
+.stateTitle {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.1;
+    margin: 0;
+    color: var(--color-text-primary);
+}
+
+.homeLink {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 10px 20px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.homeLink:hover {
+    background: var(--color-card-hover);
+    border-color: var(--color-text-tertiary);
+}
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+.hero {
+    padding: 140px 0 80px;
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.heroEyebrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-text-tertiary);
+    margin: 0 0 20px;
+}
+
+.heroHeadline {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 60px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 auto;
+    max-width: 860px;
+    color: var(--color-text-primary);
+}
+
+.heroSub {
+    font-size: clamp(16px, 2vw, 19px);
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin: 24px auto 0;
+    max-width: 640px;
+}
+
+.heroCtas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 36px;
+}
+
+/* ── CTA buttons ───────────────────────────────────────────────────────── */
+.ctaPrimary,
+.ctaSecondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 13px 26px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.ctaPrimary {
+    background: var(--color-green-btn);
+    color: var(--color-bg);
+    border: 1px solid var(--color-green-btn);
+}
+
+.ctaPrimary:hover {
+    background: var(--color-green-hover);
+    border-color: var(--color-green-hover);
+    transform: translateY(-1px);
+}
+
+.ctaSecondary {
+    background: transparent;
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-strong);
+}
+
+.ctaSecondary:hover {
+    background: var(--color-card-hover);
+    border-color: var(--color-text-tertiary);
+}
+
+/* ── Content sections ──────────────────────────────────────────────────── */
+.section {
+    padding: 80px 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sectionHeading {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 4vw, 40px);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-align: center;
+    color: var(--color-text-primary);
+}
+
+.sectionSub {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin: 16px auto 0;
+    max-width: 620px;
+    text-align: center;
+}
+
+/* ── Card grid ─────────────────────────────────────────────────────────── */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 48px;
+}
+
+.card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.card:hover {
+    background: var(--color-card-hover);
+    border-color: var(--color-border-strong);
+}
+
+.cardTitle {
+    font-family: var(--font-display);
+    font-size: 20px;
+    line-height: 1.25;
+    margin: 0 0 10px;
+    color: var(--color-text-primary);
+}
+
+.cardText {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+/* ── FAQ ───────────────────────────────────────────────────────────────── */
+.faqList {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+}
+
+.faqItem {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 4px 20px;
+    transition: border-color 0.18s ease;
+}
+
+.faqItem[open] {
+    border-color: var(--color-border-strong);
+}
+
+.faqQuestion {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    padding: 16px 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.faqQuestion::-webkit-details-marker {
+    display: none;
+}
+
+.faqQuestion::after {
+    content: '+';
+    font-size: 20px;
+    color: var(--color-text-tertiary);
+    font-weight: 400;
+    line-height: 1;
+    transition: transform 0.18s ease;
+}
+
+.faqItem[open] .faqQuestion::after {
+    content: '\2212';
+    /* minus sign */
+}
+
+.faqAnswer {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--color-text-secondary);
+    margin: 0;
+    padding: 0 0 18px;
+}
+
+/* ── Final CTA ─────────────────────────────────────────────────────────── */
+.finalCta {
+    padding: 100px 0;
+    text-align: center;
+}
+
+.finalHeadline {
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4.5vw, 46px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0 auto;
+    max-width: 640px;
+    color: var(--color-text-primary);
+}
+
+.finalText {
+    font-size: 17px;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    margin: 20px auto 0;
+    max-width: 560px;
+}
+
+/* ── Prose (intro body copy) ───────────────────────────────────────────── */
+.prose {
+    font-size: 17px;
+    line-height: 1.7;
+    color: var(--color-text-secondary);
+    margin: 20px auto 0;
+    max-width: 680px;
+    text-align: center;
+}
+
+/* ── Problem / Solution + Pros/Cons two-column grid ────────────────────── */
+.psGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 48px;
+    align-items: start;
+}
+
+.psCard {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+}
+
+/* Subtle left accent to distinguish problem (muted) vs solution (green). */
+.psProblem {
+    border-left: 3px solid var(--color-border-strong);
+}
+
+.psSolution {
+    border-left: 3px solid var(--color-green-btn);
+}
+
+.psHeading {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1.2;
+    margin: 0 0 14px;
+    color: var(--color-text-primary);
+}
+
+/* ── Point lists ───────────────────────────────────────────────────────── */
+.pointList {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pointList li {
+    position: relative;
+    padding-left: 26px;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+}
+
+.pointList li::before {
+    content: '\2715';
+    /* multiplication x — neutral/negative marker */
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.pointListPositive li::before {
+    content: '\2713';
+    /* check mark — positive marker */
+    color: var(--color-green-btn);
+}
+
+/* ── Comparison table ──────────────────────────────────────────────────── */
+.tableScroll {
+    margin-top: 48px;
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+}
+
+.compareTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    min-width: 560px;
+}
+
+.compareTable th,
+.compareTable td {
+    padding: 16px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+}
+
+.compareTable thead th {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: var(--color-card);
+    white-space: nowrap;
+}
+
+.compareTable tbody th[scope='row'] {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: var(--color-card);
+}
+
+.compareTable tbody td {
+    color: var(--color-text-secondary);
+}
+
+.compareTable tbody tr:last-child th,
+.compareTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Workflow / step list ──────────────────────────────────────────────── */
+.workflowList {
+    list-style: none;
+    counter-reset: none;
+    margin: 48px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 760px;
+}
+
+.workflowStep {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+}
+
+.workflowNum {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--color-green-btn);
+    color: var(--color-bg);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.workflowBody {
+    flex: 1;
+}
+
+/* ── Related link cards ────────────────────────────────────────────────── */
+.linkCard {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
+.linkCard .cardTitle {
+    transition: color 0.18s ease;
+}
+
+.linkCard:hover .cardTitle {
+    color: var(--color-green-btn);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .hero {
+        padding: 110px 0 60px;
+    }
+
+    .section,
+    .finalCta {
+        padding: 60px 0;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+        margin-top: 32px;
+    }
+
+    .heroCtas {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ctaPrimary,
+    .ctaSecondary {
+        width: 100%;
+    }
+}

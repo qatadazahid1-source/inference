@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  sitemap.xml — Ordisum
+
+  Lists ONLY real, publicly crawlable routes that exist in the app router
+  (see src/App.tsx). Private application areas (/dashboard, /settings, /admin,
+  /onboarding), authentication flows (/auth/*, /signin, /signup, ...) and the
+  /403 page are intentionally excluded — they are also blocked in robots.txt.
+
+  ── DOMAIN (configuration item) ─────────────────────────────────────────────
+  Every <loc> below uses the host ordisum.com — the only
+  domain referenced anywhere in the codebase — which is very likely the
+  *application* host, NOT the public marketing/canonical domain. This value was
+  intentionally NOT invented.
+  ⚠️ ACTION REQUIRED before go-live: replace the host in every <loc> (and set
+  VITE_SITE_URL) to the real public domain, e.g.
+  https://www.inferenceintelligence.com
+
+  ── CMS-MANAGED PAGES (generated) ───────────────────────────────────────────
+  Dynamic public pages are served from the Admin Panel CMS:
+    • "/:slug"               generic pages          (static_pages)
+    • "/alternatives/:slug"  competitor comparisons (static_pages, slug prefix
+                             "alternatives-")
+    • "/use-cases/:slug"     use-case landing pages (static_pages, slug prefix
+                             "use-cases-")
+    • "/blog" + "/blog/:slug" blog listing/article  (blog_posts)
+  Those entries are NOT hardcoded here. A backend generator route
+  (GET /api/public/sitemap.xml) queries published `static_pages` + `blog_posts`
+  rows and emits a <url> per slug, excluding drafts / noindex / private / admin /
+  auth routes. This static file remains the stable baseline for fixed routes.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- ── Marketing / top-level public pages ─────────────────────────────── -->
+  <url>
+    <loc>https://ordisum.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/features</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/pricing</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/security</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/contact-sales</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- ── Documentation (/docs/:slug) ────────────────────────────────────── -->
+  <url>
+    <loc>https://ordisum.com/docs/overview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/quickstart</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/providers</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/changelog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/dashboard</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/budget-alerts</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/roi-calculator</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/teams</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/api-auth</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/api-endpoints</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/faq</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/docs/troubleshooting</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!--
+    CMS-managed public pages (/:slug) are appended here by the future
+    sitemap generator described in the header comment. Do not hardcode them.
+  -->
+
+</urlset>

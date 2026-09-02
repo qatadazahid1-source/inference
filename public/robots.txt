@@ -1,0 +1,34 @@
+# robots.txt — Ordisum
+#
+# Crawl policy for the public marketing/content surface of the app.
+# PUBLIC (crawlable): "/", "/contact-sales", "/docs/*", and CMS pages at "/:slug".
+# PRIVATE (blocked):  authenticated app + operator areas and OAuth flows.
+#
+# ── DOMAIN (configuration item) ──────────────────────────────────────────────
+# The Sitemap URL below MUST point at the real production marketing domain.
+# It currently uses ordisum.com — the only host referenced in
+# the codebase — which is very likely the *application* host, NOT the public
+# marketing/canonical domain. This value was intentionally NOT invented.
+# ⚠️ ACTION REQUIRED before go-live: update the Sitemap host below (and
+# VITE_SITE_URL) to the real public domain, e.g. https://www.inferenceintelligence.com
+
+User-agent: *
+Allow: /
+
+# Private application areas — never index.
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /admin
+Disallow: /onboarding
+Disallow: /403
+
+# Authentication / OAuth flows — never index.
+Disallow: /auth/
+Disallow: /signin
+Disallow: /login
+Disallow: /signup
+Disallow: /register
+
+# Do not block static assets (JS/CSS/images) — crawlers need them to render.
+
+Sitemap: https://ordisum.com/sitemap.xml
