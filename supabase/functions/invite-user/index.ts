@@ -38,6 +38,23 @@ serve(async (req) => {
       })
     }
 
+    // SECURITY FIX: Verify that the invoking user is an active owner or admin of the target organization.
+    // Without this, anyone could invite themselves to any organization as an owner.
+    const { data: inviterMember, error: inviterError } = await supabase
+      .from('organization_members')
+      .select('role')
+      .eq('organization_id', organizationId)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (inviterError || !inviterMember || !['owner', 'admin'].includes(inviterMember.role)) {
+      return new Response(JSON.stringify({ error: 'Forbidden: Only organization owners and admins can invite users' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     // Check if user exists by getting the user_id for the email
     const { data: inviteeData } = await supabase
       .from('users')

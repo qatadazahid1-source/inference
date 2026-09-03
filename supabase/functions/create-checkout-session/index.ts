@@ -62,6 +62,24 @@ serve(async (req) => {
       })
     }
 
+    // SECURITY FIX: Verify that the authenticated user is an active member of the target organization.
+    // This prevents an attacker from passing someone else's organizationId to buy a plan for them
+    // (potentially overriding or disrupting their existing subscription).
+    const { data: member, error: memberError } = await supabase
+      .from('organization_members')
+      .select('id')
+      .eq('organization_id', organizationId)
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (memberError || !member) {
+      return new Response(JSON.stringify({ error: 'Forbidden: You do not have access to this organization' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     const { data: plan, error: planError } = await supabase
       .from('plans')
       .select('*')
