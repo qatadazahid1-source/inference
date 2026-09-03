@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/providers] GET error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -40,7 +40,7 @@ router.post('/', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/providers] POST error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -68,7 +68,7 @@ router.put('/:id', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/providers] PUT error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -86,7 +86,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('[admin/providers] DELETE error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

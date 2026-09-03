@@ -1,10 +1,10 @@
-import express from 'express';
+﻿import express from 'express';
 import os from 'os';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/system/health ────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/system/health â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns current Node.js server health, DB connectivity, and key configuration.
 router.get('/health', async (req, res) => {
   try {
@@ -64,7 +64,7 @@ router.get('/health', async (req, res) => {
   }
 });
 
-// ─── GET /api/admin/system/audit-log ─────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/system/audit-log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns global audit logs for all organizations and platform actions.
 router.get('/audit-log', async (req, res) => {
   try {
@@ -111,11 +111,11 @@ router.get('/audit-log', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/system] GET /audit-log error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/system/failed-requests ───────────────────────────────────
+// â”€â”€â”€ GET /api/admin/system/failed-requests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns API proxy requests that failed (status = 'failed' or have an error_message).
 router.get('/failed-requests', async (req, res) => {
   try {
@@ -153,7 +153,7 @@ router.get('/failed-requests', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/system] GET /failed-requests error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

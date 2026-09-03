@@ -1,9 +1,9 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/reports ───────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/reports â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List all generated reports platform-wide with organization context.
 router.get('/', async (req, res) => {
   try {
@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
     const { data: rawReports, error } = await query;
     if (error) throw error;
 
-    // Organizations + creators fetched separately — avoids PostgREST
+    // Organizations + creators fetched separately â€” avoids PostgREST
     // embedded-join schema-cache issues seen elsewhere in this project.
     const orgIds = [...new Set((rawReports || []).map(r => r.organization_id).filter(Boolean))];
     const userIds = [...new Set((rawReports || []).map(r => r.created_by).filter(Boolean))];
@@ -58,11 +58,11 @@ router.get('/', async (req, res) => {
     res.json({ data: filtered });
   } catch (err) {
     console.error('[admin/reports] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/reports/generate ─────────────────────────────────────────
+// â”€â”€â”€ POST /api/admin/reports/generate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Instantly trigger or mock generation of a report.
 router.post('/generate', async (req, res) => {
   try {
@@ -97,7 +97,7 @@ router.post('/generate', async (req, res) => {
 
     if (error) throw error;
 
-    // Org fetched separately — avoids the same embedded-join schema-cache
+    // Org fetched separately â€” avoids the same embedded-join schema-cache
     // issue seen elsewhere in this project.
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
@@ -121,11 +121,11 @@ router.post('/generate', async (req, res) => {
     res.status(201).json({ data: reportWithOrg });
   } catch (err) {
     console.error('[admin/reports] POST /generate error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── DELETE /api/admin/reports/:id ────────────────────────────────────────────
+// â”€â”€â”€ DELETE /api/admin/reports/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Admin can delete a report record.
 router.delete('/:id', async (req, res) => {
   try {
@@ -159,11 +159,11 @@ router.delete('/:id', async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error('[admin/reports] DELETE /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── DELETE /api/admin/reports/bulk ───────────────────────────────────────────
+// â”€â”€â”€ DELETE /api/admin/reports/bulk â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Bulk delete reports by id array.
 router.delete('/bulk', async (req, res) => {
   try {
@@ -188,7 +188,7 @@ router.delete('/bulk', async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error('[admin/reports] DELETE /bulk error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
@@ -21,7 +21,7 @@ function normaliseTags(tags) {
   return [];
 }
 
-// ─── GET /api/admin/blog ────────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/blog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List every post (published and draft), newest first.
 router.get('/', async (req, res) => {
   try {
@@ -35,11 +35,11 @@ router.get('/', async (req, res) => {
     res.json({ data: data || [] });
   } catch (err) {
     console.error('[admin/blog] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/blog ───────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/admin/blog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Create a new post.
 router.post('/', async (req, res) => {
   try {
@@ -122,11 +122,11 @@ router.post('/', async (req, res) => {
     res.status(201).json({ data });
   } catch (err) {
     console.error('[admin/blog] POST / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/blog/:id ────────────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/blog/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Edit an existing post (any subset of fields). Handles publish/unpublish.
 router.put('/:id', async (req, res) => {
   try {
@@ -220,11 +220,11 @@ router.put('/:id', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/blog] PUT /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── DELETE /api/admin/blog/:id ─────────────────────────────────────────────
+// â”€â”€â”€ DELETE /api/admin/blog/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -245,7 +245,7 @@ router.delete('/:id', async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error('[admin/blog] DELETE /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

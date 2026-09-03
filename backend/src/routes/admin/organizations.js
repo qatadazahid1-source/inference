@@ -1,9 +1,9 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/organizations ────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/organizations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns all organizations with member counts, subscription status, and spend.
 router.get('/', async (req, res) => {
   try {
@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
       
     if (memberErr) console.warn('[admin/organizations] Failed to fetch member counts:', memberErr);
 
-    // Fetch active subscriptions (fetched separately from plans — avoids
+    // Fetch active subscriptions (fetched separately from plans â€” avoids
     // PostgREST embedded-join schema-cache issues seen elsewhere)
     const { data: subscriptions, error: subErr } = await supabase
       .from('subscriptions')
@@ -78,11 +78,11 @@ router.get('/', async (req, res) => {
     res.json({ data: enriched });
   } catch (err) {
     console.error('[admin/organizations] GET error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/organizations/:id ────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/organizations/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns deep details for a single organization.
 router.get('/:id', async (req, res) => {
   const { id } = req.params;
@@ -96,7 +96,7 @@ router.get('/:id', async (req, res) => {
 
     if (orgErr) throw orgErr;
 
-    // Members — fetched separately from users (avoids PostgREST embedded-join
+    // Members â€” fetched separately from users (avoids PostgREST embedded-join
     // schema-cache issues seen elsewhere in this project)
     const { data: rawMembers, error: membersErr } = await supabase
       .from('organization_members')
@@ -127,7 +127,7 @@ router.get('/:id', async (req, res) => {
       .eq('organization_id', id);
 
     // Subscription
-    // Subscription — fetched separately from plans to avoid the same
+    // Subscription â€” fetched separately from plans to avoid the same
     // embedded-join schema-cache issue as above.
     const { data: rawSubscription, error: subDetailErr } = await supabase
       .from('subscriptions')
@@ -159,11 +159,11 @@ router.get('/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('[admin/organizations] GET /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/organizations/:id/status ─────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/organizations/:id/status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Suspend or reactivate an organization.
 router.put('/:id/status', async (req, res) => {
   const { id } = req.params;
@@ -197,11 +197,11 @@ router.put('/:id/status', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/organizations] PUT /status error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/organizations/:id/give-plan ─────────────────────────────
+// â”€â”€â”€ POST /api/admin/organizations/:id/give-plan â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Manually assign an active subscription plan to an organization
 router.post('/:id/give-plan', async (req, res) => {
   const { id } = req.params;
@@ -277,7 +277,7 @@ router.post('/:id/give-plan', async (req, res) => {
     res.json({ success: true, data: result });
   } catch (err) {
     console.error('[admin/organizations] POST /give-plan error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

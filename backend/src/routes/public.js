@@ -1,10 +1,10 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/public/site-links ──────────────────────────────────────────────
-// Unauthenticated — read by the landing page footer. Only returns active
+// â”€â”€â”€ GET /api/public/site-links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” read by the landing page footer. Only returns active
 // links, grouped by section, ordered for display.
 router.get('/site-links', async (req, res) => {
   try {
@@ -24,14 +24,14 @@ router.get('/site-links', async (req, res) => {
     res.json({ data: grouped });
   } catch (err) {
     console.error('[public] GET /site-links error:', err.message);
-    // Fail soft — footer should render with no links rather than break
+    // Fail soft â€” footer should render with no links rather than break
     // the whole landing page if this table has an issue.
     res.json({ data: { product: [], company: [], legal: [], social: [] } });
   }
 });
 
-// ─── GET /api/public/pricing-plans ──────────────────────────────────────────
-// Unauthenticated — read by the landing page PricingSection.
+// â”€â”€â”€ GET /api/public/pricing-plans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” read by the landing page PricingSection.
 // Returns all active plans with their display columns, ordered by sort_order.
 // Fails soft (empty array) so the landing page always renders.
 router.get('/pricing-plans', async (req, res) => {
@@ -53,10 +53,10 @@ router.get('/pricing-plans', async (req, res) => {
   }
 });
 
-// ─── GET /api/public/pages/:slug ────────────────────────────────────────────
-// Unauthenticated — read by the generic StaticPage component (About, Privacy
+// â”€â”€â”€ GET /api/public/pages/:slug â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” read by the generic StaticPage component (About, Privacy
 // Policy, Terms, etc.). Returns 404 if the slug doesn't exist or isn't
-// published — RLS also enforces the published-only rule, this check just
+// published â€” RLS also enforces the published-only rule, this check just
 // gives a clean 404 instead of an empty-row 500.
 router.get('/pages/:slug', async (req, res) => {
   try {
@@ -77,12 +77,12 @@ router.get('/pages/:slug', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[public] GET /pages/:slug error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/public/blog ───────────────────────────────────────────────────
-// Unauthenticated — read by the public blog listing page. Returns ONLY
+// â”€â”€â”€ GET /api/public/blog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” read by the public blog listing page. Returns ONLY
 // published posts, newest first (by published_at, falling back to created_at).
 // RLS also enforces the published-only rule; the status filter here keeps the
 // contract explicit and lets us order/trim columns for the list view.
@@ -102,13 +102,13 @@ router.get('/blog', async (req, res) => {
     res.json({ data: data || [] });
   } catch (err) {
     console.error('[public] GET /blog error:', err.message);
-    // Fail soft — the blog index should render an empty state rather than 500.
+    // Fail soft â€” the blog index should render an empty state rather than 500.
     res.json({ data: [] });
   }
 });
 
-// ─── GET /api/public/blog/:slug ─────────────────────────────────────────────
-// Unauthenticated — read by the blog article page. Returns the full published
+// â”€â”€â”€ GET /api/public/blog/:slug â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” read by the blog article page. Returns the full published
 // post (including SEO fields and markdown body). 404 for missing/draft slugs.
 router.get('/blog/:slug', async (req, res) => {
   try {
@@ -129,16 +129,16 @@ router.get('/blog/:slug', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[public] GET /blog/:slug error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/public/sitemap.xml ────────────────────────────────────────────
-// Unauthenticated — dynamically generated sitemap. Combines a fixed baseline of
+// â”€â”€â”€ GET /api/public/sitemap.xml â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” dynamically generated sitemap. Combines a fixed baseline of
 // hand-maintained public routes (marketing + docs) with CMS-managed content:
-//   • published `static_pages` (generic /:slug, /alternatives/:slug via the
+//   â€¢ published `static_pages` (generic /:slug, /alternatives/:slug via the
 //     "alternatives-" prefix, /use-cases/:slug via the "use-cases-" prefix)
-//   • published `blog_posts` → /blog/:slug
+//   â€¢ published `blog_posts` â†’ /blog/:slug
 // Drafts, noindex pages, and all private / admin / auth routes are excluded.
 // URLs are de-duplicated and built from SITE_URL (env, trailing slash stripped).
 // Fails soft: on any error it still returns the fixed baseline so crawlers never
@@ -178,9 +178,9 @@ function sitemapIsIndexable(robots) {
 }
 
 // Map a stored static_pages slug to its public route path.
-//   "alternatives-helicone"        → "/alternatives/helicone"
-//   "use-cases-ai-cost-monitoring" → "/use-cases/ai-cost-monitoring"
-//   "about-us"                     → "/about-us"
+//   "alternatives-helicone"        â†’ "/alternatives/helicone"
+//   "use-cases-ai-cost-monitoring" â†’ "/use-cases/ai-cost-monitoring"
+//   "about-us"                     â†’ "/about-us"
 function sitemapStaticPagePath(slug) {
   if (slug.startsWith('alternatives-')) {
     return `/alternatives/${slug.slice('alternatives-'.length)}`;
@@ -272,14 +272,14 @@ router.get('/sitemap.xml', async (req, res) => {
     res.send(sitemapRender(entries));
   } catch (err) {
     console.error('[public] GET /sitemap.xml error:', err.message);
-    // Fail soft — still serve the fixed baseline so crawlers never see a 500.
+    // Fail soft â€” still serve the fixed baseline so crawlers never see a 500.
     res.set('Content-Type', 'application/xml; charset=utf-8');
     res.send(sitemapRender(SITEMAP_FIXED_ROUTES));
   }
 });
 
-// ─── POST /api/public/contact ──────────────────────────────────────────────
-// Unauthenticated — accepts contact sales submissions and saves to sales_leads.
+// â”€â”€â”€ POST /api/public/contact â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Unauthenticated â€” accepts contact sales submissions and saves to sales_leads.
 router.post('/contact', async (req, res) => {
   try {
     const { first_name, last_name, email, company, employees, message } = req.body;

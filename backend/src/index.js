@@ -1,5 +1,6 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 
@@ -31,28 +32,70 @@ const __dirname = path.dirname(__filename);
 // Load env vars from root directory
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
+// --- Critical Startup Validation ---
+// The server refuses to start if any production-required variable is missing.
+// Accept either SUPABASE_URL or VITE_SUPABASE_URL for backward compat with
+// local .env files (seed scripts, migrate scripts) that may use the VITE_ prefix.
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+if (!supabaseUrl) {
+  console.error('[startup] FATAL: SUPABASE_URL (or VITE_SUPABASE_URL) is missing. Backend cannot start.');
+  process.exit(1);
+}
+
+const REQUIRED_ENV_VARS = [
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'FRONTEND_URL',
+  'CREDENTIAL_ENCRYPTION_KEY',
+];
+
+for (const envVar of REQUIRED_ENV_VARS) {
+  if (!process.env[envVar]) {
+    console.error(`[startup] FATAL: ${envVar} is missing from environment variables. Backend cannot start.`);
+    process.exit(1);
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Supabase Setup
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!supabaseServiceKey) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY is missing from environment variables. Backend cannot start without it.');
-}
-
-export const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+// --- Supabase Client ---
+export const supabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
   },
 });
 
-// Middlewares
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+// --- Security Headers (helmet) ---
+// Adds: X-Content-Type-Options: nosniff, X-Frame-Options: DENY,
+// Strict-Transport-Security (max-age 1 year), X-XSS-Protection,
+// Referrer-Policy, and Content-Security-Policy.
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", process.env.FRONTEND_URL],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      connectSrc: ["'self'", 'https://*.supabase.co', process.env.FRONTEND_URL],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+}));
+
+// --- CORS ---
+// FRONTEND_URL is validated above so it is always set at this point.
+// No wildcard fallback — intentional.
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 
+// --- Auth Middleware: Supabase Session ---
 export const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -61,7 +104,7 @@ export const requireAuth = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    
+
     // Verify token with Supabase
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -91,11 +134,11 @@ export const requireAuth = async (req, res, next) => {
   }
 };
 
-// Auth Middleware: Verify a Platform Key (ii_sk_live_...) for the public
-// /v1 gateway. Unlike requireAuth, this is NOT a Supabase session — it's a
-// long-lived key a user pastes into their own external code. We hash the
-// presented key and look it up in api_keys; we never store or compare
-// plain-text keys.
+// --- Auth Middleware: Platform API Key ---
+// Verify a Platform Key (ii_sk_live_...) for the public /v1 gateway.
+// Unlike requireAuth, this is NOT a Supabase session — it is a long-lived key
+// a user pastes into their own external code. We hash the presented key and
+// look it up in api_keys; we never store or compare plain-text keys.
 export const requirePlatformKey = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.split(' ')[1];
@@ -124,18 +167,18 @@ export const requirePlatformKey = async (req, res, next) => {
   next();
 };
 
-// Rate Limiter for proxy endpoints
+// --- Rate Limiters ---
+
+// AI proxy: 60 req/min per IP (existing, unchanged)
 const proxyLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 60, // Limit each IP to 60 requests per `window` (here, per minute)
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
   message: { error: 'Too many proxy requests from this IP, please try again after a minute' }
 });
 
-// Rate Limiter for the external /v1 gateway — keyed the same way as the
-// internal proxy. External callers get the same per-IP ceiling for now;
-// per-key limits can be layered on top later without touching this.
+// External /v1 gateway: 60 req/min per IP (existing, unchanged)
 const v1Limiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 60,
@@ -144,11 +187,23 @@ const v1Limiter = rateLimit({
   message: { error: { message: 'Rate limit exceeded. Please retry after a minute.', type: 'rate_limit_error' } }
 });
 
-// Routes
+// Security/2FA/Sessions: 5 req/min per IP.
+// Covers: /track-login, /2fa/*, /sessions/*, /login-history.
+// 5/min allows a full 2FA enrollment flow (start, verify, backup codes = 3
+// requests) without blocking legitimate users while preventing brute-force.
+const securityLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many security requests from this IP, please try again after a minute' }
+});
+
+// --- Routes ---
 app.use('/api/public', publicRouter);
 app.use('/api/api-keys', requireAuth, apiKeysRouter);
 app.use('/api/profile', requireAuth, profileRouter);
-app.use('/api/security', requireAuth, securityRouter);
+app.use('/api/security', requireAuth, securityLimiter, securityRouter);
 app.use('/api/organization', requireAuth, organizationRouter);
 app.use('/api/billing', requireAuth, billingRouter);
 app.use('/api/proxy', requireAuth, proxyLimiter, proxyRouter);
@@ -161,19 +216,29 @@ app.use('/api/alert-rules', requireAuth, alertRulesRouter);
 app.use('/api/platform-keys', requireAuth, platformKeysRouter);
 
 // Public external gateway — NOT requireAuth. Callers authenticate with a
-// Platform Key (ii_sk_live_...) instead of a Supabase session, so this uses
-// requirePlatformKey + its own rate limiter instead.
+// Platform Key (ii_sk_live_...) instead of a Supabase session.
 app.use('/v1', v1Limiter, requirePlatformKey, v1Router);
 
-// Health check
+// --- Health Check ---
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Error handling middleware
+// --- Global Error Handler ---
+// Catches errors passed via next(err). Rules:
+//   - Logs full error (message + stack) server-side for debugging.
+//   - Returns a generic message + correlationId to the client.
+//   - NEVER returns stack traces, DB messages, file paths, or secrets.
+// Intentional business errors (400/401/403/404/409/validation/entitlement)
+// are handled inside each route and bypass this handler entirely.
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong on the server' });
+  const correlationId = crypto.randomUUID();
+  console.error(`[error] correlationId=${correlationId}`, err.message, err.stack);
+  res.status(500).json({
+    error: 'An internal server error occurred.',
+    correlationId,
+  });
 });
 
 app.listen(PORT, () => {

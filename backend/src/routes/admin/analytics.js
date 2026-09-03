@@ -1,9 +1,9 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/analytics/overview ───────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/analytics/overview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Platform-wide KPIs: total orgs, total users, total API requests, total spend.
 router.get('/overview', async (req, res) => {
   try {
@@ -40,11 +40,11 @@ router.get('/overview', async (req, res) => {
     });
   } catch (err) {
     console.error('[admin/analytics] GET /overview error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/analytics/usage-trend ────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/analytics/usage-trend â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Daily API request counts and spend for the last 30 days (chart data).
 router.get('/usage-trend', async (req, res) => {
   try {
@@ -77,11 +77,11 @@ router.get('/usage-trend', async (req, res) => {
     res.json({ data: trend });
   } catch (err) {
     console.error('[admin/analytics] GET /usage-trend error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/analytics/top-orgs ───────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/analytics/top-orgs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Top 10 organizations by API spend this month.
 router.get('/top-orgs', async (req, res) => {
   try {
@@ -112,7 +112,7 @@ router.get('/top-orgs', async (req, res) => {
       byOrg[orgId].requests += 1;
     }
 
-    // Fetch org names/slugs separately — avoids PostgREST embedded-join
+    // Fetch org names/slugs separately â€” avoids PostgREST embedded-join
     // schema-cache issues seen elsewhere in this project.
     const orgIds = Object.keys(byOrg);
     if (orgIds.length) {
@@ -136,11 +136,11 @@ router.get('/top-orgs', async (req, res) => {
     res.json({ data: ranked });
   } catch (err) {
     console.error('[admin/analytics] GET /top-orgs error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/analytics/provider-breakdown ─────────────────────────────
+// â”€â”€â”€ GET /api/admin/analytics/provider-breakdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Spend and request count broken down by AI provider this month.
 router.get('/provider-breakdown', async (req, res) => {
   try {
@@ -168,7 +168,7 @@ router.get('/provider-breakdown', async (req, res) => {
     res.json({ data: breakdown });
   } catch (err) {
     console.error('[admin/analytics] GET /provider-breakdown error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

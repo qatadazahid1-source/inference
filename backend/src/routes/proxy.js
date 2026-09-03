@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../index.js';
 import { callProviderAndLog } from '../services/aiGateway.js';
 import { attachEntitlements, checkModelAndSpendEntitlement } from '../middleware/requireEntitlements.js';
@@ -51,10 +51,10 @@ async function handleProxyRequest(req, res) {
   const normalizedMessages = messages ?? [{ role: 'user', content: prompt }];
 
   try {
-    // 1. Resolve organization server-side — never trust frontend
+    // 1. Resolve organization server-side â€” never trust frontend
     const organization_id = await getUserOrgId(req.user.id);
 
-    // 1a. Check org is not suspended — if is_active = false, block all proxy
+    // 1a. Check org is not suspended â€” if is_active = false, block all proxy
     //     calls from this org before decrypting any key.
     const { data: org, error: orgErr } = await supabase
       .from('organizations')
@@ -69,7 +69,7 @@ async function handleProxyRequest(req, res) {
       return res.status(403).json({ error: 'Your organization has been suspended. Please contact support.' });
     }
 
-    // 1b. Plan gating — Playground must respect the same feature flag and
+    // 1b. Plan gating â€” Playground must respect the same feature flag and
     // model-tier/spend limits the external API gateway (v1.js) enforces.
     // Without this, a Starter-plan org could bypass those limits entirely
     // just by using the dashboard Playground instead of a Platform Key.
@@ -98,7 +98,7 @@ async function handleProxyRequest(req, res) {
     }
 
     // 2a. Same model access-tier + monthly spend enforcement as the external
-    // API gateway — see middleware/requireEntitlements.js. Throws
+    // API gateway â€” see middleware/requireEntitlements.js. Throws
     // isEntitlementModelNotAllowed / isBudgetBlocked, caught below.
     await checkModelAndSpendEntitlement({
       supabase,
@@ -107,7 +107,7 @@ async function handleProxyRequest(req, res) {
       model,
     });
 
-    // 3. Call the shared gateway — does the provider call, cost calc, and logging
+    // 3. Call the shared gateway â€” does the provider call, cost calc, and logging
     const { responseText, inputTokens, outputTokens, totalTokens, cost_usd } = await callProviderAndLog({
       organization_id,
       integration_id: integration.id,
@@ -117,7 +117,7 @@ async function handleProxyRequest(req, res) {
       source: 'playground',
     });
 
-    // 4. Return response — never include raw key (unchanged shape)
+    // 4. Return response â€” never include raw key (unchanged shape)
     return res.json({
       success: true,
       data: {
@@ -154,7 +154,7 @@ async function handleProxyRequest(req, res) {
       return res.status(status >= 400 && status < 600 ? status : 502).json({ error: providerMsg });
     }
 
-    return res.status(500).json({ error: err.message || 'Proxy request failed.' });
+    return res.status(500).json({ error: 'An internal server error occurred.' });
   }
 }
 

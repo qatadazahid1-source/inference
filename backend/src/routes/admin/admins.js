@@ -1,10 +1,10 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
 // Middleware: only a super_admin may touch any route in this file.
-// (requirePlatformAdmin has already run at the /api/admin mount point —
+// (requirePlatformAdmin has already run at the /api/admin mount point â€”
 // this adds the stricter super_admin-only check on top of it.)
 async function requireSuperAdmin(req, res, next) {
   try {
@@ -19,13 +19,13 @@ async function requireSuperAdmin(req, res, next) {
     }
     next();
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 }
 
 router.use(requireSuperAdmin);
 
-// ─── GET /api/admin/admins ────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/admins â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List every admin (super_admin + sub_admins) with their granted permissions.
 router.get('/', async (req, res) => {
   try {
@@ -61,11 +61,11 @@ router.get('/', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/admins] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/admins/permission-catalog ────────────────────────────
+// â”€â”€â”€ GET /api/admin/admins/permission-catalog â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Returns the fixed list of assignable permission keys, grouped by category.
 router.get('/permission-catalog', async (req, res) => {
   try {
@@ -78,13 +78,13 @@ router.get('/permission-catalog', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/admins] GET /permission-catalog error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/admins/:userId/promote ──────────────────────────────
+// â”€â”€â”€ POST /api/admin/admins/:userId/promote â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Make a regular user into a sub_admin (is_platform_admin = true, admin_role = 'sub_admin').
-// They start with ZERO permissions — the super admin must explicitly grant each one.
+// They start with ZERO permissions â€” the super admin must explicitly grant each one.
 router.post('/:userId/promote', async (req, res) => {
   const { userId } = req.params;
   try {
@@ -110,13 +110,13 @@ router.post('/:userId/promote', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/admins] POST /:userId/promote error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/admins/:userId/demote ───────────────────────────────
+// â”€â”€â”€ POST /api/admin/admins/:userId/demote â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Remove admin access entirely from a sub_admin (cannot demote a super_admin
-// through this route — that requires a manual DB change for safety).
+// through this route â€” that requires a manual DB change for safety).
 router.post('/:userId/demote', async (req, res) => {
   const { userId } = req.params;
 
@@ -161,12 +161,12 @@ router.post('/:userId/demote', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/admins] POST /:userId/demote error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/admins/:userId/permissions ───────────────────────────
-// Body: { permissions: string[] } — the FULL desired permission set for this
+// â”€â”€â”€ PUT /api/admin/admins/:userId/permissions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Body: { permissions: string[] } â€” the FULL desired permission set for this
 // sub_admin. Replaces whatever they currently have (simplest mental model:
 // "this checkbox list is exactly what they can do").
 router.put('/:userId/permissions', async (req, res) => {
@@ -212,7 +212,7 @@ router.put('/:userId/permissions', async (req, res) => {
     res.json({ success: true, data: { user_id: userId, permissions } });
   } catch (err) {
     console.error('[admin/admins] PUT /:userId/permissions error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

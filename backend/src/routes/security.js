@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import crypto from 'crypto';
 import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
@@ -13,7 +13,7 @@ function generateBackupCodes(count = 8) {
   });
 }
 
-// Minimal User-Agent parsing — no external dependency. Good enough to show
+// Minimal User-Agent parsing â€” no external dependency. Good enough to show
 // "Chrome on macOS" style labels; not meant to be exhaustive.
 function parseUserAgent(ua = '') {
   let browser = 'Unknown browser';
@@ -41,15 +41,15 @@ function getClientIp(req) {
   return req.ip || req.socket?.remoteAddress || null;
 }
 
-// POST /api/security/track-login — called once right after a successful
+// POST /api/security/track-login â€” called once right after a successful
 // Google OAuth sign-in (see Callback.tsx). Populates login_history and
 // security_sessions, which are otherwise never written to anywhere in the
-// app — Supabase's own OAuth flow doesn't touch these custom tables.
+// app â€” Supabase's own OAuth flow doesn't touch these custom tables.
 //
 // Known simplification: this marks the newly-created session row as the
 // only `is_current = true` row for the user, flipping any previous rows to
 // false. If the same user is logged in on two devices at once, whichever
-// logged in most recently is the one "protected" from revoke — the other
+// logged in most recently is the one "protected" from revoke â€” the other
 // device's row would show as revocable even though it's still an active
 // session there. A cleaner fix needs a per-device/browser session token
 // persisted client-side (e.g. in localStorage) so revoke logic can tell overlapping
@@ -88,17 +88,17 @@ router.post('/track-login', async (req, res) => {
 
     res.json({ data: { success: true } });
   } catch (err) {
-    // Never let tracking failures block login itself — log and move on.
+    // Never let tracking failures block login itself â€” log and move on.
     console.error('[security] track-login error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── Two-Factor Authentication ──────────────────────────────────────
+// â”€â”€â”€ Two-Factor Authentication â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Backed by the real `two_factor_auth` table (is_enabled, method,
 // totp_secret, backup_codes, backup_codes_used, verified_at).
 
-// GET /api/security/2fa — current status (never returns the raw secret once verified)
+// GET /api/security/2fa â€” current status (never returns the raw secret once verified)
 router.get('/2fa', async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -119,11 +119,11 @@ router.get('/2fa', async (req, res) => {
     });
   } catch (err) {
     console.error('[security] GET /2fa error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// POST /api/security/2fa/start — generates a TOTP secret + QR code, but does
+// POST /api/security/2fa/start â€” generates a TOTP secret + QR code, but does
 // NOT enable 2FA yet. is_enabled flips to true only after /2fa/verify.
 router.post('/2fa/start', async (req, res) => {
   try {
@@ -144,11 +144,11 @@ router.post('/2fa/start', async (req, res) => {
     res.json({ data: { qrCodeDataUrl, secret } });
   } catch (err) {
     console.error('[security] POST /2fa/start error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// POST /api/security/2fa/verify — confirms the 6-digit code, enables 2FA, issues backup codes
+// POST /api/security/2fa/verify â€” confirms the 6-digit code, enables 2FA, issues backup codes
 router.post('/2fa/verify', async (req, res) => {
   try {
     const { code } = req.body;
@@ -184,7 +184,7 @@ router.post('/2fa/verify', async (req, res) => {
     res.json({ data: { success: true, backupCodes } });
   } catch (err) {
     console.error('[security] POST /2fa/verify error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -200,7 +200,7 @@ router.post('/2fa/disable', async (req, res) => {
     res.json({ data: { success: true } });
   } catch (err) {
     console.error('[security] POST /2fa/disable error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -218,11 +218,11 @@ router.post('/2fa/backup-codes/regenerate', async (req, res) => {
     res.json({ data: { backupCodes } });
   } catch (err) {
     console.error('[security] regenerate backup codes error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── Active Sessions ─────────────────────────────────────────────────
+// â”€â”€â”€ Active Sessions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Backed by the real `security_sessions` table.
 
 // GET /api/security/sessions
@@ -240,7 +240,7 @@ router.get('/sessions', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[security] GET /sessions error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -266,11 +266,11 @@ router.post('/sessions/:id/revoke', async (req, res) => {
     res.json({ data: { success: true } });
   } catch (err) {
     console.error('[security] revoke session error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// POST /api/security/sessions/revoke-all — revokes every session except the current one
+// POST /api/security/sessions/revoke-all â€” revokes every session except the current one
 router.post('/sessions/revoke-all', async (req, res) => {
   try {
     const { error } = await supabase
@@ -284,11 +284,11 @@ router.post('/sessions/revoke-all', async (req, res) => {
     res.json({ data: { success: true } });
   } catch (err) {
     console.error('[security] revoke-all error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── Login History ───────────────────────────────────────────────────
+// â”€â”€â”€ Login History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // GET /api/security/login-history?limit=5&offset=0
 router.get('/login-history', async (req, res) => {
   try {
@@ -306,7 +306,7 @@ router.get('/login-history', async (req, res) => {
     res.json({ data, total: count });
   } catch (err) {
     console.error('[security] GET /login-history error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

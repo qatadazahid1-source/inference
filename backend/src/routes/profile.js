@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../index.js';
 
 const router = express.Router();
@@ -16,7 +16,7 @@ async function getUserOrgMembership(userId) {
   if (!error && data) return data;
 
   // Fallback: user owns an org directly (organizations.user_id) but has no
-  // organization_members row yet — treat them as owner.
+  // organization_members row yet â€” treat them as owner.
   const { data: org } = await supabase
     .from('organizations')
     .select('id')
@@ -30,11 +30,11 @@ async function getUserOrgMembership(userId) {
 }
 
 // Only these fields are allowed to be updated via PATCH /api/profile.
-// Deliberately whitelisted — do NOT spread req.body into the update, that
+// Deliberately whitelisted â€” do NOT spread req.body into the update, that
 // would let a client overwrite is_active, is_platform_admin, admin_role, etc.
 const EDITABLE_USER_FIELDS = ['full_name', 'job_title', 'phone_number', 'timezone', 'language'];
 
-// GET /api/profile — full profile: user + org + role + plan + current-period usage
+// GET /api/profile â€” full profile: user + org + role + plan + current-period usage
 router.get('/', async (req, res) => {
   try {
     const { data: user, error: userError } = await supabase
@@ -71,11 +71,11 @@ router.get('/', async (req, res) => {
       }
     } catch (orgErr) {
       // A user with no org yet (e.g. mid-onboarding) shouldn't 500 the whole
-      // profile page — just return null org/plan and let the frontend handle it.
+      // profile page â€” just return null org/plan and let the frontend handle it.
       console.warn('[profile] No organization resolved for user:', orgErr.message);
     }
 
-    // Usage summary — org-level only. api_usage_logs has no user_id column
+    // Usage summary â€” org-level only. api_usage_logs has no user_id column
     // (confirmed from live schema), so this is org-wide spend, not per-user.
     let usage = { currentPeriodCost: 0, requestCount: 0, periodStart: null, periodEnd: null };
     if (organization) {
@@ -102,11 +102,11 @@ router.get('/', async (req, res) => {
     res.json({ data: { user, organization, role, plan, usage } });
   } catch (err) {
     console.error('[profile] GET error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// PATCH /api/profile — update only whitelisted, editable fields
+// PATCH /api/profile â€” update only whitelisted, editable fields
 router.patch('/', async (req, res) => {
   try {
     const updates = {};
@@ -131,13 +131,13 @@ router.patch('/', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[profile] PATCH error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
 // Keep PUT as an alias of PATCH for backward compatibility with the existing
 // frontend call in Profile.tsx (which currently uses method: 'PUT'). Same
-// whitelist logic — avatar_url is deliberately excluded here; it's written
+// whitelist logic â€” avatar_url is deliberately excluded here; it's written
 // server-side only after a real Supabase Storage upload, never accepted raw
 // from the client (the old code accepted a base64 data URL directly, which
 // would have bloated the users table with image blobs).
@@ -165,11 +165,11 @@ router.put('/', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[profile] PUT error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// POST /api/profile/avatar — accepts a public URL already uploaded to
+// POST /api/profile/avatar â€” accepts a public URL already uploaded to
 // Supabase Storage from the client (via the existing uploadAvatar() helper
 // in src/services/users.ts, which uploads to the 'user-content' bucket).
 // This endpoint just confirms/persists it server-side so avatar_url updates
@@ -192,16 +192,16 @@ router.post('/avatar', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[profile] avatar error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// Note: no /change-password route — this platform is Google OAuth only
+// Note: no /change-password route â€” this platform is Google OAuth only
 // (see src/pages/auth/SignIn.tsx / lib/auth.ts). There's no password-based
 // sign-in for a changed password to ever be used with, so this endpoint
 // was removed rather than left as dead/misleading functionality.
 
-// POST /api/profile/change-email — Supabase Auth sends a verification email
+// POST /api/profile/change-email â€” Supabase Auth sends a verification email
 // to the new address; email is not changed until the user confirms it.
 router.post('/change-email', async (req, res) => {
   try {
@@ -218,14 +218,14 @@ router.post('/change-email', async (req, res) => {
     res.json({ data: { success: true, message: 'Verification email sent to the new address' } });
   } catch (err) {
     console.error('[profile] change-email error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// DELETE /api/profile — deletes the Supabase Auth user. The `users` row and
+// DELETE /api/profile â€” deletes the Supabase Auth user. The `users` row and
 // dependent rows should cascade via FK ON DELETE CASCADE where configured;
 // if that's not set up in the live schema, this will need a cleanup step
-// added before going live — flagging rather than guessing.
+// added before going live â€” flagging rather than guessing.
 router.delete('/', async (req, res) => {
   try {
     const { error } = await supabase.auth.admin.deleteUser(req.user.id);
@@ -233,7 +233,7 @@ router.delete('/', async (req, res) => {
     res.json({ data: { success: true } });
   } catch (err) {
     console.error('[profile] delete error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

@@ -1,11 +1,11 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
 const PLAN_SELECT = 'id, name, slug, price_monthly, price_annual, tagline, is_popular, cta_text, cta_variant, sort_order, display_features, system_limits, lemonsqueezy_variant_id_monthly, lemonsqueezy_variant_id_annual, is_active, created_at';
 
-// ─── GET /api/admin/plans ────────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/plans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // All plans (active and inactive), ordered by sort_order.
 router.get('/', async (req, res) => {
   try {
@@ -18,11 +18,11 @@ router.get('/', async (req, res) => {
     res.json({ data: data || [] });
   } catch (err) {
     console.error('[admin/plans] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/plans ───────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/admin/plans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Create a new plan.
 router.post('/', async (req, res) => {
   try {
@@ -73,11 +73,11 @@ router.post('/', async (req, res) => {
     res.status(201).json({ data });
   } catch (err) {
     console.error('[admin/plans] POST / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/plans/:id ────────────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/plans/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Update any editable field on a plan.
 router.put('/:id', async (req, res) => {
   try {
@@ -123,12 +123,12 @@ router.put('/:id', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/plans] PUT /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── DELETE /api/admin/plans/:id ─────────────────────────────────────────────
-// Soft-delete only — sets is_active = false. Hard deletes are blocked because
+// â”€â”€â”€ DELETE /api/admin/plans/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Soft-delete only â€” sets is_active = false. Hard deletes are blocked because
 // subscriptions reference plan_id and we don't want orphaned rows.
 router.delete('/:id', async (req, res) => {
   try {
@@ -156,7 +156,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/plans] DELETE /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

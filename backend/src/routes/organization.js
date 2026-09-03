@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../index.js';
 import { attachEntitlements } from '../middleware/requireEntitlements.js';
 
@@ -27,19 +27,19 @@ async function getUserMembership(userId) {
   throw new Error(`No active organization found for user ${userId}`);
 }
 
-// Only owner/admin roles can edit org settings — everyone in the org can view.
+// Only owner/admin roles can edit org settings â€” everyone in the org can view.
 const CAN_EDIT_ROLES = ['owner', 'admin'];
 
 // Fields that actually exist as columns on `organizations` in the live schema.
 // NOTE: the frontend Organization.tsx "Data & Privacy" section (data
 // retention, anonymize cost data, share benchmarks, allow third-party
-// processing) has no backing columns in the live schema snapshot — those
+// processing) has no backing columns in the live schema snapshot â€” those
 // toggles currently have nowhere real to persist to. Flagging rather than
 // inventing a migration; decide whether that section stays UI-only,
 // gets removed, or needs a real migration before wiring it up.
 const EDITABLE_ORG_FIELDS = ['name', 'website', 'industry', 'company_size', 'country', 'logo_url', 'primary_color', 'billing_email', 'tax_id', 'billing_address'];
 
-// GET /api/organization — the current user's org (view access for any active member)
+// GET /api/organization â€” the current user's org (view access for any active member)
 router.get('/', async (req, res) => {
   try {
     const membership = await getUserMembership(req.user.id);
@@ -55,11 +55,11 @@ router.get('/', async (req, res) => {
     res.json({ data: { ...data, currentUserRole: membership.role, canEdit: CAN_EDIT_ROLES.includes(membership.role) } });
   } catch (err) {
     console.error('[organization] GET error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// PATCH /api/organization — owner/admin only
+// PATCH /api/organization â€” owner/admin only
 router.patch('/', async (req, res) => {
   try {
     const membership = await getUserMembership(req.user.id);
@@ -89,11 +89,11 @@ router.patch('/', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[organization] PATCH error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// POST /api/organization/logo — same pattern as profile avatar: client
+// POST /api/organization/logo â€” same pattern as profile avatar: client
 // uploads to Supabase Storage first, this just persists the resulting URL.
 router.post('/logo', async (req, res) => {
   try {
@@ -118,20 +118,20 @@ router.post('/logo', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[organization] logo error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
 // Subscription statuses that count as "paying" access, separate from trial.
 // past_due is included deliberately as a short grace period rather than
-// cutting access off the moment a renewal payment fails — that failure is
+// cutting access off the moment a renewal payment fails â€” that failure is
 // already surfaced as an alert (see lemonsqueezy-webhook.js) so the org
 // isn't left unaware, but access isn't yanked instantly either.
 const PAID_ACCESS_STATUSES = ['active', 'trialing', 'past_due'];
 
-// GET /api/organization/access — used by DashboardLayout to gate dashboard
+// GET /api/organization/access â€” used by DashboardLayout to gate dashboard
 // routes. Deliberately its own lightweight endpoint rather than folding
-// this into GET / — the dashboard needs this on every load and doesn't
+// this into GET / â€” the dashboard needs this on every load and doesn't
 // need the rest of the org record.
 router.get('/access', async (req, res) => {
   try {
@@ -156,7 +156,7 @@ router.get('/access', async (req, res) => {
 
     // Scheduled ("end of billing period") cancellation: Lemon Squeezy sets
     // status to 'cancelled' immediately when this is scheduled, with
-    // cancelled_at holding the future date access actually ends — not the
+    // cancelled_at holding the future date access actually ends â€” not the
     // moment they clicked cancel. Access should continue until then.
     if (subscription?.status === 'cancelled' && subscription.cancelled_at && new Date(subscription.cancelled_at) > new Date()) {
       return res.json({
@@ -183,11 +183,11 @@ router.get('/access', async (req, res) => {
     });
   } catch (err) {
     console.error('[organization] access check error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// GET /api/organization/entitlements — return current system limits for UI enforcement
+// GET /api/organization/entitlements â€” return current system limits for UI enforcement
 router.get('/entitlements', attachEntitlements, (req, res) => {
   const { limits, usage, features, rate_limits, model_access } = req.entitlements;
   res.json({ data: { limits, usage, features, rate_limits, model_access } });

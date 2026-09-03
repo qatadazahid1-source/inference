@@ -1,9 +1,9 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/integrations ──────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/integrations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List all AI integrations platform-wide with organization details.
 // Note: We omit api_key_hash for security.
 router.get('/', async (req, res) => {
@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
     const { data: rawIntegrations, error } = await query;
     if (error) throw error;
 
-    // Organizations fetched separately — avoids PostgREST embedded-join
+    // Organizations fetched separately â€” avoids PostgREST embedded-join
     // schema-cache issues seen elsewhere in this project.
     const orgIds = [...new Set((rawIntegrations || []).map(i => i.organization_id).filter(Boolean))];
     let orgsById = new Map();
@@ -57,11 +57,11 @@ router.get('/', async (req, res) => {
     res.json({ data: filtered });
   } catch (err) {
     console.error('[admin/integrations] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/integrations/:id/status ───────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/integrations/:id/status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Admin can suspend/deactivate or reactivate an integration.
 router.put('/:id/status', async (req, res) => {
   try {
@@ -95,7 +95,7 @@ router.put('/:id/status', async (req, res) => {
     res.json({ data: integration });
   } catch (err) {
     console.error('[admin/integrations] PUT /status error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

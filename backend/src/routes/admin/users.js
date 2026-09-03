@@ -1,9 +1,9 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/users ─────────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List all users across the platform with their org membership and role.
 router.get('/', async (req, res) => {
   try {
@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
     if (error) throw error;
 
     // Org memberships + orgs fetched separately (avoids PostgREST embedded-
-    // join issues — organization_members has more than one FK to users,
+    // join issues â€” organization_members has more than one FK to users,
     // e.g. user_id AND invited_by/created_by, so PostgREST can't auto-embed
     // without an explicit hint. Fetching separately sidesteps this entirely.)
     const userIds = (rawUsers || []).map(u => u.id);
@@ -112,11 +112,11 @@ router.get('/', async (req, res) => {
     res.json({ data: users, total: count });
   } catch (err) {
     console.error('[admin/users] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/users/:id ─────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/users/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Full detail for a single user: profile + all org memberships + usage stats.
 router.get('/:id', async (req, res) => {
   try {
@@ -130,7 +130,7 @@ router.get('/:id', async (req, res) => {
 
     if (userErr) throw userErr;
 
-    // Org memberships — fetched separately (avoids nested embedded-join
+    // Org memberships â€” fetched separately (avoids nested embedded-join
     // schema-cache issues seen elsewhere in this project).
     const { data: memberships, error: memErr } = await supabase
       .from('organization_members')
@@ -195,7 +195,7 @@ router.get('/:id', async (req, res) => {
       };
     });
 
-    // NOTE: api_usage_logs has no user_id column — usage is only tracked at
+    // NOTE: api_usage_logs has no user_id column â€” usage is only tracked at
     // the organization level in this schema, not per individual user. As a
     // best-effort approximation, stats_30d reports the last-30-day usage
     // for the organization(s) this user belongs to.
@@ -225,11 +225,11 @@ router.get('/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('[admin/users] GET /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/users/:id/role ───────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/users/:id/role â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Change a user's role ('admin' | 'member') within a specific organization.
 router.put('/:id/role', async (req, res) => {
   try {
@@ -264,11 +264,11 @@ router.put('/:id/role', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/users] PUT /:id/role error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/users/:id/platform-admin ─────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/users/:id/platform-admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Toggle platform-admin status for a user.
 router.put('/:id/platform-admin', async (req, res) => {
   try {
@@ -307,11 +307,11 @@ router.put('/:id/platform-admin', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/users] PUT /:id/platform-admin error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/users/:id/status ─────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/users/:id/status â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Activate/deactivate a user's account platform-wide.
 router.put('/:id/status', async (req, res) => {
   try {
@@ -349,7 +349,7 @@ router.put('/:id/status', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/users] PUT /:id/status error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

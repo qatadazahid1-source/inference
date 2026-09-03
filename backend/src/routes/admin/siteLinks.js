@@ -1,11 +1,11 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
 const VALID_SECTIONS = ['product', 'company', 'legal', 'social'];
 
-// ─── GET /api/admin/site-links ────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/site-links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List every link (active and inactive), grouped by section.
 router.get('/', async (req, res) => {
   try {
@@ -20,11 +20,11 @@ router.get('/', async (req, res) => {
     res.json({ data: data || [] });
   } catch (err) {
     console.error('[admin/site-links] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/site-links ───────────────────────────────────────────────
+// â”€â”€â”€ POST /api/admin/site-links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Add a new link.
 router.post('/', async (req, res) => {
   try {
@@ -58,11 +58,11 @@ router.post('/', async (req, res) => {
     res.status(201).json({ data });
   } catch (err) {
     console.error('[admin/site-links] POST / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/site-links/:id ────────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/site-links/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Edit an existing link (label, url, sort_order, is_active).
 router.put('/:id', async (req, res) => {
   try {
@@ -98,11 +98,11 @@ router.put('/:id', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/site-links] PUT /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── DELETE /api/admin/site-links/:id ─────────────────────────────────────────
+// â”€â”€â”€ DELETE /api/admin/site-links/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -123,7 +123,7 @@ router.delete('/:id', async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error('[admin/site-links] DELETE /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

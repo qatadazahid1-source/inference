@@ -1,15 +1,15 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
 
-// ─── GET /api/admin/budgets ───────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/budgets â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // All budgets platform-wide with org info, current month spend, and utilization %.
 router.get('/', async (req, res) => {
   try {
     const { search = '' } = req.query;
 
-    // Fetch all budgets (org fetched separately — avoids PostgREST
+    // Fetch all budgets (org fetched separately â€” avoids PostgREST
     // embedded-join schema-cache issues seen elsewhere in this project)
     let budgetQuery = supabase
       .from('budgets')
@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
       .select('organization_id, cost_usd')
       .gte('logged_at', monthStart);
 
-    // Build spend map: org_id → spend
+    // Build spend map: org_id â†’ spend
     const spendByOrg = {};
     for (const row of usageData || []) {
       const oid = row.organization_id;
@@ -84,11 +84,11 @@ router.get('/', async (req, res) => {
     res.json({ data: enriched });
   } catch (err) {
     console.error('[admin/budgets] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/budgets/summary ──────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/budgets/summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Quick KPIs: total budgets, exceeded count, critical count, total allocated.
 router.get('/summary', async (req, res) => {
   try {
@@ -129,11 +129,11 @@ router.get('/summary', async (req, res) => {
     });
   } catch (err) {
     console.error('[admin/budgets] GET /summary error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/budgets/alerts ───────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/budgets/alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Global platform alerts: unread, recent 100.
 router.get('/alerts', async (req, res) => {
   try {
@@ -167,13 +167,13 @@ router.get('/alerts', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/budgets] GET /alerts error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/budgets/:id/hard-limit ───────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/budgets/:id/hard-limit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Admin can toggle hard-limit enforcement on any budget (pause/resume
-// blocking). NOTE: budgets have no is_active/enabled column in this schema —
+// blocking). NOTE: budgets have no is_active/enabled column in this schema â€”
 // hard_limit is the closest real lever admins have over enforcement.
 router.put('/:id/hard-limit', async (req, res) => {
   try {
@@ -206,11 +206,11 @@ router.put('/:id/hard-limit', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/budgets] PUT /:id/hard-limit error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/budgets/alerts/:id/read ──────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/budgets/alerts/:id/read â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Mark a triggered alert as read/acknowledged.
 router.put('/alerts/:id/read', async (req, res) => {
   try {
@@ -242,7 +242,7 @@ router.put('/alerts/:id/read', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/budgets] PUT /alerts/:id/read error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

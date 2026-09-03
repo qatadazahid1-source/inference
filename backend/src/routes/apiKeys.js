@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../index.js';
 import { encrypt } from '../utils/encryption.js';
 import { attachEntitlements } from '../middleware/requireEntitlements.js';
@@ -6,7 +6,7 @@ import { attachEntitlements } from '../middleware/requireEntitlements.js';
 const router = express.Router();
 
 // Helper: resolve the organization_id for the currently authenticated user.
-// We never trust organization_id from the frontend — it is always looked up
+// We never trust organization_id from the frontend â€” it is always looked up
 // server-side from organization_members, using the verified user id from the JWT.
 async function getOrganizationIdForUser(userId) {
   const { data, error } = await supabase
@@ -63,7 +63,7 @@ router.get('/', async (req, res) => {
     res.json({ data: integrations });
   } catch (err) {
     console.error('[api-keys] GET error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -84,7 +84,7 @@ router.get('/providers', async (req, res) => {
     res.json({ data: data || [] });
   } catch (err) {
     console.error('[api-keys] GET /providers error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -114,7 +114,7 @@ router.post('/', attachEntitlements, async (req, res) => {
     // since there is no built-in endpoint for them. We validate it here rather
     // than trusting the gateway to fail later, so the user gets a clear error
     // at connect time. The value is stored in the free-form metadata jsonb
-    // column — no schema change is needed.
+    // column â€” no schema change is needed.
     if (provider === 'custom' && !metadata?.base_url) {
       return res.status(400).json({ error: 'A custom provider requires metadata.base_url (the OpenAI-compatible API base URL).' });
     }
@@ -148,11 +148,11 @@ router.post('/', attachEntitlements, async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[api-keys] POST error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// Update an existing API key (integration) — display name and/or the key itself.
+// Update an existing API key (integration) â€” display name and/or the key itself.
 // api_key is OPTIONAL on update: if the user only wants to rename the integration,
 // they can omit it and the existing encrypted key is left untouched.
 router.put('/:id', async (req, res) => {
@@ -196,7 +196,7 @@ router.put('/:id', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[api-keys] PUT error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -210,7 +210,7 @@ router.delete('/:id', async (req, res) => {
     // do this before the delete (not relying on a DB cascade) so it's
     // explicit and so a failure here stops the integration from being
     // deleted with dangling active keys left behind. This is a soft-revoke
-    // (is_active = false), never a hard-delete — api_usage_logs rows may
+    // (is_active = false), never a hard-delete â€” api_usage_logs rows may
     // still reference these keys via metadata.platform_key_id.
     const { error: revokeError } = await supabase
       .from('api_keys')
@@ -233,7 +233,7 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error('[api-keys] DELETE error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

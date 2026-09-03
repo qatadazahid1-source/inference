@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
@@ -6,7 +6,7 @@ const router = express.Router();
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const SELECT_COLS = 'id, slug, title, content, meta_title, meta_description, meta_keywords, canonical_url, og_image, robots, content_blocks, is_published, created_at, updated_at';
 
-// ─── GET /api/admin/pages ──────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // List every page (published and draft).
 router.get('/', async (req, res) => {
   try {
@@ -20,11 +20,11 @@ router.get('/', async (req, res) => {
     res.json({ data: data || [] });
   } catch (err) {
     console.error('[admin/pages] GET / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/pages ─────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/admin/pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Create a new page.
 router.post('/', async (req, res) => {
   try {
@@ -75,11 +75,11 @@ router.post('/', async (req, res) => {
     res.status(201).json({ data });
   } catch (err) {
     console.error('[admin/pages] POST / error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/pages/:id ───────────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/pages/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Edit an existing page (any subset of fields).
 router.put('/:id', async (req, res) => {
   try {
@@ -130,11 +130,11 @@ router.put('/:id', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/pages] PUT /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── DELETE /api/admin/pages/:id ────────────────────────────────────────────
+// â”€â”€â”€ DELETE /api/admin/pages/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -155,7 +155,7 @@ router.delete('/:id', async (req, res) => {
     res.status(204).send();
   } catch (err) {
     console.error('[admin/pages] DELETE /:id error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

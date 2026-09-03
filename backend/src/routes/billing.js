@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../index.js';
 
 const router = express.Router();
@@ -32,11 +32,11 @@ async function getUserOrgId(userId) {
 // GET /api/billing/payment-method-url
 //
 // IMPORTANT: this deliberately does NOT collect a card number anywhere in
-// this app. Lemon Squeezy is a Merchant of Record — like Stripe, PCI-DSS
+// this app. Lemon Squeezy is a Merchant of Record â€” like Stripe, PCI-DSS
 // compliance means raw card data can only ever be entered on their own
 // hosted, PCI-compliant page, never inside a form we control and post to
-// our own backend. Building a custom "enter your card" form here — even
-// with good intentions — would mean card numbers passing through our
+// our own backend. Building a custom "enter your card" form here â€” even
+// with good intentions â€” would mean card numbers passing through our
 // servers, which is both a serious security liability and not something
 // Lemon Squeezy's API supports anyway (there's no endpoint to attach a
 // raw card to a customer).
@@ -60,13 +60,13 @@ router.get('/payment-method-url', async (req, res) => {
     if (subError) throw subError;
 
     if (!subscription?.lemonsqueezy_subscription_id) {
-      // No subscription yet — Lemon Squeezy doesn't have a concept of
+      // No subscription yet â€” Lemon Squeezy doesn't have a concept of
       // "add a card with nothing to charge it for". Card entry happens
       // naturally as part of checkout once a plan is picked, so that's
       // the honest answer here rather than pretending a standalone
       // add-card flow exists.
       return res.status(404).json({
-        error: 'No subscription yet — pick a plan first. Card details are added as part of checkout.',
+        error: 'No subscription yet â€” pick a plan first. Card details are added as part of checkout.',
         code: 'no_subscription',
       });
     }
@@ -94,7 +94,7 @@ router.get('/payment-method-url', async (req, res) => {
     res.json({ data: { url: updateUrl } });
   } catch (err) {
     console.error('[billing] payment-method-url error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
@@ -102,11 +102,11 @@ router.get('/payment-method-url', async (req, res) => {
 // body: { immediate: boolean }
 //
 // Lemon Squeezy has two distinct cancel operations:
-//  - PATCH .../subscriptions/{id} with { cancelled: true } → "soft" cancel:
+//  - PATCH .../subscriptions/{id} with { cancelled: true } â†’ "soft" cancel:
 //    status flips to 'cancelled' right away but `ends_at` is set to the
 //    current period end, so the user keeps access until then (matches the
 //    "end of billing cycle" option from the original spec).
-//  - DELETE .../subscriptions/{id} → immediate cancel, access ends now.
+//  - DELETE .../subscriptions/{id} â†’ immediate cancel, access ends now.
 router.post('/cancel-subscription', async (req, res) => {
   try {
     const orgId = await getUserOrgId(req.user.id);
@@ -155,13 +155,13 @@ router.post('/cancel-subscription', async (req, res) => {
       return res.status(502).json({ error: lsBody?.errors?.[0]?.detail || 'Could not cancel subscription with Lemon Squeezy' });
     }
 
-    // Update our own record immediately rather than waiting on the webhook —
+    // Update our own record immediately rather than waiting on the webhook â€”
     // the webhook will arrive shortly after and reconcile to the exact
     // Lemon Squeezy-confirmed date, but the user shouldn't see a stale
     // "active" status (or, for a scheduled cancel, lose access early) just
     // because a webhook round-trip hasn't landed yet. For a scheduled
     // cancel, use the subscription's already-known current_period_end as
-    // the interim cancelled_at — NOT null, since the access check treats a
+    // the interim cancelled_at â€” NOT null, since the access check treats a
     // null cancelled_at on a 'cancelled' subscription as "access already
     // ended", which would incorrectly cut them off immediately instead of
     // at period end.
@@ -178,13 +178,13 @@ router.post('/cancel-subscription', async (req, res) => {
     res.json({ data: { success: true, immediate } });
   } catch (err) {
     console.error('[billing] cancel-subscription error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
 // POST /api/billing/resume-subscription
 // Only works for a *scheduled* cancellation (cancel-at-period-end) that
-// hasn't taken effect yet — Lemon Squeezy supports un-cancelling via the
+// hasn't taken effect yet â€” Lemon Squeezy supports un-cancelling via the
 // same PATCH endpoint with cancelled: false. An immediately-cancelled
 // subscription can't be resumed this way; the user would need to
 // re-subscribe via checkout instead.
@@ -240,7 +240,7 @@ router.post('/resume-subscription', async (req, res) => {
     res.json({ data: { success: true } });
   } catch (err) {
     console.error('[billing] resume-subscription error:', err.message, err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 

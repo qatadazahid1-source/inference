@@ -1,12 +1,12 @@
-import express from 'express';
+﻿import express from 'express';
 import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
 
 const router = express.Router();
 
-// ─── Pricing Audit Logger ────────────────────────────────────────────────────
+// â”€â”€â”€ Pricing Audit Logger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Inserts a row in pricing_audit_log before returning a response.
-// Called by PUT and POST routes. Never throws — audit failure is silent so
+// Called by PUT and POST routes. Never throws â€” audit failure is silent so
 // the actual pricing update is not rolled back because of it.
 async function logPricingChange({ changedBy, modelPricingId, provider, modelName, oldInputCost, oldOutputCost, newInputCost, newOutputCost, action }) {
   try {
@@ -26,7 +26,7 @@ async function logPricingChange({ changedBy, modelPricingId, provider, modelName
   }
 }
 
-// ─── GET /api/admin/pricing ──────────────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/pricing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // All model_pricing rows, ordered by provider then model name.
 router.get('/', async (req, res) => {
   try {
@@ -40,11 +40,11 @@ router.get('/', async (req, res) => {
     res.json({ data });
   } catch (err) {
     console.error('[admin/pricing] GET error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── PUT /api/admin/pricing/:id ──────────────────────────────────────────────
+// â”€â”€â”€ PUT /api/admin/pricing/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Update a specific pricing row by UUID. Logs to pricing_audit_log.
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
@@ -95,11 +95,11 @@ router.put('/:id', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/pricing] PUT error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/pricing ─────────────────────────────────────────────────
+// â”€â”€â”€ POST /api/admin/pricing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Add a new provider+model pricing entry. Logs to pricing_audit_log.
 router.post('/', async (req, res) => {
   const { provider, model, input_cost_per_1k, output_cost_per_1k, context_window } = req.body;
@@ -139,11 +139,11 @@ router.post('/', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/pricing] POST error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/pricing/sync-openrouter ─────────────────────────────────
+// â”€â”€â”€ POST /api/admin/pricing/sync-openrouter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Fetches latest pricing from OpenRouter API and updates DB
 router.post('/sync-openrouter', async (req, res) => {
   try {
@@ -292,11 +292,11 @@ router.post('/sync-openrouter', async (req, res) => {
     res.json({ success: true, updatedCount, insertedCount, totalProcessed: targetModels.length });
   } catch (err) {
     console.error('[admin/pricing] Sync error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── POST /api/admin/pricing/sync-custom-urls ────────────────────────────────
+// â”€â”€â”€ POST /api/admin/pricing/sync-custom-urls â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Fetches pricing from custom provider URLs using an LLM scraping agent
 router.post('/sync-custom-urls', async (req, res) => {
   const { providers } = req.body;
@@ -434,12 +434,12 @@ router.post('/sync-custom-urls', async (req, res) => {
     });
   } catch (err) {
     console.error('[admin/pricing] Custom URL sync error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
 
-// ─── DELETE /api/admin/pricing/:id ───────────────────────────────────────────
+// â”€â”€â”€ DELETE /api/admin/pricing/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Soft-delete only: sets is_active = false. Never hard-deletes.
 // Deactivated models keep all historical cost data intact.
 router.delete('/:id', async (req, res) => {
@@ -480,11 +480,11 @@ router.delete('/:id', async (req, res) => {
     res.json({ success: true, data });
   } catch (err) {
     console.error('[admin/pricing] DELETE error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
-// ─── GET /api/admin/pricing/audit-log ────────────────────────────────────────
+// â”€â”€â”€ GET /api/admin/pricing/audit-log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Most recent 50 entries from pricing_audit_log with the changer's email.
 router.get('/audit-log', async (req, res) => {
   try {
@@ -540,7 +540,7 @@ router.get('/audit-log', async (req, res) => {
     res.json({ data: mapped });
   } catch (err) {
     console.error('[admin/pricing] GET /audit-log error:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
 
