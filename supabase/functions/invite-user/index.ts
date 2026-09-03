@@ -126,7 +126,7 @@ serve(async (req) => {
       })
 
       if (!res.ok) {
-        console.error('Failed to send email:', await res.text())
+        console.error(`[Resend] Failed to send email. HTTP Status: ${res.status}`)
       }
     }
 

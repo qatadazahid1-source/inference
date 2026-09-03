@@ -48,3 +48,6 @@ coverage/
 # Local only
 *.local
 *.zip
+
+# Supabase local CLI cache (contains project ref, DB connection strings)
+supabase/.temp/
