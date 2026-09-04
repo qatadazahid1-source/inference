@@ -1,5 +1,6 @@
-﻿import express from 'express';
+import express from 'express';
 import { supabase } from '../index.js';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
@@ -278,9 +279,17 @@ router.get('/sitemap.xml', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ POST /api/public/contact â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Unauthenticated â€” accepts contact sales submissions and saves to sales_leads.
-router.post('/contact', async (req, res) => {
+// ————————————————————————————————————————————————————————————————————————————
+// Unauthenticated — accepts contact sales submissions and saves to sales_leads.
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many contact requests from this IP, please try again after an hour.' }
+});
+
+router.post('/contact', contactLimiter, async (req, res) => {
   try {
     const { first_name, last_name, email, company, employees, message } = req.body;
 

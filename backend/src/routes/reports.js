@@ -1,6 +1,7 @@
 import express from 'express';
 import { supabase } from '../index.js';
 import { attachEntitlements } from '../middleware/requireEntitlements.js';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
 
@@ -146,7 +147,16 @@ router.get('/:id/snapshot', async (req, res) => {
 });
 
 // POST /api/reports — generate a new report with a real data snapshot
-router.post('/', attachEntitlements, async (req, res) => {
+const reportsLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.id || req['ip'],
+  message: { error: 'Too many report generation requests. Please try again later.' }
+});
+
+router.post('/', attachEntitlements, reportsLimiter, async (req, res) => {
   if (!req.entitlements.hasFeature('reports')) {
     return res.status(403).json({ error: 'Reports feature is not available on your plan.' });
   }

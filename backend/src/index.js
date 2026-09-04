@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
@@ -22,6 +22,7 @@ import platformKeysRouter from './routes/platformKeys.js';
 import v1Router from './routes/v1.js';
 import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
+import { proxyLimiter, v1Limiter, securityLimiter } from './middleware/rateLimiters.js';
 
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -168,36 +169,8 @@ export const requirePlatformKey = async (req, res, next) => {
 };
 
 // --- Rate Limiters ---
-
-// AI proxy: 60 req/min per IP (existing, unchanged)
-const proxyLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many proxy requests from this IP, please try again after a minute' }
-});
-
-// External /v1 gateway: 60 req/min per IP (existing, unchanged)
-const v1Limiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 60,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: { message: 'Rate limit exceeded. Please retry after a minute.', type: 'rate_limit_error' } }
-});
-
-// Security/2FA/Sessions: 5 req/min per IP.
-// Covers: /track-login, /2fa/*, /sessions/*, /login-history.
-// 5/min allows a full 2FA enrollment flow (start, verify, backup codes = 3
-// requests) without blocking legitimate users while preventing brute-force.
-const securityLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many security requests from this IP, please try again after a minute' }
-});
+// Limiters (proxyLimiter, v1Limiter, securityLimiter) are imported from middleware/rateLimiters.js
+// to allow safe reuse across the codebase without circular dependencies.
 
 // --- Routes ---
 app.use('/api/public', publicRouter);

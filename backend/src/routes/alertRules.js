@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../index.js';
 import { sendAlertEmail } from '../utils/sendAlertEmail.js';
 import { attachEntitlements } from '../middleware/requireEntitlements.js';
+import { proxyLimiter } from '../middleware/rateLimiters.js';
 
 const router = express.Router();
 
@@ -194,7 +195,7 @@ router.delete('/:id', async (req, res) => {
 //
 // Dedup: a rule that triggered within the last hour (last_triggered_at) is
 // skipped, so reloading/polling the page doesn't spam duplicate alerts.
-router.post('/check', async (req, res) => {
+router.post('/check', proxyLimiter, async (req, res) => {
   try {
     const organization_id = await getUserOrgId(req.user.id);
 
@@ -217,8 +218,16 @@ router.post('/check', async (req, res) => {
     // yesterday and today.
     const yesterdayEnd = todayStart;
 
+    const escapeHtml = (s) => String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+
     for (const rule of rules || []) {
       checked += 1;
+      const safeRuleName = escapeHtml(rule.name);
 
       // Dedup: skip if this rule already fired within the last hour
       if (rule.last_triggered_at) {
@@ -288,9 +297,9 @@ router.post('/check', async (req, res) => {
           for (const email of emailRecipients) {
             await sendAlertEmail({
               to: email,
-              subject: `[Ordisum] Alert: ${rule.name}`,
-              title: `Alert Triggered: ${rule.name}`,
-              message: `"${rule.name}" triggered: spend has reached ${percent.toFixed(1)}% of the total budget ($${spend.toFixed(2)} of $${totalBudget.toFixed(2)}).`,
+              subject: `[Ordisum] Alert: ${safeRuleName}`,
+              title: `Alert Triggered: ${safeRuleName}`,
+              message: `"${safeRuleName}" triggered: spend has reached ${percent.toFixed(1)}% of the total budget ($${spend.toFixed(2)} of $${totalBudget.toFixed(2)}).`,
               severity,
             });
           }
@@ -326,9 +335,9 @@ router.post('/check', async (req, res) => {
           for (const email of emailRecipients) {
             await sendAlertEmail({
               to: email,
-              subject: `[Ordisum] Alert: ${rule.name}`,
-              title: `Alert Triggered: ${rule.name}`,
-              message: `"${rule.name}" triggered: today's spend is $${todaySpend.toFixed(2)}, at or above the $${Number(rule.condition_value).toFixed(2)} threshold.`,
+              subject: `[Ordisum] Alert: ${safeRuleName}`,
+              title: `Alert Triggered: ${safeRuleName}`,
+              message: `"${safeRuleName}" triggered: today's spend is $${todaySpend.toFixed(2)}, at or above the $${Number(rule.condition_value).toFixed(2)} threshold.`,
               severity,
             });
           }
@@ -363,9 +372,9 @@ router.post('/check', async (req, res) => {
           for (const email of emailRecipients) {
             await sendAlertEmail({
               to: email,
-              subject: `[Ordisum] Alert: ${rule.name}`,
-              title: `Alert Triggered: ${rule.name}`,
-              message: `"${rule.name}" triggered: today's usage is ${todayTokens.toLocaleString()} tokens, at or above the ${Number(rule.condition_value).toLocaleString()} threshold.`,
+              subject: `[Ordisum] Alert: ${safeRuleName}`,
+              title: `Alert Triggered: ${safeRuleName}`,
+              message: `"${safeRuleName}" triggered: today's usage is ${todayTokens.toLocaleString()} tokens, at or above the ${Number(rule.condition_value).toLocaleString()} threshold.`,
               severity,
             });
           }
@@ -405,9 +414,9 @@ router.post('/check', async (req, res) => {
           for (const email of emailRecipients) {
             await sendAlertEmail({
               to: email,
-              subject: `[Ordisum] Alert: ${rule.name}`,
-              title: `Alert Triggered: ${rule.name}`,
-              message: `"${rule.name}" triggered: ${failed} failed request${failed === 1 ? '' : 's'} in the last hour, at or above the threshold of ${Number(rule.condition_value)}.`,
+              subject: `[Ordisum] Alert: ${safeRuleName}`,
+              title: `Alert Triggered: ${safeRuleName}`,
+              message: `"${safeRuleName}" triggered: ${failed} failed request${failed === 1 ? '' : 's'} in the last hour, at or above the threshold of ${Number(rule.condition_value)}.`,
               severity,
             });
           }
@@ -458,9 +467,9 @@ router.post('/check', async (req, res) => {
           for (const email of emailRecipients) {
             await sendAlertEmail({
               to: email,
-              subject: `[Ordisum] Alert: ${rule.name}`,
-              title: `Alert Triggered: ${rule.name}`,
-              message: `"${rule.name}" triggered: today's spend ($${todaySpend.toFixed(2)}) is ${multiple.toFixed(1)}x yesterday's ($${yesterdaySpend.toFixed(2)}), above the ${Number(rule.condition_value)}x threshold.`,
+              subject: `[Ordisum] Alert: ${safeRuleName}`,
+              title: `Alert Triggered: ${safeRuleName}`,
+              message: `"${safeRuleName}" triggered: today's spend ($${todaySpend.toFixed(2)}) is ${multiple.toFixed(1)}x yesterday's ($${yesterdaySpend.toFixed(2)}), above the ${Number(rule.condition_value)}x threshold.`,
               severity,
             });
           }
