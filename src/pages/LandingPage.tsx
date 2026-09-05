@@ -87,9 +87,6 @@ const IconLinkedIn = () => (
   </svg>
 );
 
-// ─── MINI CHART DATA ──────────────────────────────────────────────────────────
-const chartData = [28, 45, 32, 58, 41, 67, 52, 74, 61, 83, 70, 92, 78, 100];
-
 // ─── HELPER ──────────────────────────────────────────────────────────────────
 const formatUrl = (url: string) => {
   if (!url) return '#';
@@ -257,73 +254,11 @@ export default function LandingPage() {
 
         {/* Dashboard Widget / Image Placeholder */}
         <div className={styles.heroWidget} style={{ position: 'relative' }}>
-          {/* PLACEHOLDER: Replace this div/img with the actual product screenshot provided later */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: '12px' }}>
-             <img src="/images/placeholder-hero.svg" alt="Ordisum Dashboard Placeholder" style={{ maxWidth: '100%', height: 'auto', opacity: 0.5 }} />
-             <p style={{ position: 'absolute', color: 'white', fontWeight: 'bold' }}>Dashboard Image Placeholder</p>
-          </div>
-          
-          <div className={styles.widgetTopBar}>
-            <div className={styles.widgetDots}>
-              <div className={styles.widgetDot} />
-              <div className={styles.widgetDot} />
-              <div className={styles.widgetDot} />
-            </div>
-            <span className={styles.widgetTitle}>COST ANALYTICS</span>
-            <span style={{ width: 48 }} />
-          </div>
-
-          <div className={styles.widgetBody}>
-            <div className={styles.widgetKpiRow}>
-              <div className={styles.widgetKpi}>
-                <div className={styles.widgetKpiLabel}>Total Spend</div>
-                <div className={styles.widgetKpiValue}>$2,847</div>
-                <div className={styles.widgetKpiSub}>this month</div>
-              </div>
-              <div className={styles.widgetKpi}>
-                <div className={styles.widgetKpiLabel}>Requests</div>
-                <div className={styles.widgetKpiValue}>48.3K</div>
-                <div className={styles.widgetKpiSub}>last 30 days</div>
-              </div>
-              <div className={styles.widgetKpi}>
-                <div className={styles.widgetKpiLabel}>Avg Cost/1K</div>
-                <div className={styles.widgetKpiValue}>$0.058</div>
-                <div className={styles.widgetKpiSub}>tokens</div>
-              </div>
-              <div className={styles.widgetKpi}>
-                <div className={styles.widgetKpiLabel}>Budget Used</div>
-                <div className={styles.widgetKpiValue}>71%</div>
-                <div className={styles.widgetKpiSub}>$4,000 limit</div>
-              </div>
-            </div>
-
-            <div className={styles.widgetChartLabel}>Daily Spend — 14 days</div>
-            <div className={styles.miniChart}>
-              {chartData.map((h, i) => (
-                <div
-                  key={i}
-                  className={`${styles.miniBar} ${i === chartData.length - 1 ? styles.miniBarActive : ''}`}
-                  style={{ height: `${h}%` }}
-                />
-              ))}
-            </div>
-
-            <hr className={styles.widgetDivider} />
-
-            <div className={styles.widgetLogList}>
-              {[
-                { provider: 'groq / llama-3.3-70b', tokens: '12,480 tok', cost: '$0.0062' },
-                { provider: 'openai / gpt-4o-mini', tokens: '8,240 tok', cost: '$0.0041' },
-                { provider: 'anthropic / claude-3-haiku', tokens: '6,100 tok', cost: '$0.0037' },
-              ].map((row, i) => (
-                <div key={i} className={styles.widgetLogRow}>
-                  <span className={styles.widgetLogProvider}>{row.provider}</span>
-                  <span className={styles.widgetLogTokens}>{row.tokens}</span>
-                  <span className={styles.widgetLogCost}>{row.cost}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <img 
+            src="/images/dashboard-hero.png" 
+            alt="ORDISUM AI Cost Intelligence Dashboard" 
+            style={{ width: '100%', height: 'auto', borderRadius: '12px', display: 'block', border: '1px solid var(--color-border)' }} 
+          />
         </div>
       </section>
 
