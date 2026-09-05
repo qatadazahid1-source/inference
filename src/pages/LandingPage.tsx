@@ -102,18 +102,26 @@ const formatUrl = (url: string) => {
 // ─── COMPONENT ───────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const [pricingPlans, setPricingPlans] = useState<any[]>([]);
+  const [pricingLoading, setPricingLoading] = useState(true);
   const [siteLinks, setSiteLinks] = useState<any>({ product: [], company: [], legal: [], social: [] });
   const [homeSeo, setHomeSeo] = useState<HomeSeo>({});
 
   useEffect(() => {
+    let cancelled = false;
     fetch('/api/public/pricing-plans')
       .then(res => res.json())
       .then(data => {
-        if (data.data && data.data.length > 0) {
-          setPricingPlans(data.data);
+        if (!cancelled) {
+          if (data.data && data.data.length > 0) {
+            setPricingPlans(data.data);
+          }
+          setPricingLoading(false);
         }
       })
-      .catch(err => console.error('Failed to load pricing:', err));
+      .catch(err => {
+        console.error('[LandingPage] Failed to load pricing:', err);
+        if (!cancelled) setPricingLoading(false);
+      });
 
     fetch('/api/public/site-links')
       .then(res => res.json())
@@ -135,6 +143,7 @@ export default function LandingPage() {
         }
       })
       .catch(() => { /* no CMS record — fall back to defaults */ });
+    return () => { cancelled = true; };
   }, []);
 
   // ─── Resolved SEO values (CMS → fallback default) ──────────────────────────
@@ -511,94 +520,60 @@ export default function LandingPage() {
         </div>
 
         <div className={styles.pricingGrid}>
-          {pricingPlans.length > 0 ? (
-            pricingPlans.map((plan: any) => (
-              <div key={plan.id} className={`${styles.pricingCard} ${plan.is_popular ? styles.pricingCardFeatured : ''}`}>
-                <p className={styles.pricingPlan}>{plan.name}</p>
-                <div className={styles.pricingPrice}>
-                  {plan.price_monthly === 0 ? (
-                    <><sup>$</sup>0</>
-                  ) : plan.price_monthly ? (
-                    <><sup>$</sup>{plan.price_monthly}</>
+          {pricingLoading ? (
+            // Loading state — prevents stale hardcoded cards from flashing.
+            // Invisible placeholder that keeps the section height stable.
+            <p style={{ textAlign: 'center', opacity: 0.4, gridColumn: '1 / -1', padding: '2rem 0' }}>Loading plans…</p>
+          ) : pricingPlans.length > 0 ? (
+            pricingPlans.map((plan: any) => {
+              // Plans with price_monthly=0 AND price_annual=0 are Custom (e.g. Enterprise).
+              // A legitimate $0 paid plan would never exist in ORDISUM's current model.
+              const isCustom = Number(plan.price_monthly) === 0 && Number(plan.price_annual) === 0;
+              const isEnterprise = plan.slug === 'enterprise';
+              return (
+                <div key={plan.id} className={`${styles.pricingCard} ${plan.is_popular ? styles.pricingCardFeatured : ''}`}>
+                  <p className={styles.pricingPlan}>{plan.name}</p>
+                  <div className={styles.pricingPrice}>
+                    {isCustom ? (
+                      <span style={{ fontSize: 32 }}>Custom</span>
+                    ) : (
+                      <><sup>$</sup>{plan.price_monthly}</>
+                    )}
+                  </div>
+                  <p className={styles.pricingPeriod}>{plan.tagline || 'Contact us for details'}</p>
+                  <hr className={styles.pricingDivider} />
+                  <ul className={styles.pricingFeatures}>
+                    {plan.display_features?.map((feature: any, idx: number) => (
+                      <li
+                        key={idx}
+                        style={{
+                          opacity: typeof feature === 'object' && feature.included === false ? 0.4 : 1,
+                          textDecoration: typeof feature === 'object' && feature.included === false ? 'line-through' : 'none'
+                        }}
+                      >
+                        {typeof feature === 'string' ? feature : feature.text}
+                      </li>
+                    ))}
+                  </ul>
+                  {isEnterprise ? (
+                    <Link to="/contact-sales" className={styles.pricingCta}>
+                      {plan.cta_text || 'Contact Sales'}
+                    </Link>
                   ) : (
-                    <span style={{ fontSize: 32 }}>Custom</span>
+                    <Link to={`/auth/signup?plan=${plan.slug}`} className={`${styles.pricingCta} ${plan.is_popular ? styles.pricingCtaFeatured : ''}`}>
+                      {plan.cta_text || 'Start free trial'}
+                    </Link>
                   )}
                 </div>
-                <p className={styles.pricingPeriod}>{plan.tagline || 'Contact us for details'}</p>
-                <hr className={styles.pricingDivider} />
-                <ul className={styles.pricingFeatures}>
-                  {plan.display_features?.map((feature: any, idx: number) => (
-                    <li
-                      key={idx}
-                      style={{
-                        opacity: typeof feature === 'object' && feature.included === false ? 0.4 : 1,
-                        textDecoration: typeof feature === 'object' && feature.included === false ? 'line-through' : 'none'
-                      }}
-                    >
-                      {typeof feature === 'string' ? feature : feature.text}
-                    </li>
-                  ))}
-                </ul>
-                <Link to={`/auth/signup?plan=${plan.slug}`} className={`${styles.pricingCta} ${plan.is_popular ? styles.pricingCtaFeatured : ''}`}>
-                  {plan.cta_text || 'Start free trial'}
-                </Link>
-              </div>
-            ))
+              );
+            })
           ) : (
-            <>
-              {/* Starter */}
-              <div className={styles.pricingCard}>
-                <p className={styles.pricingPlan}>Starter</p>
-                <div className={styles.pricingPrice}><sup>$</sup>0</div>
-                <p className={styles.pricingPeriod}>14-day free trial, then free tier</p>
-                <hr className={styles.pricingDivider} />
-                <ul className={styles.pricingFeatures}>
-                  <li>Up to 10,000 logged requests/mo</li>
-                  <li>1 connected provider</li>
-                  <li>Cost Analytics dashboard</li>
-                  <li>Basic budget alerts</li>
-                  <li>7-day data retention</li>
-                </ul>
-                <Link to="/auth/signup" className={styles.pricingCta}>Get started free</Link>
-              </div>
-
-              {/* Professional */}
-              <div className={`${styles.pricingCard} ${styles.pricingCardFeatured}`}>
-                <p className={styles.pricingPlan}>Professional</p>
-                <div className={styles.pricingPrice}><sup>$</sup>49</div>
-                <p className={styles.pricingPeriod}>per month, billed monthly</p>
-                <hr className={styles.pricingDivider} />
-                <ul className={styles.pricingFeatures}>
-                  <li>Unlimited logged requests</li>
-                  <li>All supported providers</li>
-                  <li>Hard budget enforcement</li>
-                  <li>Platform API Keys (external gateway)</li>
-                  <li>Alert rules (cost, tokens, errors, spikes)</li>
-                  <li>Reports + CSV/PDF export</li>
-                  <li>90-day data retention</li>
-                </ul>
-                <Link to="/auth/signup?plan=professional" className={`${styles.pricingCta} ${styles.pricingCtaFeatured}`}>
-                  Start free trial
-                </Link>
-              </div>
-
-              {/* Enterprise */}
-              <div className={styles.pricingCard}>
-                <p className={styles.pricingPlan}>Enterprise</p>
-                <div className={styles.pricingPrice} style={{ fontSize: 32 }}>Custom</div>
-                <p className={styles.pricingPeriod}>volume pricing, SLA available</p>
-                <hr className={styles.pricingDivider} />
-                <ul className={styles.pricingFeatures}>
-                  <li>Everything in Professional</li>
-                  <li>Dedicated support</li>
-                  <li>Custom data retention</li>
-                  <li>SSO / SAML</li>
-                  <li>Team roles and permissions</li>
-                  <li>Priority onboarding</li>
-                </ul>
-                <Link to="/contact-sales" className={styles.pricingCta}>Contact sales</Link>
-              </div>
-            </>
+            // Fail-soft: API returned empty or failed — show a neutral CTA
+            // rather than stale/incorrect hardcoded pricing cards.
+            <div style={{ textAlign: 'center', gridColumn: '1 / -1', padding: '2rem 0' }}>
+              <p style={{ opacity: 0.6, marginBottom: '1rem' }}>Pricing information is temporarily unavailable.</p>
+              <Link to="/auth/signup" className={styles.pricingCta}>Get started</Link>
+            </div>
           )}
         </div>
       </section>
