@@ -386,18 +386,171 @@ export default function MarketingPage({ slug, template = 'marketing' }: Marketin
     }
 
     if (status === 'error' || !page) {
+        // ── Static prerender fallback ──────────────────────────────────────────
+        // During react-snap the backend API is unreachable, so the fetch always
+        // fails and status becomes 'error'. Instead of freezing an error state
+        // into the generated HTML, we render a minimal but meaningful static
+        // shell for the three known marketing slugs.
+        //
+        // HYDRATION SAFETY: When JavaScript loads in the browser the useEffect
+        // will re-fire, fetch the real CMS data (if available), and replace this
+        // shell with live content — no hydration mismatch because both renders
+        // produce a valid DOM tree with the same root structure.
+        //
+        // For unknown/dynamic slugs we still show the error state (the slug
+        // isn't a known marketing page, so no safe fallback exists).
+        const FALLBACKS: Record<string, {
+            metaTitle: string;
+            metaDescription: string;
+            canonical: string;
+            h1: string;
+            subheadline: string;
+            sections: Array<{ heading: string; body: string }>;
+            primaryCta: { label: string; href: string };
+            secondaryCta: { label: string; href: string };
+        }> = {
+            features: {
+                metaTitle: 'Features — Ordisum',
+                metaDescription:
+                    'Real-time AI API cost observability, budget enforcement, multi-provider dashboards, anomaly detection, and export tools — all in one platform.',
+                canonical: `${SITE_URL}/features`,
+                h1: 'Every feature your team needs to control AI spend',
+                subheadline:
+                    'From real-time cost dashboards to hard budget limits and one-click exports — Ordisum gives engineering and finance teams full visibility into AI API usage.',
+                sections: [
+                    {
+                        heading: 'Unified multi-provider dashboard',
+                        body: 'See spend across OpenAI, Anthropic, Google Gemini, Azure OpenAI, AWS Bedrock, Mistral, Groq and Cohere in a single view — updated every 5 minutes.',
+                    },
+                    {
+                        heading: 'Per-team and per-project budget limits',
+                        body: 'Set hard spending caps at the organisation, team or project level. Requests are automatically blocked before the limit is exceeded.',
+                    },
+                    {
+                        heading: 'Real-time anomaly detection',
+                        body: 'Ordisum fires an alert when spend spikes 3× above your 7-day average, so you catch runaway jobs before they hit the invoice.',
+                    },
+                    {
+                        heading: 'CSV and XLSX export',
+                        body: 'Finance teams can pull any date range into a spreadsheet in one click. Perfect for board reports and cost-allocation workflows.',
+                    },
+                ],
+                primaryCta: { label: 'Start Free Trial', href: '/auth/signup' },
+                secondaryCta: { label: 'Read the docs', href: '/docs' },
+            },
+            pricing: {
+                metaTitle: 'Pricing — Ordisum',
+                metaDescription:
+                    'Simple, transparent pricing for AI API cost management. Start free and scale with your team.',
+                canonical: `${SITE_URL}/pricing`,
+                h1: 'Simple pricing, no surprises',
+                subheadline:
+                    'Start with a free trial and upgrade when you need more seats, providers or budget controls. Every plan includes real-time dashboards and anomaly detection.',
+                sections: [
+                    {
+                        heading: 'All plans include',
+                        body: 'Real-time cost dashboards · Multi-provider support · Budget alerts · Anomaly detection · CSV/XLSX export · Team roles (Owner, Admin, Member, Viewer)',
+                    },
+                    {
+                        heading: 'No per-request fees',
+                        body: 'Ordisum connects to provider usage APIs using read-only keys. We never sit in your inference path, so there are no per-token or per-request charges.',
+                    },
+                ],
+                primaryCta: { label: 'Start Free Trial', href: '/auth/signup' },
+                secondaryCta: { label: 'Contact Sales', href: '/contact-sales' },
+            },
+            security: {
+                metaTitle: 'Security — Ordisum',
+                metaDescription:
+                    'How Ordisum protects your data: read-only provider keys, zero prompt storage, encrypted credentials, and enterprise-grade access controls.',
+                canonical: `${SITE_URL}/security`,
+                h1: 'Security built for enterprise AI teams',
+                subheadline:
+                    'Ordisum reads cost and usage metadata only. We never store your prompts, completions or model outputs.',
+                sections: [
+                    {
+                        heading: 'Read-only API keys',
+                        body: 'You provide read-only API keys scoped to usage/billing endpoints. Ordisum cannot make inference requests or modify your provider account.',
+                    },
+                    {
+                        heading: 'Zero prompt storage',
+                        body: 'We collect token counts, latency and cost metadata only — never the content of your requests or model responses.',
+                    },
+                    {
+                        heading: 'Encrypted credentials',
+                        body: 'All provider keys are encrypted at rest using AES-256. Keys are never exposed in logs, dashboards or API responses.',
+                    },
+                    {
+                        heading: 'Role-based access control',
+                        body: 'Assign Owner, Admin, Member or Viewer roles per organisation. Viewers cannot modify settings or access provider credentials.',
+                    },
+                ],
+                primaryCta: { label: 'Start Free Trial', href: '/auth/signup' },
+                secondaryCta: { label: 'Contact Sales', href: '/contact-sales' },
+            },
+        };
+
+        const fallback = FALLBACKS[routeSlug] ?? null;
+
+        if (!fallback) {
+            // Unknown slug — keep the original error state.
+            return (
+                <div className={styles.page}>
+                    <div className={styles.stateWrap}>
+                        <p className={styles.eyebrow}>Error</p>
+                        <h1 className={styles.stateTitle}>Something went wrong</h1>
+                        <p className={styles.stateText}>
+                            Couldn't load this page right now — please try again shortly.
+                        </p>
+                        <Link to="/" className={styles.homeLink}>
+                            ← Back to home
+                        </Link>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className={styles.page}>
-                <div className={styles.stateWrap}>
-                    <p className={styles.eyebrow}>Error</p>
-                    <h1 className={styles.stateTitle}>Something went wrong</h1>
-                    <p className={styles.stateText}>
-                        Couldn't load this page right now — please try again shortly.
-                    </p>
-                    <Link to="/" className={styles.homeLink}>
-                        ← Back to home
-                    </Link>
-                </div>
+                <Seo
+                    title={fallback.metaTitle}
+                    description={fallback.metaDescription}
+                    canonical={fallback.canonical}
+                    robots="index,follow"
+                    ogType="website"
+                />
+                <Navbar />
+
+                {/* Hero */}
+                <section className={styles.hero}>
+                    <div className={styles.container}>
+                        <h1 className={styles.heroHeadline}>{fallback.h1}</h1>
+                        <p className={styles.heroSub}>{fallback.subheadline}</p>
+                        <div className={styles.heroCtas}>
+                            <Link to={fallback.primaryCta.href} className={styles.ctaPrimary}>
+                                {fallback.primaryCta.label}
+                            </Link>
+                            <Link to={fallback.secondaryCta.href} className={styles.ctaSecondary}>
+                                {fallback.secondaryCta.label}
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Key sections */}
+                {fallback.sections.map((s, i) => (
+                    <section key={i} className={styles.section}>
+                        <div className={styles.container}>
+                            <h2 className={styles.sectionHeading}>{s.heading}</h2>
+                            <p className={styles.prose}>{s.body}</p>
+                        </div>
+                    </section>
+                ))}
+
+                {/* Pricing widget for /pricing route */}
+                {routeSlug === 'pricing' && <PricingSection />}
+
+                <Footer />
             </div>
         );
     }
