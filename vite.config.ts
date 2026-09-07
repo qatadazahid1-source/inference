@@ -26,6 +26,7 @@ export default defineConfig({
     }
   },
   build: {
+    target: 'es2019',
     rollupOptions: {
       output: {
         // ── Manual vendor chunking (SEO-25) ──────────────────────────
