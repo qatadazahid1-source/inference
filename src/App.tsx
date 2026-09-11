@@ -277,6 +277,11 @@ export default function App() {
         <Route path="/pricing" element={<MarketingPage slug="pricing" />} />
         <Route path="/security" element={<MarketingPage slug="security" />} />
 
+        {/* ── Legal Pages (CMS-driven fallbacks, explicit routes before catch-all) ── */}
+        <Route path="/privacy-policy" element={<StaticPage />} />
+        <Route path="/terms" element={<StaticPage />} />
+        <Route path="/refund-policy" element={<StaticPage />} />
+
         {/* ── Dynamic Marketing Templates (one reusable route per category) ── */}
         <Route
           path="/alternatives/:slug"

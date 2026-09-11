@@ -11,7 +11,8 @@
     "postbuild": "react-snap",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -63,7 +64,10 @@
       "/security",
       "/contact-sales",
       "/blog",
-      "/docs"
+      "/docs",
+      "/privacy-policy",
+      "/terms",
+      "/refund-policy"
     ],
     "puppeteerArgs": [
       "--no-sandbox",
