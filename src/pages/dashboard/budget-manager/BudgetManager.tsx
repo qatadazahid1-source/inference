@@ -3,6 +3,8 @@ import { Bell, MoreVertical, Plus } from 'lucide-react';
 import { Button } from '../../../components/ui/Button/Button';
 import { Badge } from '../../../components/ui/Badge/Badge';
 import { Modal } from '../../../components/ui/Modal/Modal';
+import { GridContainer, GridItem } from '../../../components/layout/Grid';
+import { KPICard } from '../../../components/dashboard/KPICard/KPICard';
 
 import type { Budget } from '../../../types/dashboard.types';
 import { useAuth } from '../../../hooks/useAuth';
@@ -48,6 +50,10 @@ export function BudgetManager() {
   const createBudget = useCreateBudget();
   const updateBudget = useUpdateBudget();
   const deleteBudget = useDeleteBudget();
+
+  const totalAllocated = budgets.reduce((acc: number, b: any) => acc + (Number(b.total_budget) || 0), 0);
+  const activeSpend = budgets.reduce((acc: number, b: any) => acc + (Number(b.current_spend) || 0), 0);
+  const utilizationPct = totalAllocated > 0 ? (activeSpend / totalAllocated) * 100 : 0;
 
   const handleCreate = () => {
     setEditingBudgetId(null);
@@ -134,6 +140,44 @@ export function BudgetManager() {
           Create Budget
         </Button>
       </div>
+
+      {!isLoading && budgets.length > 0 && (
+        <GridContainer className={styles.summaryGrid}>
+          <GridItem span={4}>
+            <KPICard
+              data={{
+                label: 'Total Allocated Budget',
+                value: `$${totalAllocated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                icon: 'DollarSign',
+                isPrimary: true,
+                trendText: `${budgets.length} active budget${budgets.length === 1 ? '' : 's'}`,
+              }}
+            />
+          </GridItem>
+          <GridItem span={4}>
+            <KPICard
+              data={{
+                label: 'Active Spend',
+                value: `$${activeSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                icon: 'Activity',
+                isPrimary: false,
+                trendText: 'Current billing period',
+              }}
+            />
+          </GridItem>
+          <GridItem span={4}>
+            <KPICard
+              data={{
+                label: 'Overall Utilization',
+                value: `${utilizationPct.toFixed(1)}%`,
+                icon: 'Target',
+                isPrimary: false,
+                trendText: 'Capacity consumed',
+              }}
+            />
+          </GridItem>
+        </GridContainer>
+      )}
 
       {isLoading ? (
         <div className={styles.empty}>

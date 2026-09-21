@@ -9,7 +9,7 @@
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const FROM_ADDRESS = process.env.ALERT_FROM_EMAIL || 'alerts@ordisum.com';
-const SITE_URL = process.env.SITE_URL || 'https://app.ordisum.com';
+const SITE_URL = process.env.SITE_URL || 'https://ordisum.com';
 
 /**
  * Send an alert email via Resend.

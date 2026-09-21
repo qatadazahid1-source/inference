@@ -92,8 +92,10 @@ export interface AnalyticsDerived {
  */
 function periodFromDays(days: number): string {
     if (days === 7) return '7d';
-    if (days === 90 || days === 365) return 'all';
-    return '30d';
+    if (days === 30) return '30d';
+    if (days === 90) return '90d';
+    // 365 (YTD) and any unrecognised value → all historical data
+    return 'all';
 }
 
 /** Transform raw analytics → DashboardOverview (mirrors getOverview). */

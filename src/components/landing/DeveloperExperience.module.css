@@ -1,0 +1,114 @@
+.section {
+  padding: 80px 48px;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.left {
+  padding: 48px;
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: var(--fw-extrabold);
+  color: var(--color-text-primary);
+  line-height: 1.25;
+  margin: 0 0 16px;
+}
+
+.description {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.65;
+  margin: 0 0 24px;
+}
+
+.bulletList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bullet {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-primary);
+}
+
+.bulletDot {
+  width: 5px;
+  height: 5px;
+  background: var(--color-text-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.right {
+  padding: 32px;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+}
+
+.codeBox {
+  width: 100%;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.comment { color: var(--color-text-tertiary); }
+.keyword { color: var(--color-text-secondary); }
+.string  { color: var(--color-signal); }
+.variable { color: var(--color-text-primary); }
+
+@media (max-width: 900px) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+  .left {
+    padding: 32px 24px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .right {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 60px 20px;
+  }
+}

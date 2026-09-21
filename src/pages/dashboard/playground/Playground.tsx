@@ -178,8 +178,9 @@ export function Playground() {
       <div className={styles.layout}>
         <div className={styles.configPanel}>
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Provider</label>
+            <label htmlFor="provider-select" className={styles.fieldLabel}>Provider</label>
             <select
+              id="provider-select"
               className={styles.select}
               value={selectedIntegrationId}
               onChange={(e) => setSelectedIntegrationId(e.target.value)}
@@ -203,8 +204,9 @@ export function Playground() {
           />
 
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>System Message (Optional)</label>
+            <label htmlFor="system-message" className={styles.fieldLabel}>System Message (Optional)</label>
             <textarea
+              id="system-message"
               className={styles.textarea}
               value={systemMessage}
               onChange={(e) => setSystemMessage(e.target.value)}
@@ -216,7 +218,7 @@ export function Playground() {
         </div>
 
         <div className={styles.chatPanel}>
-          <div className={styles.thread}>
+          <div className={styles.thread} role="log" aria-live="polite" aria-label="Chat messages history">
             {thread.length === 0 && (
               <div className={styles.threadEmpty}>
                 Send a message to start the conversation. Chat history is not saved — it'll clear on reload.
@@ -227,7 +229,7 @@ export function Playground() {
                 key={msg.id}
                 className={`${styles.bubble} ${msg.role === 'user' ? styles.bubbleUser : styles.bubbleAssistant} ${msg.isError ? styles.bubbleError : ''}`}
               >
-                <div className={styles.bubbleIcon}>
+                <div className={styles.bubbleIcon} aria-hidden="true">
                   {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
                 </div>
                 <div className={styles.bubbleContent}>
@@ -238,7 +240,7 @@ export function Playground() {
             ))}
             {isSending && (
               <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-                <div className={styles.bubbleIcon}><Bot size={14} /></div>
+                <div className={styles.bubbleIcon} aria-hidden="true"><Bot size={14} /></div>
                 <div className={styles.bubbleContent}>
                   <Spinner size="sm" />
                 </div>
@@ -249,11 +251,13 @@ export function Playground() {
 
           <div className={styles.composer}>
             <textarea
+              id="user-message"
               className={styles.composerInput}
               value={userMessage}
               onChange={(e) => setUserMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={hasConnectedProvider ? 'Enter user message...' : 'Connect a provider to start chatting'}
+              aria-label="User prompt message"
               rows={2}
               disabled={!hasConnectedProvider}
             />
@@ -261,6 +265,7 @@ export function Playground() {
               onClick={handleSend}
               disabled={!hasConnectedProvider || !userMessage.trim() || !model.trim() || isSending}
               isLoading={isSending}
+              aria-label="Send message"
             >
               <Send size={16} />
               Submit

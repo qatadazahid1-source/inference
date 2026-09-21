@@ -1,5 +1,5 @@
 {
-  "name": "inference-intelligence-backend",
+  "name": "ordisum-backend",
   "version": "1.0.0",
   "description": "Backend API for Ordisum",
   "main": "src/index.js",

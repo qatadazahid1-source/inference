@@ -5,7 +5,9 @@ import Navbar from '../components/Navbar/Navbar';
 import Footer from '../components/Footer/Footer';
 import { Seo } from '../components/seo/Seo';
 
-const SALES_EMAIL = 'sales@inference-intelligence.com';
+import { LEGAL_CONFIG } from '../config/legal';
+
+const SALES_EMAIL = LEGAL_CONFIG.CONTACT_EMAIL;
 
 export default function ContactSales() {
   const [name, setName] = useState('');
@@ -79,7 +81,7 @@ export default function ContactSales() {
             <Mail size={26} />
           </div>
 
-          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12, fontFamily: 'Fraunces, serif' }}>
+          <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12 }}>
             Talk to Sales
           </h1>
           <p style={{ color: 'var(--color-text-secondary)', marginBottom: 40, lineHeight: 1.6 }}>

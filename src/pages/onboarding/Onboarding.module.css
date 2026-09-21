@@ -49,12 +49,12 @@
 }
 
 .stepDotCurrent {
-  background: var(--color-green);
+  background: var(--color-signal);
   color: var(--color-bg);
 }
 
 .stepDotDone {
-  background: var(--color-green);
+  background: var(--color-signal);
   color: var(--color-bg);
 }
 
@@ -69,12 +69,12 @@
 }
 
 .stepLabelCurrent {
-  color: var(--color-green);
+  color: var(--color-signal);
   font-weight: var(--fw-semibold);
 }
 
 .stepLabelDone {
-  color: var(--color-green);
+  color: var(--color-signal);
 }
 
 .progressLine {
@@ -89,7 +89,7 @@
 
 .progressFill {
   height: 100%;
-  background: var(--color-green);
+  background: var(--color-signal);
   transition: width 400ms ease;
 }
 
@@ -97,7 +97,7 @@
 .card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 40px 32px;
   animation: fadeSlideUp 0.3s ease;
 }
@@ -106,7 +106,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: var(--color-green-muted);
+  background: var(--color-signal-bg);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +114,7 @@
 }
 
 .iconCircle svg {
-  color: var(--color-green);
+  color: var(--color-signal);
 }
 
 .heading {
@@ -145,7 +145,7 @@
 }
 
 .benefitIcon {
-  color: var(--color-green);
+  color: var(--color-signal);
 }
 
 .actions {
@@ -195,8 +195,7 @@
 }
 
 .select:focus {
-  border-color: var(--color-green);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+  border-color: var(--color-signal);
 }
 
 .checkboxGrid {
@@ -219,16 +218,16 @@
 }
 
 .checkboxLabel:hover {
-  border-color: var(--color-green);
+  border-color: var(--color-signal);
 }
 
 .checkboxLabelChecked {
-  border-color: var(--color-green);
-  background: var(--color-green-muted);
+  border-color: var(--color-signal);
+  background: var(--color-signal-bg);
 }
 
 .checkboxLabel input {
-  accent-color: var(--color-green);
+  accent-color: var(--color-signal);
 }
 
 /* Step 3 - Providers */
@@ -276,10 +275,10 @@
 
 .connectedBadge {
   font-size: 11px;
-  color: var(--color-green);
-  background: var(--color-green-muted);
+  color: var(--color-success);
+  background: var(--color-success-bg);
   padding: 2px 8px;
-  border-radius: 100px;
+  border-radius: var(--radius-sm);
 }
 
 .providerCount {
@@ -305,7 +304,7 @@
 }
 
 .addLink {
-  color: var(--color-green);
+  color: var(--color-signal);
   background: none;
   border: none;
   font-size: 14px;
@@ -316,7 +315,7 @@
 }
 
 .addLink:hover {
-  color: var(--color-green-hover);
+  color: var(--color-signal-hover);
 }
 
 .roleHelper {
@@ -338,7 +337,7 @@
 }
 
 .checkmarkCircle {
-  fill: var(--color-green);
+  fill: var(--color-success);
 }
 
 .checkmarkPath {
@@ -373,7 +372,7 @@
 }
 
 .summaryCheck {
-  color: var(--color-green);
+  color: var(--color-success);
 }
 
 @keyframes fadeSlideUp {
@@ -406,5 +405,22 @@
 @media (max-width: 480px) {
   .providerGrid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .page {
+    animation: none;
+  }
+  .checkmarkPath {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .progressFill {
+    transition: none;
+  }
+  .stepDot {
+    transition: none;
   }
 }

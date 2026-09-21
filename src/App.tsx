@@ -21,6 +21,20 @@ const BlogList = lazy(() => import('./pages/BlogList'));
 const BlogPost = lazy(() => import('./pages/BlogPost'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
+// Static Marketing Pages
+const FeaturesPage = lazy(() => import('./pages/public/Features'));
+const PricingPage = lazy(() => import('./pages/public/Pricing'));
+const SecurityPage = lazy(() => import('./pages/public/Security'));
+
+const HeliconePage = lazy(() => import('./pages/public/alternatives/Helicone'));
+const LangfusePage = lazy(() => import('./pages/public/alternatives/Langfuse'));
+const PortkeyPage = lazy(() => import('./pages/public/alternatives/Portkey'));
+const LiteLLMPage = lazy(() => import('./pages/public/alternatives/LiteLLM'));
+
+const CostMonitoringPage = lazy(() => import('./pages/public/use-cases/CostMonitoring'));
+const BudgetManagementPage = lazy(() => import('./pages/public/use-cases/BudgetManagement'));
+const RoiMeasurementPage = lazy(() => import('./pages/public/use-cases/RoiMeasurement'));
+
 // Admin Pages (named exports)
 const AdminLayout = lazy(() =>
   import('./pages/admin/layout/AdminLayout').then((m) => ({ default: m.AdminLayout }))
@@ -272,21 +286,29 @@ export default function App() {
         <Route path="/blog" element={<BlogList />} />
         <Route path="/blog/:slug" element={<BlogPost />} />
 
-        {/* ── Marketing Pages (CMS-driven, explicit routes before catch-all) ── */}
-        <Route path="/features" element={<MarketingPage slug="features" />} />
-        <Route path="/pricing" element={<MarketingPage slug="pricing" />} />
-        <Route path="/security" element={<MarketingPage slug="security" />} />
+        {/* ── Marketing Pages (Static & CMS-driven) ── */}
+        <Route path="/features" element={<FeaturesPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/security" element={<SecurityPage />} />
 
         {/* ── Legal Pages (CMS-driven fallbacks, explicit routes before catch-all) ── */}
         <Route path="/privacy-policy" element={<StaticPage />} />
         <Route path="/terms" element={<StaticPage />} />
         <Route path="/refund-policy" element={<StaticPage />} />
 
-        {/* ── Dynamic Marketing Templates (one reusable route per category) ── */}
+        {/* ── Dynamic Marketing Templates (with static overrides) ── */}
+        <Route path="/alternatives/helicone" element={<HeliconePage />} />
+        <Route path="/alternatives/langfuse" element={<LangfusePage />} />
+        <Route path="/alternatives/portkey" element={<PortkeyPage />} />
+        <Route path="/alternatives/litellm" element={<LiteLLMPage />} />
         <Route
           path="/alternatives/:slug"
           element={<MarketingPage template="alternative" />}
         />
+        
+        <Route path="/use-cases/ai-cost-monitoring" element={<CostMonitoringPage />} />
+        <Route path="/use-cases/ai-budget-management" element={<BudgetManagementPage />} />
+        <Route path="/use-cases/ai-roi-measurement" element={<RoiMeasurementPage />} />
         <Route
           path="/use-cases/:slug"
           element={<MarketingPage template="usecase" />}

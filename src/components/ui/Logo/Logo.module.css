@@ -1,0 +1,42 @@
+.container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  position: relative;
+  user-select: none;
+  overflow: hidden;
+}
+
+.logoImg {
+  height: 100%;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+/* Size Variants */
+.sm {
+  height: 28px;
+}
+
+.md {
+  height: 36px;
+}
+
+.lg {
+  height: 48px;
+}
+
+/* Variant Specifics */
+.mark {
+  width: 28px;
+  overflow: hidden;
+}
+
+.mark .logoImg {
+  object-position: left center;
+}
+
+.compact {
+  max-width: 140px;
+}

@@ -2,15 +2,16 @@ import { DocPage } from './types'
 
 export const dashboardPage: DocPage = {
   slug: 'dashboard',
-  title: 'Dashboard',
-  description: 'How to read and use the Ordisum cost dashboard.',
+  seoTitle: 'Dashboard | Ordisum Docs',
+  title: 'Using the Cost Dashboard',
+  description: 'How to read and use the Ordisum cost dashboard — per-model, per-provider breakdowns updated every 5 minutes.',
 
   sections: [
     {
       id: 'layout',
       heading: 'Dashboard Layout',
       body:
-        'The dashboard is divided into four main areas: the top metrics bar, ' +
+        'The dashboard updates every five minutes and breaks cost down by model, provider, team, and project. \n\n The dashboard is divided into four main areas: the top metrics bar, ' +
         'the provider cost breakdown table, the trend charts, and the alert panel.\n\n' +
         'Everything on the dashboard updates in real time as your AI providers ' +
         'report new usage data. Most providers report with a 5-minute delay.',

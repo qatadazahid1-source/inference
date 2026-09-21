@@ -1,36 +1,74 @@
-import { TrendingUp, TrendingDown, PiggyBank } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Zap, Clock, Target, PiggyBank, FileText } from 'lucide-react';
 import type { KpiData } from '../../../types/dashboard.types';
 import styles from './KPICard.module.css';
 
+export interface ExtendedKpiData {
+  label: string;
+  value: string;
+  icon: string;
+  trend?: number;
+  trendDirection?: 'up' | 'down';
+  trendText?: string;
+  trendValence?: 'positive' | 'negative' | 'neutral';
+  isPrimary?: boolean;
+}
+
 interface KPICardProps {
-  data: KpiData;
+  data: ExtendedKpiData;
 }
 
 const iconMap: Record<string, React.ReactNode> = {
-  DollarSign: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>,
-  Target: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-  TrendingUp: <TrendingUp size={20} />,
-  Clock: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
-  Plug: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8Z"/></svg>,
-  PiggyBank: <PiggyBank size={20} />,
+  DollarSign: <DollarSign size={18} />,
+  Target: <Target size={18} />,
+  TrendingUp: <TrendingUp size={18} />,
+  Clock: <Clock size={18} />,
+  Plug: <Activity size={18} />,
+  PiggyBank: <PiggyBank size={18} />,
+  Activity: <Activity size={18} />,
+  Zap: <Zap size={18} />,
+  FileText: <FileText size={18} />,
 };
 
 export function KPICard({ data }: KPICardProps) {
+  const isPrimary = data.isPrimary ?? false;
+  const hasTrend = typeof data.trend === 'number' && data.trend !== 0;
+
+  // Determine trend color valence:
+  // positive = green (#22c55e), negative = red (#ef4444), neutral = slate (#909090)
+  let valenceClass = styles.neutralTrend;
+  if (data.trendValence === 'positive') {
+    valenceClass = styles.positiveTrend;
+  } else if (data.trendValence === 'negative') {
+    valenceClass = styles.negativeTrend;
+  } else if (hasTrend) {
+    valenceClass = data.trendDirection === 'down' ? styles.positiveTrend : styles.negativeTrend;
+  }
+
+  const ariaText = `${data.label}: ${data.value}. ${data.trendText ?? (hasTrend ? `${data.trend! > 0 ? '+' : ''}${data.trend}% ${data.trendDirection}` : 'Live period')}`;
+
   return (
-    <div className={styles.card}>
+    <div
+      className={`${styles.card} ${isPrimary ? styles.primaryCard : ''}`}
+      role="region"
+      aria-label={ariaText}
+    >
       <div className={styles.topRow}>
-        <div className={styles.iconCircle}>
-          {iconMap[data.icon] ?? <TrendingUp size={20} />}
+        <div className={`${styles.iconCircle} ${isPrimary ? styles.primaryIconCircle : ''}`} aria-hidden="true">
+          {iconMap[data.icon] ?? <Activity size={18} />}
         </div>
-        {data.trend > 0 && (
-          <span className={`${styles.trendBadge} ${data.trendDirection === 'up' ? styles.trendUp : styles.trendDown}`}>
+        {hasTrend ? (
+          <span className={`${styles.trendBadge} ${valenceClass}`} aria-hidden="true">
             {data.trendDirection === 'up' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {data.trend}%
+            {data.trend! > 0 ? `+${data.trend}%` : `${data.trend}%`}
+          </span>
+        ) : (
+          <span className={`${styles.trendBadge} ${styles.neutralTrend}`} aria-hidden="true">
+            {data.trendText ?? 'Live period'}
           </span>
         )}
       </div>
       <span className={styles.label}>{data.label}</span>
-      <span className={styles.value}>{data.value}</span>
+      <span className={`${styles.value} ${isPrimary ? styles.primaryValue : ''}`}>{data.value}</span>
     </div>
   );
 }

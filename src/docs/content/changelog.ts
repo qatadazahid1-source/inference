@@ -2,8 +2,9 @@ import { DocPage } from './types'
 
 export const changelogPage: DocPage = {
   slug: 'changelog',
+  seoTitle: 'Changelog | Ordisum Docs',
   title: 'Changelog',
-  description: "What's new in Ordisum.",
+  description: 'What\'s new in Ordisum — shipped features and fixes.',
 
   sections: [
     {

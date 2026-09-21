@@ -23,7 +23,7 @@ CREATE POLICY "Admins can view all sales leads"
         EXISTS (
             SELECT 1 FROM public.users
             WHERE users.id = auth.uid()
-            AND users.system_role = 'admin'
+            AND users.is_platform_admin = true
         )
     );
 
@@ -35,7 +35,7 @@ CREATE POLICY "Admins can update sales leads"
         EXISTS (
             SELECT 1 FROM public.users
             WHERE users.id = auth.uid()
-            AND users.system_role = 'admin'
+            AND users.is_platform_admin = true
         )
     );
 

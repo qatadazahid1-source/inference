@@ -33,6 +33,7 @@ export interface DocNavLink {
 
 export interface DocPage {
   slug:        string
+  seoTitle?:   string
   title:       string
   description: string
   sections:    DocSection[]

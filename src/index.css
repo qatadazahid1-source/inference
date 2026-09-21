@@ -1,64 +1,101 @@
 /* ═══════════════════════════════════════════════════════════════════
-   Ordisum — UNIFIED DESIGN SYSTEM
+   Ordisum — REFINED TACTICAL OBSERVABILITY DESIGN SYSTEM
+   Direction: Enterprise FinOps + Developer-Grade Infrastructure
    ═══════════════════════════════════════════════════════════════════ */
 
 
 :root {
-  /* ── Core Palette (Monochrome System) ── */
-  --color-bg: #0A0A0A;
-  --color-card: #141414;
-  --color-card-hover: #1A1A1A;
-  --color-tertiary: #1A1A1A;
+  /* ── Core Surface Palette ── */
+  --color-bg: #000000;           /* Void: true black base */
+  --color-card: #0A0A0A;         /* Surface: card backgrounds */
+  --color-card-hover: #111111;   /* Raised surface: hover/active state */
+  --color-tertiary: #111111;     /* Raised surface alias */
 
-  /* Accent (Silver/Monochrome) */
-  --color-green: #E0E0E0; /* Kept for legacy alias, now silver */
-  --color-green-btn: #E0E0E0;
-  --color-green-hover: #C8C8C8;
-  --color-green-muted: rgba(224, 224, 224, 0.10);
+  /* ── Signal Accent (Chartreuse #CCFF00) ── */
+  /* USAGE: Primary CTA, active/selected states, live indicators, primary chart series */
+  --color-signal: #CCFF00;
+  --color-signal-hover: #B8E600;
+  --color-signal-bg: rgba(204, 255, 0, 0.08);
+  --color-accent: #CCFF00;
+  --color-accent-hover: #B8E600;
+  --color-accent-muted: rgba(204, 255, 0, 0.08);
+  --color-accent-text: #000000;  /* Text on Chartreuse bg MUST be black */
 
-  --color-gold: #E0E0E0; /* Kept for legacy alias, now silver */
-  --color-gold-muted: rgba(224, 224, 224, 0.12);
+  /* ── Neutral Silver Accent ── */
+  --color-silver: #E0E0E0;
+  --color-silver-hover: #C8C8C8;
+  --color-silver-muted: rgba(224, 224, 224, 0.10);
 
-  --color-text-primary: #F0F0F0;
-  --color-text-secondary: #9A9A9A;
-  --color-text-tertiary: #6B6B6B;
-  --color-text-muted: #474747;
+  /* ── Legacy Aliases ── */
+  --color-green: #CCFF00;        /* Signal Chartreuse for active/selected states */
+  --color-green-btn: #CCFF00;
+  --color-green-hover: #B8E600;
+  --color-green-muted: rgba(204, 255, 0, 0.08);
+  --color-gold: #C8C8C8;
+  --color-gold-muted: rgba(224, 224, 224, 0.10);
 
-  --color-border: #222222;
-  --color-border-strong: #2E2E2E;
+  /* ── Text Hierarchy ── */
+  --color-text-primary: #FFFFFF;   /* Primary: headings, active labels */
+  --color-text-secondary: #C8C8C8; /* Secondary: supporting UI text */
+  --color-text-tertiary: #909090;  /* Tertiary: muted labels (WCAG AA 4.5:1 against #0A0A0A) */
+  --color-text-quaternary: #4A4A4A;/* Quaternary: disabled, placeholders */
+  --color-text-muted: #4A4A4A;     /* Low-emphasis alias */
 
+  /* ── Borders (structural, 1px) ── */
+  --color-border: #222222;         /* Structural border */
+  --color-border-strong: #333333;  /* Active/focus structural border */
+
+  /* ── Semantic Colors ── */
   --color-error: #ef4444;
   --color-error-bg: rgba(239, 68, 68, 0.08);
-  --color-success: #22c55e;
   --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.08);
+  --color-success: #22c55e;        /* Success green: completed/confirmed states */
+  --color-success-bg: rgba(34, 197, 94, 0.08);
 
-  --radius: 8px 8px 2px 2px;
-  --radius-sm: 4px;
-  --radius-lg: 12px 12px 4px 4px;
-  --card-gap: 32px;
+  /* ── Geometry: strict 2px radius default ── */
+  --radius: 2px;
+  --radius-sm: 2px;
+  --radius-lg: 2px;
+
+  /* ── Spacing Scale ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Layout Constraints ── */
+  --card-gap: 16px;
   --max-width: 1152px;
-  --hero-max: 896px;
-
-  /* ── Shadows ───────────────────── */
-  --shadow-sharp: 0px 4px 12px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--color-border);
-
-  /* ── Type System ───────────────── */
-  --font-display: 'Fraunces', Georgia, serif;
-  --font: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'Geist Mono', 'Fira Code', monospace;
-
+  --hero-max: 960px;
   --max-w: 1152px;
   --max-w-hero: 1120px;
   --max-w-wide: 1280px;
   --container-max: 1152px;
 
-  /* ── Legacy aliases ───────────────────────────────────────────── */
+  /* ── Typography ── */
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', 'Fira Code', monospace;
+  --font-display: var(--font);
+
+  /* ── Font Weights ── */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+
+  /* ── Backward Compatibility Aliases ── */
   --bg: var(--color-bg);
   --bg-card: var(--color-card);
-  --bg-card-60: rgba(20, 20, 20, 0.60);
-  --bg-card-40: rgba(20, 20, 20, 0.40);
+  --bg-card-60: rgba(10, 10, 10, 0.60);
+  --bg-card-40: rgba(10, 10, 10, 0.40);
   --bg-void: var(--color-bg);
-  --bg-raised: var(--color-bg);
+  --bg-raised: var(--color-card-hover);
   --bg-base: var(--color-bg);
   --surface: var(--color-card);
   --surface2: var(--color-card-hover);
@@ -67,34 +104,34 @@
   --border2: var(--color-border-strong);
   --border-1: var(--color-border);
   --border-2: var(--color-border-strong);
-  --border-accent: var(--color-gold-muted);
-  --pine-300: var(--color-green-hover);
-  --pine-400: var(--color-green);
-  --pine-500: var(--color-green-btn);
+  --border-accent: var(--color-accent-muted);
+  --pine-300: var(--color-silver-hover);
+  --pine-400: var(--color-silver);
+  --pine-500: var(--color-accent);
   --amber: var(--color-warning);
   --red: var(--color-error);
   --red-light: #f87171;
-  --accent: var(--color-gold);
-  --accent-hover: var(--color-gold);
-  --cyan: var(--color-gold);
-  --green: var(--color-green);
-  --silver: #E0E0E0;
-  --silver2: #C8C8C8;
+  --accent: var(--color-accent);
+  --accent-hover: var(--color-accent-hover);
+  --cyan: var(--color-silver);
+  --green: var(--color-signal);
+  --silver: var(--color-silver);
+  --silver2: var(--color-silver-hover);
   --text: var(--color-text-primary);
   --muted: var(--color-text-secondary);
   --muted2: var(--color-text-tertiary);
   --text-white: var(--color-text-primary);
   --text-muted: var(--color-text-secondary);
   --text-dim: var(--color-text-tertiary);
-  --text-faint: var(--color-text-muted);
+  --text-faint: var(--color-text-quaternary);
   --text-1: var(--color-text-primary);
   --text-2: var(--color-text-secondary);
   --text-3: var(--color-text-tertiary);
-  --text-4: var(--color-text-muted);
+  --text-4: var(--color-text-quaternary);
   --radius-md: var(--radius);
   --font-heading: var(--font);
   --font-body: var(--font);
-  --ff-display: var(--font-display);
+  --ff-display: var(--font);
   --ff-body: var(--font);
   --ff-mono: var(--font-mono);
 }
@@ -154,9 +191,15 @@ ul, ol { list-style: none; }
   to { transform: rotate(360deg); }
 }
 
-@keyframes glowPulse {
-  from { opacity: 0.5; transform: scale(1); }
-  to { opacity: 1; transform: scale(1.06); }
+/* glowPulse removed — decorative glow effects are not part of the design system */
+
+/* Live indicator pulse — subtle opacity only, no scaling, respects reduced-motion */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes livePulse { from, to { opacity: 1; } }
 }
 
 @keyframes toastIn {
@@ -215,8 +258,48 @@ ul, ol { list-style: none; }
   background-size: 24px 24px;
 }
 
+/* ── Focus Management ─────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
+}
+
+.skipLink {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  background: var(--color-signal);
+  color: #000000;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  z-index: 9999;
+  border-radius: var(--radius-sm);
+  transition: top 150ms ease;
+}
+
+.skipLink:focus {
+  top: 16px;
+}
+
+/* ── Technical Numeric Typography Utility ──────────────────────── */
+.tabular-nums, .font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Reduced Motion Media Query ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Scrollbar ─────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg, var(--bg)); }
-::-webkit-scrollbar-thumb { background: var(--color-text-muted, var(--text-faint)); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--color-text-quaternary, var(--text-faint)); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary, var(--text-dim)); }
+

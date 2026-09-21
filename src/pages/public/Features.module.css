@@ -1,0 +1,56 @@
+.main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 6rem 2rem;
+  flex: 1;
+}
+
+.hero {
+  margin-bottom: 4rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 2.5rem;
+  line-height: 1.2;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-primary);
+}
+
+.intro {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.featureSection {
+  margin-bottom: 4rem;
+}
+
+.featureSection h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 1rem;
+}
+
+.featureSection p {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  margin-bottom: 1rem;
+}
+
+.featureSection strong {
+  color: var(--color-text-primary);
+}
+
+.featureSection a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.featureSection a:hover {
+  text-decoration: underline;
+}

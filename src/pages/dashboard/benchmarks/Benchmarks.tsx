@@ -4,19 +4,17 @@ import {
 } from 'recharts';
 import { Button } from '../../../components/ui/Button/Button';
 import { adminService, type ModelPricing } from '../../../api/services/admin.service';
+import { chartTheme } from '../../../utils/chartColors';
+import { GridContainer, GridItem } from '../../../components/layout/Grid';
+import { KPICard, type ExtendedKpiData } from '../../../components/dashboard/KPICard/KPICard';
 import styles from './Benchmarks.module.css';
 
 const tooltipStyle = {
-  background: 'var(--color-card-hover)',
-  border: '1px solid rgba(64,80,85,0.5)',
-  borderRadius: 6,
+  background: chartTheme.surface,
+  border: `1px solid ${chartTheme.border}`,
+  borderRadius: 'var(--radius-sm)',
   fontSize: 13,
 };
-
-const gridColor  = 'rgba(64, 80, 85, 0.3)';
-const textColor  = '#64748b';
-const barCost    = '#E0E0E0';
-const barTeal    = '#14b8a6';
 
 // Shorten model name for chart labels
 function shortLabel(model: string) {
@@ -61,6 +59,28 @@ export function Benchmarks() {
     return sum / pricing.length;
   }, [pricing]);
 
+  const kpiCardsData: ExtendedKpiData[] = useMemo(() => [
+    {
+      label: 'Active Models',
+      value: isLoading ? '—' : String(pricing.length),
+      icon: 'Activity',
+      isPrimary: true, // Primary operational metric for Benchmarks
+      trendText: 'Live pricing catalog',
+    },
+    {
+      label: 'Avg Input / 1M Tokens',
+      value: isLoading ? '—' : `$${avgInputCostPer1M.toFixed(2)}`,
+      icon: 'Zap',
+      trendText: 'Live pricing catalog',
+    },
+    {
+      label: 'Avg Output / 1M Tokens',
+      value: isLoading ? '—' : `$${avgOutputCostPer1M.toFixed(2)}`,
+      icon: 'DollarSign',
+      trendText: 'Live pricing catalog',
+    },
+  ], [isLoading, pricing.length, avgInputCostPer1M, avgOutputCostPer1M]);
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -71,24 +91,17 @@ export function Benchmarks() {
       </div>
 
       {/* ── Summary stats ──────────────────────────────────────────── */}
-      <div className={styles.statGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>{isLoading ? '\u2014' : pricing.length}</div>
-          <div className={styles.statLabel}>Active Models <span className={styles.liveTag}>LIVE</span></div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>{isLoading ? '\u2014' : `$${avgInputCostPer1M.toFixed(2)}`}</div>
-          <div className={styles.statLabel}>Avg Input / 1M Tokens <span className={styles.liveTag}>LIVE</span></div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>{isLoading ? '\u2014' : `$${avgOutputCostPer1M.toFixed(2)}`}</div>
-          <div className={styles.statLabel}>Avg Output / 1M Tokens <span className={styles.liveTag}>LIVE</span></div>
-        </div>
-      </div>
+      <GridContainer style={{ marginBottom: 32 }}>
+        {kpiCardsData.map((kpi) => (
+          <GridItem key={kpi.label} span={4}>
+            <KPICard data={kpi} />
+          </GridItem>
+        ))}
+      </GridContainer>
 
       {/* ── States ─────────────────────────────────────────────────── */}
       {isLoading && (
-        <div className={styles.emptyState}>Loading model pricing from admin\u2026</div>
+        <div className={styles.emptyState}>Loading model pricing from admin…</div>
       )}
       {!isLoading && error && (
         <div className={styles.errorState}>{error}</div>
@@ -110,12 +123,12 @@ export function Benchmarks() {
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={costData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                <XAxis dataKey="model" tick={{ fontSize: 11, fill: textColor }} />
-                <YAxis tick={{ fontSize: 11, fill: textColor }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                <XAxis dataKey="model" tick={{ fontSize: 11, fill: chartTheme.text }} />
+                <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} />
                 <Tooltip contentStyle={tooltipStyle} labelStyle={{ color: '#f8fafc' }} />
-                <Bar dataKey="Input/1M"  fill={barCost}  radius={[2, 2, 0, 0]} />
-                <Bar dataKey="Output/1M" fill={barTeal}  radius={[2, 2, 0, 0]} />
+                <Bar dataKey="Input/1M"  fill={chartTheme.text}  radius={[2, 2, 0, 0]} />
+                <Bar dataKey="Output/1M" fill={chartTheme.primary}  radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

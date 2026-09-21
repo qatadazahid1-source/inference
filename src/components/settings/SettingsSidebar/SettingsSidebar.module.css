@@ -40,8 +40,8 @@
 }
 
 .active {
-  background: var(--color-green-muted);
-  color: var(--color-green);
+  background: var(--color-raised);
+  color: var(--color-text-primary);
 }
 
 .active::before {
@@ -52,7 +52,7 @@
   transform: translateY(-50%);
   width: 3px;
   height: 18px;
-  background: var(--color-green);
+  background: var(--color-text-primary);
   border-radius: 2px;
 }
 
@@ -97,7 +97,7 @@
   }
 
   .active {
-    border: 1px solid var(--color-green);
+    border: 1px solid var(--color-border-strong);
   }
 
   .userSection {

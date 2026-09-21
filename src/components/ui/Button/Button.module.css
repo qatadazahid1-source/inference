@@ -6,41 +6,55 @@
   border: none;
   border-radius: var(--radius-sm);
   font-weight: var(--fw-medium);
-  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+  font-family: var(--font);
+  /* Snap transitions — feels native and instant */
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease, opacity 100ms ease;
   white-space: nowrap;
   line-height: 1;
+  cursor: pointer;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: 2px;
 }
 
 .button:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
 .sm {
-  padding: 6px 12px;
-  font-size: 13px;
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
 }
 
 .md {
-  padding: 10px 20px;
-  font-size: 14px;
+  height: 34px;
+  padding: 0 16px;
+  font-size: 13px;
 }
 
 .lg {
-  padding: 14px 28px;
-  font-size: 15px;
+  height: 40px;
+  padding: 0 24px;
+  font-size: 14px;
 }
 
+/* Primary CTA — Chartreuse (signal color). Use sparingly: high-value conversions only. */
 .primary {
-  background: var(--color-green-btn);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-accent-text); /* black on chartreuse */
+  font-weight: var(--fw-semibold);
+  border: 1px solid transparent;
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--color-green-hover);
-  color: var(--color-bg);
+  background: var(--color-accent-hover);
 }
 
+/* Secondary — Silver/Neutral */
 .secondary {
   background: transparent;
   border: 1px solid var(--color-border);
@@ -48,28 +62,33 @@
 }
 
 .secondary:hover:not(:disabled) {
-  border-color: var(--color-text-secondary);
+  border-color: var(--color-border-strong);
   color: var(--color-text-primary);
+  background: var(--color-card-hover);
 }
 
+/* Danger */
 .danger {
   background: var(--color-error-bg);
   color: var(--color-error);
-  border: 1px solid transparent;
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .danger:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
 }
 
+/* Ghost — for tertiary/icon-adjacent actions */
 .ghost {
   background: transparent;
-  color: var(--color-green);
+  color: var(--color-text-secondary);
   border: none;
 }
 
 .ghost:hover:not(:disabled) {
-  color: var(--color-green-hover);
+  color: var(--color-text-primary);
+  background: var(--color-card-hover);
 }
 
 .fullWidth {
@@ -77,14 +96,31 @@
 }
 
 .spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid color-mix(in srgb, currentColor 30%, transparent);
   border-top-color: currentColor;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@media (max-width: 600px) {
+  .sm {
+    height: 34px;
+    padding: 0 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+  .spinner {
+    animation: none;
+  }
 }

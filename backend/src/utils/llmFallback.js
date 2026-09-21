@@ -73,11 +73,27 @@ export const PLAN_TOOL_SCHEMA = {
   required: ["name", "monthly_price", "system_limits"]
 };
 
+// Primary: Dahl LLM provider (OpenAI-compatible) via LLM_API_KEY / LLM_BASE_URL
+const dahlClient = process.env.LLM_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.LLM_API_KEY,
+      baseURL: process.env.LLM_BASE_URL || 'https://inference.dahl.global/v1',
+    })
+  : null;
+
+// Optional fallback providers (disabled unless their keys are explicitly set)
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
 
+// Dahl provider model priority list for the pricing agent
+const DAHL_AGENT_MODELS = [
+  'zai-org/GLM-5.3-Flash',
+  'deepseek-ai/DeepSeek-V4-Flash-0731',
+  'MiniMaxAI/MiniMax-M2.7',
+];
+
 /**
- * Calls OpenAI first, falls back to Anthropic if it fails.
+ * Calls Dahl LLM first (primary provider), then falls back to OpenAI, then Anthropic.
  */
 export async function callAgentLLM(prompt, existingPlansContext) {
   const systemPrompt = `You are the Ordisum Pricing & Subscription AI Agent.
@@ -91,53 +107,82 @@ ${JSON.stringify(existingPlansContext, null, 2)}
 You must return a tool call: either 'create_plan' or 'update_plan'.
 Make sure system_limits strictly follows the schema. Ensure 'null' is used for unlimited numeric values, not 9999 or -1.`;
 
-  // 1. Try OpenAI
+  const tools = [
+    {
+      type: 'function',
+      function: {
+        name: 'create_plan',
+        description: 'Create a new subscription plan',
+        parameters: PLAN_TOOL_SCHEMA
+      }
+    },
+    {
+      type: 'function',
+      function: {
+        name: 'update_plan',
+        description: 'Update an existing subscription plan',
+        parameters: {
+          type: 'object',
+          properties: {
+            plan_id: { type: 'string', description: 'The UUID of the plan to update' },
+            updates: PLAN_TOOL_SCHEMA
+          },
+          required: ['plan_id', 'updates']
+        }
+      }
+    }
+  ];
+
+  // 1. Try Dahl (primary provider) across supported models
+  if (dahlClient) {
+    for (const model of DAHL_AGENT_MODELS) {
+      try {
+        console.log(`[PricingAgent] Attempting with Dahl model: ${model}...`);
+        const completion = await dahlClient.chat.completions.create({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: prompt }
+          ],
+          tools,
+          tool_choice: 'required'
+        });
+
+        const toolCall = completion.choices[0].message.tool_calls[0];
+        return {
+          action: toolCall.function.name,
+          args: JSON.parse(toolCall.function.arguments),
+          provider: `dahl/${model}`
+        };
+      } catch (err) {
+        console.warn(`[PricingAgent] Dahl model ${model} failed: ${err.message}. Trying next...`);
+      }
+    }
+    console.error('[PricingAgent] All Dahl models exhausted. Trying fallback providers...');
+  }
+
+  // 2. Try OpenAI fallback
   if (openai) {
     try {
-      console.log('[PricingAgent] Attempting with OpenAI (gpt-4o)...');
+      console.log('[PricingAgent] Attempting with OpenAI fallback (gpt-4o)...');
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'create_plan',
-              description: 'Create a new subscription plan',
-              parameters: PLAN_TOOL_SCHEMA
-            }
-          },
-          {
-            type: 'function',
-            function: {
-              name: 'update_plan',
-              description: 'Update an existing subscription plan',
-              parameters: {
-                type: 'object',
-                properties: {
-                  plan_id: { type: 'string', description: 'The UUID of the plan to update' },
-                  updates: PLAN_TOOL_SCHEMA
-                },
-                required: ['plan_id', 'updates']
-              }
-            }
-          }
-        ],
+        tools,
         tool_choice: 'required'
       });
 
       const toolCall = completion.choices[0].message.tool_calls[0];
       return {
-        action: toolCall.function.name, // 'create_plan' or 'update_plan'
+        action: toolCall.function.name,
         args: JSON.parse(toolCall.function.arguments),
         provider: 'openai'
       };
     } catch (err) {
-      console.error('[PricingAgent] OpenAI failed:', err.message);
-      // Fall through to Anthropic
+      console.error('[PricingAgent] OpenAI fallback failed:', err.message);
     }
   }
 
@@ -184,9 +229,9 @@ Make sure system_limits strictly follows the schema. Ensure 'null' is used for u
       };
     } catch (err) {
       console.error('[PricingAgent] Anthropic failed:', err.message);
-      throw new Error('Both primary (OpenAI) and fallback (Anthropic) LLMs failed or are unavailable.');
+      throw new Error('All LLM providers (Dahl, OpenAI, Anthropic) failed or are unavailable.');
     }
   }
 
-  throw new Error('No LLM API keys configured for Pricing Agent.');
+  throw new Error('No LLM API keys configured for Pricing Agent. Set LLM_API_KEY to use the Dahl provider.');
 }

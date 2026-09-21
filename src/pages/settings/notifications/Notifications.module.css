@@ -17,7 +17,7 @@
 .card {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 24px;
   margin-bottom: 24px;
 }
@@ -65,6 +65,7 @@
   justify-content: center;
 }
 
+/* Toggle — pill shape allowed per design system (toggle knob exception) */
 .toggle {
   width: 36px;
   height: 20px;
@@ -78,7 +79,7 @@
 }
 
 .toggleOn {
-  background: var(--color-green);
+  background: var(--color-signal);
 }
 
 .toggleOff {
@@ -122,4 +123,10 @@
 @keyframes fadeSlideUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    animation: none;
+  }
 }

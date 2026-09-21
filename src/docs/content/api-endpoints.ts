@@ -2,13 +2,15 @@ import { DocPage } from './types'
 
 export const apiEndpointsPage: DocPage = {
   slug: 'api-endpoints',
-  title: 'API Endpoints',
+  seoTitle: 'API Endpoints | Ordisum Docs',
+  title: 'API Reference',
   description: 'Full reference for the Ordisum API.',
 
   sections: [
     {
       id: 'base-url',
       heading: 'Base URL',
+      body: 'Endpoint reference for direct API integration.',
       code: {
         language: 'bash',
         code: `https://api.ordisum.com/v1`,

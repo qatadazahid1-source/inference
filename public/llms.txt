@@ -1,0 +1,32 @@
+# Ordisum
+
+> Ordisum is an AI API cost management platform that tracks, budgets, and enforces spend across AI providers including OpenAI, Anthropic, Google Gemini, Azure OpenAI, AWS Bedrock, Mistral, Groq, and Cohere. It connects as a Gateway between an application and its AI providers — no SDK required, just a base-URL swap.
+
+## What Ordisum does
+
+- Real-time cost tracking per model, provider, team, and project
+- Hard budget enforcement — requests blocked before the limit is exceeded
+- Threshold alerts at 50/75/90/100% via Email, Slack, SMS
+- Anomaly detection when hourly spend exceeds 3× the trailing 7-day average
+- ROI Calculator that converts spend to a business case using team size, hourly rate, and productivity benchmarks
+- External API Gateway for tracking third-party and script usage via platform keys (ii_sk_...)
+- AES-256-GCM encryption for provider API keys at rest
+- TOTP two-factor authentication
+- 14-day free trial, no credit card required
+
+## Core pages
+
+- [Homepage](https://ordisum.com/)
+- [Features](https://ordisum.com/features)
+- [Pricing](https://ordisum.com/pricing)
+- [Security](https://ordisum.com/security)
+- [Documentation](https://ordisum.com/docs)
+- [Blog](https://ordisum.com/blog)
+
+## Supported providers
+
+OpenAI, Anthropic, Google Gemini, Azure OpenAI, AWS Bedrock, Mistral, Groq, Cohere
+
+## Who Ordisum is for
+
+Engineering leads and finance/FinOps teams at companies using multiple AI providers who need cost attribution, budget enforcement, and the ability to report AI ROI to non-technical stakeholders.

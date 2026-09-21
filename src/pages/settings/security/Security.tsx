@@ -214,6 +214,7 @@ export function Security() {
                 className={styles.codeInput}
                 maxLength={6}
                 placeholder="000000"
+                aria-label="6-digit verification code"
                 value={verificationCode}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -289,16 +290,16 @@ export function Security() {
           </p>
         ) : (
           <>
-            <div className={styles.tableWrap}>
+            <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Active Sessions scroll container">
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Device</th>
-                    <th>Browser + OS</th>
-                    <th>Location</th>
-                    <th>IP Address</th>
-                    <th>Last Active</th>
-                    <th>Revoke</th>
+                    <th scope="col">Device</th>
+                    <th scope="col">Browser + OS</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">IP Address</th>
+                    <th scope="col">Last Active</th>
+                    <th scope="col">Revoke</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -324,6 +325,7 @@ export function Security() {
                             type="button"
                             className={styles.revokeBtn}
                             onClick={() => handleRevokeSession(session.id)}
+                            aria-label={`Revoke session for ${session.device_name || 'unknown device'}`}
                           >
                             Revoke
                           </button>
@@ -359,15 +361,15 @@ export function Security() {
           </p>
         ) : (
           <>
-            <div className={styles.tableWrap}>
+            <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Login History scroll container">
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Date & Time</th>
-                    <th>Device</th>
-                    <th>Location</th>
-                    <th>IP</th>
-                    <th>Status</th>
+                    <th scope="col">Date & Time</th>
+                    <th scope="col">Device</th>
+                    <th scope="col">Location</th>
+                    <th scope="col">IP</th>
+                    <th scope="col">Status</th>
                   </tr>
                 </thead>
                 <tbody>

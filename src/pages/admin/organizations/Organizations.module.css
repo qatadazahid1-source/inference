@@ -12,14 +12,14 @@
 
 .title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   margin: 0 0 8px 0;
 }
 
 .subtitle {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   margin: 0;
 }
 
@@ -33,39 +33,47 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--fw-medium);
   cursor: pointer;
-  transition: all 200ms;
+  transition: background 200ms ease, border-color 200ms ease;
   background: var(--color-tertiary);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
 }
 
 .btnSecondary:hover {
-  background: var(--color-border);
+  background: var(--color-card-hover);
+  border-color: var(--color-border-strong);
 }
 
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
 }
 
-.badgeActive { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-.badgeSuspended { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.badgeTrialing { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.badgeActive { background: var(--color-signal-bg); color: var(--color-signal); border: 1px solid var(--color-signal-border); }
+.badgeSuspended { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
+.badgeTrialing { background: rgba(59, 130, 246, 0.12); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.25); }
 
 .orgName {
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
 }
 
 .orgSlug {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btnSecondary {
+    transition: none;
+  }
 }

@@ -2,15 +2,16 @@ import { DocPage } from './types'
 
 export const budgetAlertsPage: DocPage = {
   slug: 'budget-alerts',
-  title: 'Budget Alerts',
-  description: 'Set up hard budget limits and threshold/anomaly alerts.',
+  seoTitle: 'Budget Alerts | Ordisum Docs',
+  title: 'Setting Up Budget Alerts',
+  description: 'Set up hard budget limits, threshold alerts, and anomaly detection — step by step.',
 
   sections: [
     {
       id: 'overview',
       heading: 'Overview',
       body:
-        'Budget alerts let you define spending limits at any level: per provider, ' +
+        'This page covers hard limits, threshold alerts (50%/75%/90%/100%), and anomaly detection configuration. \n\n Budget alerts let you define spending limits at any level: per provider, ' +
         'per team, per project, or for your entire organization. ' +
         'When spend crosses a threshold, alerts are sent through your configured channels.',
       callout: {

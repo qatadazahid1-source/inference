@@ -1,7 +1,7 @@
 .sidebar {
   width: 60px;
   min-height: 100vh;
-  background: var(--color-card);
+  background: var(--color-bg);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -9,7 +9,7 @@
   left: 0;
   top: 0;
   z-index: 100;
-  transition: width 200ms;
+  transition: width 150ms ease;
   overflow: hidden;
 }
 
@@ -17,46 +17,46 @@
 
 .expanded {
   width: 240px;
-  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
 }
 
-/* Logo area — shows "A" badge when collapsed, full title when expanded */
+/* Logo area */
 .logo {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--color-border);
+  min-height: 56px;
 }
 
-.logoMark {
-  width: 28px;
+.logoImg {
   height: 28px;
-  background: #ef4444;           /* Red to distinguish admin from user dashboard */
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 13px;
-  flex-shrink: 0;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
 }
 
-.logoText {
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  color: var(--color-text-primary);
+.logoImgCollapsed {
+  height: 24px;
+  width: 24px;
+  object-fit: cover;
+  object-position: left center;
+  display: block;
+  border-radius: var(--radius-sm);
 }
 
-.logoSubText {
-  font-size: 11px;
-  color: #ef4444;
-  font-weight: 600;
+.adminBadge {
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  color: var(--color-error);
+  background: var(--color-error-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  font-family: var(--font-mono);
   white-space: nowrap;
 }
 
@@ -67,17 +67,18 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  overflow-y: auto;
 }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
   transition: background 100ms, color 100ms;
   border: none;
   background: none;
@@ -89,31 +90,36 @@
 }
 
 .navItem:hover {
-  background: var(--color-tertiary);
+  background: var(--color-card);
   color: var(--color-text-primary);
 }
 
+.navItem:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: -1px;
+}
+
 .navItemActive {
-  background: rgba(239, 68, 68, 0.10);
-  color: #ef4444;
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .navItemActive::before {
   content: '';
   position: absolute;
-  left: -8px;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  background: #ef4444;
-  border-radius: 2px;
+  width: 2px;
+  height: 18px;
+  background: var(--color-error);
+  border-radius: 0 1px 1px 0;
 }
 
 .navIcon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,23 +128,25 @@
 .navLabel {
   white-space: nowrap;
   overflow: hidden;
+  font-size: 13px;
 }
 
 /* Footer / back-to-dashboard link */
 .footer {
   padding: 12px 8px;
   border-top: 1px solid var(--color-border);
+  min-height: 56px;
 }
 
 .backBtn {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 9px 11px;
   border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
+  color: var(--color-text-quaternary);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   transition: background 100ms, color 100ms;
   border: none;
   background: none;
@@ -149,8 +157,13 @@
 }
 
 .backBtn:hover {
-  background: var(--color-tertiary);
+  background: var(--color-card);
   color: var(--color-text-secondary);
+}
+
+.backBtn:focus-visible {
+  outline: 2px solid var(--color-signal);
+  outline-offset: -1px;
 }
 
 .backLabel { white-space: nowrap; overflow: hidden; }

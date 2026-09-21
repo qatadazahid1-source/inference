@@ -9,6 +9,10 @@
   margin-bottom: 32px;
 }
 
+.summaryGrid {
+  margin-bottom: 24px;
+}
+
 .header h1 {
   font-size: 24px;
   font-weight: var(--fw-extrabold);
@@ -46,6 +50,8 @@
   font-weight: var(--fw-bold);
   color: var(--color-text-primary);
   margin: 8px 0;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .progressWrap {
@@ -77,6 +83,8 @@
 .usedText {
   font-size: 13px;
   color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .cardActions {

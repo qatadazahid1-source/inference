@@ -13,14 +13,14 @@
 
 .title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   margin: 0 0 4px 0;
 }
 
 .subtitle {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin: 0;
 }
 
@@ -35,7 +35,7 @@
 .kpiCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 20px 24px;
 }
 
@@ -44,18 +44,19 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin-bottom: 8px;
 }
 
 .kpiValue {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   line-height: 1;
+  font-family: var(--font-mono);
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
@@ -79,16 +80,16 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
   padding: 8px 12px 8px 36px;
-  background: var(--color-tertiary);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   font-size: 14px;
   outline: none;
@@ -96,13 +97,15 @@
   box-sizing: border-box;
 }
 
-.searchInput:focus { border-color: #16a34a; }
+.searchInput:focus {
+  border-color: var(--color-border-strong);
+}
 
 .filterSelect {
   padding: 8px 12px;
-  background: var(--color-tertiary);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   font-size: 14px;
   cursor: pointer;
@@ -113,7 +116,7 @@
 .tableCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -125,7 +128,7 @@
 .formGroup label {
   display: block;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   color: var(--color-text-secondary);
   margin-bottom: 6px;
 }
@@ -135,7 +138,7 @@
   padding: 10px 12px;
   background: var(--color-tertiary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   font-size: 14px;
   outline: none;
@@ -143,7 +146,7 @@
 }
 
 .input:focus, .select:focus {
-  border-color: #16a34a;
+  border-color: var(--color-border-strong);
 }
 
 /* ── Badges ──────────────────────────────────────────────────────── */
@@ -152,14 +155,28 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
-.badgeReady { background: #16a34a22; color: #22c55e; border: 1px solid #16a34a44; }
-.badgePending { background: #2563eb22; color: #60a5fa; border: 1px solid #2563eb44; }
-.badgeFailed { background: #dc262622; color: #f87171; border: 1px solid #dc262644; }
+.badgeReady {
+  background: var(--color-signal-bg);
+  color: var(--color-signal);
+  border: 1px solid var(--color-signal-border);
+}
+
+.badgePending {
+  background: rgba(37, 99, 235, 0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+
+.badgeFailed {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
+}
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .btnPrimary {
@@ -172,14 +189,21 @@
   border-radius: var(--radius-sm);
   color: var(--color-bg);
   font-size: 13px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   font-family: var(--font);
   cursor: pointer;
-  transition: background 150ms ease, transform 150ms ease;
+  transition: background 150ms ease;
 }
 
-.btnPrimary:hover:not(:disabled) { background: var(--silver2); border-color: var(--silver2); transform: translateY(-1px); }
-.btnPrimary:disabled { opacity: 0.4; cursor: not-allowed; }
+.btnPrimary:hover:not(:disabled) {
+  background: var(--silver2);
+  border-color: var(--silver2);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 .btnSecondary {
   display: inline-flex;
@@ -188,42 +212,62 @@
   padding: 8px 16px;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.btnSecondary:hover:not(:disabled) { background: var(--color-tertiary); }
+.btnSecondary:hover:not(:disabled) {
+  background: var(--color-tertiary);
+  border-color: var(--color-border-strong);
+}
 
 .btnSmall {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 5px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
   border: 1px solid var(--color-border);
   background: transparent;
-  color: var(--color-text-muted);
-  transition: all 0.2s;
+  color: var(--color-text-tertiary);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
 .btnSmall:hover:not(:disabled) {
-  border-color: #16a34a;
-  color: #16a34a;
-  background: #16a34a11;
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  background: var(--color-tertiary);
 }
 
 .btnSmallDanger:hover:not(:disabled) {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: #ef444411;
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
-.btnSmall:disabled { opacity: 0.4; cursor: not-allowed; }
+.btnSmall:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
-@keyframes spin { to { transform: rotate(360deg); } }
-.spin { animation: spin 1s linear infinite; }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spin {
+    animation: none;
+  }
+  .btnPrimary, .btnSecondary, .btnSmall, .searchInput {
+    transition: none;
+  }
+}

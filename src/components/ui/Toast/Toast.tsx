@@ -34,11 +34,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className={styles.container}>
+      <div className={styles.container} role="region" aria-label="Notifications">
         {toasts.map((toast) => (
-          <div key={toast.id} className={`${styles.toast} ${styles[toast.type]}`}>
+          <div key={toast.id} className={`${styles.toast} ${styles[toast.type]}`} role="status" aria-live="polite">
             <span className={styles.message}>{toast.message}</span>
-            <button className={styles.dismissBtn} onClick={() => dismiss(toast.id)} aria-label="Dismiss">
+            <button className={styles.dismissBtn} onClick={() => dismiss(toast.id)} aria-label="Dismiss notification">
               <X size={16} />
             </button>
           </div>

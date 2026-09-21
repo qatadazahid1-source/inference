@@ -2,13 +2,15 @@ import { DocPage } from './types'
 
 export const providersPage: DocPage = {
   slug: 'providers',
-  title: 'Supported Providers',
-  description: 'See every AI provider Ordisum tracks cost for, and how to connect each.',
+  seoTitle: 'Supported AI Providers | Ordisum Docs',
+  title: 'Supported AI Providers',
+  description: 'Every provider Ordisum tracks cost for — OpenAI, Anthropic, Gemini, Azure OpenAI, Bedrock, Mistral, Groq, Cohere — and how to connect each.',
 
   sections: [
     {
       id: 'supported-providers',
       heading: 'Supported Providers',
+      body: 'Ordisum supports eight providers. Each section below covers what gets tracked and any provider-specific setup notes.',
       table: {
         headers: ['Provider', 'Status', 'Notes'],
         rows: [

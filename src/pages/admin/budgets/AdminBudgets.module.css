@@ -13,14 +13,14 @@
 
 .title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   margin: 0 0 4px 0;
 }
 
 .subtitle {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin: 0;
 }
 
@@ -35,7 +35,7 @@
 .kpiCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 18px 20px;
 }
 
@@ -44,23 +44,24 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin-bottom: 8px;
 }
 
 .kpiValue {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   line-height: 1;
+  font-family: var(--font-mono);
 }
 
-.kpiValueDanger { color: #ef4444; }
-.kpiValueWarning { color: #f59e0b; }
-.kpiValueGreen { color: #22c55e; }
+.kpiValueDanger { color: var(--color-danger); }
+.kpiValueWarning { color: var(--color-warning); }
+.kpiValueGreen { color: var(--color-signal); }
 
 /* ── Tabs ────────────────────────────────────────────────────────── */
 .tabs {
@@ -75,7 +76,7 @@
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   font-size: 14px;
   cursor: pointer;
   transition: color 0.2s;
@@ -85,9 +86,9 @@
 .tab:hover { color: var(--color-text-primary); }
 
 .tabActive {
-  color: #16a34a;
-  border-bottom-color: #16a34a;
-  font-weight: 500;
+  color: var(--color-signal);
+  border-bottom-color: var(--color-signal);
+  font-weight: var(--fw-semibold);
 }
 
 /* ── Toolbar ─────────────────────────────────────────────────────── */
@@ -111,16 +112,16 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   pointer-events: none;
 }
 
 .searchInput {
   width: 100%;
   padding: 8px 12px 8px 36px;
-  background: var(--color-tertiary);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   font-size: 14px;
   outline: none;
@@ -128,13 +129,13 @@
   box-sizing: border-box;
 }
 
-.searchInput:focus { border-color: #16a34a; }
+.searchInput:focus { border-color: var(--color-border-strong); }
 
 .filterSelect {
   padding: 8px 12px;
-  background: var(--color-tertiary);
+  background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   font-size: 14px;
   cursor: pointer;
@@ -145,7 +146,7 @@
 .tableCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -159,24 +160,25 @@
 
 .progressTrack {
   flex: 1;
-  height: 7px;
+  height: 6px;
   background: var(--color-tertiary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .progressFill {
   height: 100%;
-  border-radius: 4px;
-  transition: width 0.6s ease;
+  border-radius: var(--radius-sm);
+  transition: width 0.4s ease;
 }
 
 .progressLabel {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   white-space: nowrap;
   min-width: 38px;
   text-align: right;
+  font-family: var(--font-mono);
 }
 
 /* ── Status Badge ────────────────────────────────────────────────── */
@@ -185,22 +187,22 @@
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 9999px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
-.badgeHealthy  { background: #16a34a22; color: #22c55e; border: 1px solid #16a34a44; }
-.badgeModerate { background: #2563eb22; color: #60a5fa; border: 1px solid #2563eb44; }
-.badgeWarning  { background: #d9770622; color: #f59e0b; border: 1px solid #d9770644; }
-.badgeCritical { background: #dc262622; color: #f87171; border: 1px solid #dc262644; }
-.badgeExceeded { background: #7f1d1d33; color: #ef4444; border: 1px solid #ef444466; }
-.badgeInactive { background: var(--color-tertiary); color: var(--color-text-muted); border: 1px solid var(--color-border); }
+.badgeHealthy  { background: var(--color-signal-bg); color: var(--color-signal); border: 1px solid var(--color-signal-border); }
+.badgeModerate { background: rgba(37, 99, 235, 0.12); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.25); }
+.badgeWarning  { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning-border); }
+.badgeCritical { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
+.badgeExceeded { background: rgba(239, 68, 68, 0.2); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
+.badgeInactive { background: var(--color-tertiary); color: var(--color-text-tertiary); border: 1px solid var(--color-border); }
 
 /* ── Alert severity ──────────────────────────────────────────────── */
-.severityInfo     { background: #1e3a5f33; color: #60a5fa; border: 1px solid #1e3a5f66; }
-.severityWarning  { background: #78350f33; color: #fbbf24; border: 1px solid #78350f66; }
-.severityCritical { background: #7f1d1d33; color: #f87171; border: 1px solid #7f1d1d66; }
+.severityInfo     { background: rgba(37, 99, 235, 0.12); color: #60a5fa; border: 1px solid rgba(37, 99, 235, 0.25); }
+.severityWarning  { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning-border); }
+.severityCritical { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .btnSecondary {
@@ -210,7 +212,7 @@
   padding: 8px 16px;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   font-size: 14px;
   cursor: pointer;
@@ -218,7 +220,7 @@
   flex-shrink: 0;
 }
 
-.btnSecondary:hover:not(:disabled) { background: var(--color-tertiary); }
+.btnSecondary:hover:not(:disabled) { background: var(--color-tertiary); border-color: var(--color-border-strong); }
 .btnSecondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btnSmall {
@@ -226,28 +228,33 @@
   align-items: center;
   gap: 4px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
   border: 1px solid var(--color-border);
   background: transparent;
-  color: var(--color-text-muted);
-  transition: all 0.2s;
+  color: var(--color-text-tertiary);
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
 .btnSmall:hover:not(:disabled) {
-  border-color: #16a34a;
-  color: #16a34a;
-  background: #16a34a11;
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+  background: var(--color-tertiary);
 }
 
 .btnSmallDanger:hover:not(:disabled) {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: #ef444411;
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
 }
 
 .btnSmall:disabled { opacity: 0.4; cursor: not-allowed; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 1s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spin { animation: none; }
+  .btnSecondary, .btnSmall, .searchInput, .progressFill, .tab { transition: none; }
+}

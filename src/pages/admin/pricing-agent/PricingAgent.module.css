@@ -11,18 +11,19 @@
 .header h1 {
   font-size: 24px;
   margin-bottom: 8px;
-  color: #f8fafc;
+  color: var(--color-text-primary);
+  font-weight: var(--fw-extrabold);
 }
 
 .header p {
-  color: #94a3b8;
+  color: var(--color-text-tertiary);
   font-size: 14px;
 }
 
 .chatContainer {
-  background: #1e293b;
-  border-radius: 12px;
-  border: 1px solid #334155;
+  background: var(--color-card);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   height: 600px;
@@ -53,50 +54,56 @@
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
 }
 
 .user .avatar {
-  background: #3b82f6;
-  color: white;
+  background: var(--color-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
 }
 
 .agent .avatar {
-  background: #10b981;
-  color: white;
+  background: var(--color-signal-bg);
+  color: var(--color-signal);
+  border: 1px solid var(--color-signal-border);
 }
 
 .messageContent {
-  background: #334155;
+  background: var(--color-tertiary);
   padding: 16px;
-  border-radius: 12px;
-  color: #f8fafc;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
   font-size: 14px;
   line-height: 1.5;
 }
 
 .user .messageContent {
-  background: #3b82f6;
+  background: var(--color-card);
+  border-color: var(--color-border-strong);
 }
 
 .previewCard {
-  background: #0f172a;
-  border: 1px solid #475569;
-  border-radius: 8px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   margin-top: 12px;
   overflow: hidden;
 }
 
 .previewHeader {
   padding: 12px 16px;
-  background: #1e293b;
-  border-bottom: 1px solid #475569;
+  background: var(--color-tertiary);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -105,7 +112,8 @@
 .previewHeader h4 {
   margin: 0;
   font-size: 14px;
-  color: #e2e8f0;
+  color: var(--color-text-primary);
+  font-weight: var(--fw-semibold);
 }
 
 .previewBody {
@@ -114,16 +122,16 @@
 
 .previewBody pre {
   margin: 0;
-  color: #10b981;
-  font-family: monospace;
+  color: var(--color-signal);
+  font-family: var(--font-mono);
   font-size: 13px;
   white-space: pre-wrap;
 }
 
 .previewActions {
   padding: 12px 16px;
-  background: #1e293b;
-  border-top: 1px solid #475569;
+  background: var(--color-tertiary);
+  border-top: 1px solid var(--color-border);
   display: flex;
   gap: 12px;
   justify-content: flex-end;
@@ -131,10 +139,10 @@
 
 .inputArea {
   padding: 16px;
-  background: #0f172a;
-  border-top: 1px solid #334155;
-  border-bottom-left-radius: 12px;
-  border-bottom-right-radius: 12px;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  border-bottom-left-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
 }
 
 .inputForm {
@@ -144,38 +152,47 @@
 
 .input {
   flex: 1;
-  background: #1e293b;
-  border: 1px solid #475569;
-  border-radius: 8px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
-  color: white;
+  color: var(--color-text-primary);
   font-size: 14px;
   outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .input:focus {
-  border-color: #3b82f6;
+  border-color: var(--color-border-strong);
 }
 
 .sendButton {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
+  background: var(--silver);
+  color: var(--color-bg);
+  border: 1px solid var(--silver);
+  border-radius: var(--radius-sm);
   padding: 0 24px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
+  font-family: var(--font);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: background 0.2s;
+  transition: background 0.2s ease;
 }
 
 .sendButton:hover:not(:disabled) {
-  background: #2563eb;
+  background: var(--silver2);
+  border-color: var(--silver2);
 }
 
 .sendButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input, .sendButton {
+    transition: none;
+  }
 }

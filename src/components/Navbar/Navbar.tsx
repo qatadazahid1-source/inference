@@ -35,9 +35,8 @@ const Navbar: React.FC = () => {
   return (
     <nav className={`${styles.nav} ${scrolled ? styles.scrolled : ''}`}>
       <div className={styles.inner}>
-        <Link to="/" className={styles.logo}>
-          <span className={styles.logoMark}>i∞</span>
-          Ordisum
+        <Link to="/" className={styles.logo} aria-label="ORDISUM Home">
+          <img src="/ordisum-logo.png" alt="ORDISUM" className={styles.logoImg} />
         </Link>
 
         <ul className={styles.links}>

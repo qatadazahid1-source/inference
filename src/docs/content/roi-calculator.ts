@@ -2,15 +2,16 @@ import { DocPage } from './types'
 
 export const roiCalculatorDocPage: DocPage = {
   slug: 'roi-calculator',
-  title: 'ROI Calculator',
-  description: 'How the ROI Calculator turns spend into a business case.',
+  seoTitle: 'ROI Calculator | Ordisum Docs',
+  title: 'Using the ROI Calculator',
+  description: 'How the ROI Calculator converts your tracked AI spend into a business-case ROI figure.',
 
   sections: [
     {
       id: 'overview',
       heading: 'Overview',
       body:
-        'The ROI Calculator converts your raw AI spend data into a defensible ' +
+        'The ROI Calculator takes your tracked spend plus team size, hourly rate, and time-savings estimates, and outputs a ROI figure. \n\n The ROI Calculator converts your raw AI spend data into a defensible ' +
         'business case. It combines your actual usage costs with team size, ' +
         'hourly rates, and productivity benchmarks to produce a single ROI figure ' +
         'you can present to leadership.',

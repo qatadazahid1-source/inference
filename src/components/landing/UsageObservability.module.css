@@ -1,0 +1,428 @@
+.section {
+  padding: 80px 48px;
+  max-width: var(--max-w-wide, 1280px);
+  margin: 0 auto;
+  border-top: 1px solid var(--color-border);
+}
+
+.header {
+  margin-bottom: 40px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: clamp(26px, 3.2vw, 38px);
+  font-weight: var(--fw-extrabold);
+  color: var(--color-text-primary);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px 0;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 780px;
+  margin: 0;
+}
+
+/* ── Product-in-Context Container Layout ── */
+.container {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Dominant Product Visualization (Left Column) ── */
+.instrumentCard {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.instrumentTopBar {
+  background: var(--color-bg);
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.instrumentTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusIndicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-signal);
+  letter-spacing: 0.06em;
+}
+
+.pulseDot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-signal);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--color-signal);
+}
+
+.instrumentBody {
+  padding: 24px;
+}
+
+/* ── Operational Metric Summary Row ── */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.metricTile {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+}
+
+.metricLabel {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.metricValue {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: var(--fw-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+  font-feature-settings: "tnum";
+}
+
+.metricSub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badgeSuccess {
+  color: var(--color-success);
+}
+
+.badgeWarning {
+  color: var(--color-warning);
+}
+
+.badgeSignal {
+  color: var(--color-signal);
+}
+
+.badgeError {
+  color: var(--color-error);
+}
+
+/* ── Telemetry Visualization (Token & Provider Distribution) ── */
+.vizRow {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.vizHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.vizHeaderTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.providerDistributionBars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.providerBarItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.providerBarMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.providerName {
+  color: var(--color-text-primary);
+  font-weight: var(--fw-medium);
+}
+
+.providerStats {
+  color: var(--color-text-tertiary);
+  font-feature-settings: "tnum";
+}
+
+.barTrack {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  display: flex;
+}
+
+.barFillPrompt {
+  background: var(--color-signal);
+  height: 100%;
+}
+
+.barFillCompletion {
+  background: var(--color-text-secondary);
+  height: 100%;
+}
+
+/* ── Live Log Stream Table ── */
+.tableContainer {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+
+.tableHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tableTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-secondary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.logTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: left;
+}
+
+.logTable th {
+  padding: 10px 14px;
+  color: var(--color-text-tertiary);
+  font-weight: var(--fw-medium);
+  border-bottom: 1px solid var(--color-border);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.logTable td {
+  padding: 10px 14px;
+  color: var(--color-text-secondary);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-feature-settings: "tnum";
+}
+
+.logTable tr:last-child td {
+  border-bottom: none;
+}
+
+.logTable tr:hover td {
+  background: var(--color-card-hover);
+  color: var(--color-text-primary);
+}
+
+.keyCell {
+  color: var(--color-text-primary);
+}
+
+.statusPillSuccess {
+  color: var(--color-success);
+  font-weight: var(--fw-semibold);
+}
+
+.statusPillError {
+  color: var(--color-error);
+  font-weight: var(--fw-semibold);
+  background: var(--color-error-bg);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* ── Secondary Capability Matrix (Right Column / Side Rail) ── */
+.capabilityRail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.railTitle {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 4px 0;
+}
+
+.capabilityCard {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+  transition: border-color 0.15s ease;
+}
+
+.capabilityCard:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-card-hover);
+}
+
+.capHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.capIcon {
+  color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capTitle {
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.capBody {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.capTag {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  margin-top: 10px;
+}
+
+/* ── Responsive Rules ── */
+@media (max-width: 1080px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .capabilityRail {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .capabilityRail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .section {
+    padding: 60px 20px;
+  }
+  
+  .instrumentBody {
+    padding: 16px;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulseDot {
+    animation: none;
+    box-shadow: none;
+  }
+
+  .capabilityCard {
+    transition: none;
+  }
+}
+

@@ -1,8 +1,8 @@
 .page { padding: 32px; max-width: 900px; }
 
 .header { margin-bottom: 28px; }
-.title { font-size: 24px; font-weight: 700; color: var(--color-text-primary); margin: 0 0 6px; }
-.subtitle { font-size: 14px; color: var(--color-text-secondary); margin: 0; }
+.title { font-size: 24px; font-weight: var(--fw-extrabold); color: var(--color-text-primary); margin: 0 0 6px; }
+.subtitle { font-size: 14px; color: var(--color-text-tertiary); margin: 0; }
 
 .loadingText, .emptyText {
   font-size: 13px;
@@ -18,7 +18,7 @@
   justify-content: space-between;
   margin-bottom: 12px;
 }
-.sectionTitle { font-size: 15px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
+.sectionTitle { font-size: 15px; font-weight: var(--fw-semibold); color: var(--color-text-primary); margin: 0; }
 
 .btnAdd {
   display: inline-flex;
@@ -26,18 +26,18 @@
   gap: 6px;
   padding: 6px 12px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-secondary);
   background: var(--color-card);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   transition: border-color 150ms, color 150ms;
 }
-.btnAdd:hover { border-color: var(--color-green); color: var(--color-text-primary); }
+.btnAdd:hover { border-color: var(--color-border-strong); color: var(--color-text-primary); }
 
 .table {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -51,7 +51,7 @@
 
 .tableHeadRow {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
@@ -72,7 +72,7 @@
   transition: border-color 150ms, background 150ms;
 }
 .input:hover { background: var(--color-card-hover); }
-.input:focus { outline: none; border-color: var(--color-green); background: var(--color-card-hover); }
+.input:focus { outline: none; border-color: var(--color-border-strong); background: var(--color-card-hover); }
 
 .toggle {
   width: 34px;
@@ -83,13 +83,13 @@
   position: relative;
   transition: background 150ms;
 }
-.toggleOn { background: var(--color-green-btn); border-color: var(--color-green-btn); }
+.toggleOn { background: var(--color-signal); border-color: var(--color-signal); }
 .toggleDot {
   position: absolute;
   top: 1px; left: 1px;
   width: 14px; height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--color-bg);
   transition: transform 150ms;
 }
 .toggleOn .toggleDot { transform: translateX(16px); }
@@ -107,23 +107,26 @@
   transition: color 150ms, border-color 150ms;
 }
 .btnIcon:hover { color: var(--color-text-primary); border-color: var(--color-border-strong); }
-.btnIconDanger:hover { color: var(--color-error); border-color: var(--color-error); }
+.btnIconDanger:hover { color: var(--color-danger); border-color: var(--color-danger-border); }
 
 .btnSave, .btnCancel, .btnDanger {
   padding: 6px 12px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
 }
-.btnSave { background: var(--color-green-btn); color: #fff; border-color: var(--color-green-btn); }
+.btnSave { background: var(--silver); color: var(--color-bg); border-color: var(--silver); font-weight: var(--fw-medium); }
+.btnSave:hover { background: var(--silver2); border-color: var(--silver2); }
 .btnCancel { background: transparent; color: var(--color-text-secondary); }
-.btnDanger { background: var(--color-error); color: #fff; border-color: var(--color-error); }
+.btnCancel:hover { background: var(--color-tertiary); }
+.btnDanger { background: var(--color-danger-bg); color: var(--color-danger); border-color: var(--color-danger-border); }
+.btnDanger:hover { background: rgba(239, 68, 68, 0.2); }
 
 .confirmOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -132,11 +135,17 @@
 }
 .confirmBox {
   background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   padding: 20px;
   max-width: 380px;
   width: 100%;
 }
 .confirmText { font-size: 14px; color: var(--color-text-primary); margin: 0 0 16px; }
 .confirmActions { display: flex; gap: 10px; justify-content: flex-end; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btnAdd, .input, .toggle, .toggleDot, .btnIcon, .btnIconDanger, .btnSave, .btnCancel, .btnDanger {
+    transition: none;
+  }
+}

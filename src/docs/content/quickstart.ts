@@ -2,15 +2,16 @@ import { DocPage } from './types'
 
 export const quickstartPage: DocPage = {
   slug: 'quickstart',
-  title: 'Quickstart',
-  description: 'Get Ordisum tracking your AI spend in minutes — no SDK required.',
+  seoTitle: 'Quickstart | Ordisum Docs',
+  title: 'Get Started with Ordisum',
+  description: 'Get Ordisum tracking your AI spend in minutes — two configuration changes, no SDK.',
 
   sections: [
     {
       id: 'sign-up',
       heading: 'Step 1 — Sign Up',
       body:
-        'Create a free account at app.ordisum.com. ' +
+        'Integration is two things: a base-URL swap and an API key. This guide gets you tracking spend in under 5 minutes. \n\n Create a free account at app.ordisum.com. ' +
         'You will be prompted to create your first workspace. ' +
         'A workspace maps to a single organization or team.',
       callout: {
@@ -46,7 +47,7 @@ AWS Bedrock  → AWS Console → Bedrock → Model access`,
         'and use your Ordisum platform key. We handle the rest.',
       code: {
         language: 'bash',
-        code: `curl https://api.inference-intelligence.com/v1/chat/completions \\
+        code: `curl https://api.ordisum.com/v1/chat/completions \\
   -H "Authorization: Bearer ii_live_your_platform_key_here" \\
   -H "Content-Type: application/json" \\
   -d '{

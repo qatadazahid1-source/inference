@@ -1,15 +1,12 @@
 import { useState, useMemo } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import { useApiUsage } from '../../../hooks/queries/useDashboard';
+import { chartTheme, getProviderColor } from '../../../utils/chartColors';
+import { GridContainer, GridItem } from '../../../components/layout/Grid';
+import { KPICard, type ExtendedKpiData } from '../../../components/dashboard/KPICard/KPICard';
 import styles from './APIUsage.module.css';
-
-const chartColors = {
-  green: '#22c55e',
-  grid: 'rgba(64, 80, 85, 0.3)',
-  text: '#64748b',
-};
 
 export function APIUsage() {
   const [activeTab, setActiveTab] = useState<string>('30D');
@@ -49,6 +46,34 @@ export function APIUsage() {
   const avgTokensPerReq = totalRequests > 0 ? Math.round(totalTokens / totalRequests) : 0;
   const avgCostPerReq = totalRequests > 0 ? (totalCost / totalRequests) : 0;
 
+  const kpiCardsData: ExtendedKpiData[] = useMemo(() => [
+    {
+      label: 'Total Requests',
+      value: totalRequests.toLocaleString(),
+      icon: 'Activity',
+      isPrimary: true, // Primary operational metric for API Usage
+      trendText: 'Live telemetry',
+    },
+    {
+      label: 'Avg Tokens / Req',
+      value: avgTokensPerReq.toLocaleString(),
+      icon: 'Zap',
+      trendText: 'Live telemetry',
+    },
+    {
+      label: 'Total Tokens',
+      value: totalTokens.toLocaleString(),
+      icon: 'Target',
+      trendText: 'Live telemetry',
+    },
+    {
+      label: 'Avg Cost / Req',
+      value: `$${avgCostPerReq.toFixed(4)}`,
+      icon: 'DollarSign',
+      trendText: 'Live telemetry',
+    },
+  ], [totalRequests, avgTokensPerReq, totalTokens, avgCostPerReq]);
+
   // Group request counts by provider for the bar chart
   const requestsByProvider = usageLogs.reduce((acc: Record<string, number>, log) => {
     const provider = log.provider || 'unknown';
@@ -58,7 +83,7 @@ export function APIUsage() {
   const barData = Object.entries(requestsByProvider).map(([name, requests]) => ({ name, requests }));
 
   if (isLoading && !usageLogs.length) {
-    return <div style={{ color: chartColors.text, padding: '2rem' }}>Loading API usage...</div>;
+    return <div style={{ color: chartTheme.text, padding: '2rem' }}>Loading API usage...</div>;
   }
 
   return (
@@ -78,47 +103,40 @@ export function APIUsage() {
         </div>
       </div>
 
-      <div className={styles.statGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>{totalRequests.toLocaleString()}</div>
-          <div className={styles.statLabel}>Total Requests</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>{avgTokensPerReq.toLocaleString()}</div>
-          <div className={styles.statLabel}>Avg Tokens / Req</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>{totalTokens.toLocaleString()}</div>
-          <div className={styles.statLabel}>Total Tokens</div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statValue}>${avgCostPerReq.toFixed(4)}</div>
-          <div className={styles.statLabel}>Avg Cost / Req</div>
-        </div>
-      </div>
+      <GridContainer style={{ marginBottom: 32 }}>
+        {kpiCardsData.map((kpi) => (
+          <GridItem key={kpi.label} span={3}>
+            <KPICard data={kpi} />
+          </GridItem>
+        ))}
+      </GridContainer>
 
       <div className={styles.chartCard}>
         <h3 className={styles.chartTitle}>API Requests by Provider</h3>
         {barData.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: chartColors.text }} />
-              <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: chartTheme.text }} />
+              <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} />
               <Tooltip
                 contentStyle={{
-                  background: 'var(--color-card-hover)',
-                  border: '1px solid rgba(64,80,85,0.5)',
-                  borderRadius: 6,
+                  background: chartTheme.surface,
+                  border: `1px solid ${chartTheme.border}`,
+                  borderRadius: 'var(--radius-sm)',
                   fontSize: 13,
                 }}
                 labelStyle={{ color: '#f8fafc' }}
               />
-              <Bar dataKey="requests" fill={chartColors.green} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="requests" radius={[2, 2, 0, 0]}>
+                {barData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getProviderColor(entry.name)} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartColors.text }}>
+          <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartTheme.text }}>
             No API usage tracked
           </div>
         )}
@@ -151,7 +169,7 @@ export function APIUsage() {
               ))
             ) : (
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', color: chartColors.text, padding: '2rem 0' }}>
+                <td colSpan={6} style={{ textAlign: 'center', color: chartTheme.text, padding: '2rem 0' }}>
                   No API usage tracked
                 </td>
               </tr>

@@ -45,8 +45,7 @@ export function SignUp() {
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.card}>
         <div className={styles.logoRow}>
-          <div className={styles.logoMark}>II</div>
-          <span className={styles.logoText}>Ordisum</span>
+          <img src="/ordisum-logo.png" alt="ORDISUM" className={styles.logoImg} />
         </div>
 
         <h1 className={styles.heading}>Get started for free</h1>

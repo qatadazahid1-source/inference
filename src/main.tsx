@@ -18,6 +18,7 @@ import { AuthProvider } from './context/AuthContext'
 import { OrganizationProvider } from './context/OrganizationContext'
 import { ToastProvider } from './components/ui/Toast/Toast'
 import { EntitlementsProvider } from './context/EntitlementsContext'
+import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { queryClient } from './lib/queryClient'
 import './index.css'
 
@@ -34,20 +35,22 @@ if (import.meta.env.VITE_PLAUSIBLE_DOMAIN) {
 
 const app = (
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <OrganizationProvider>
-            <EntitlementsProvider>
-              <ToastProvider>
-                <App />
-              </ToastProvider>
-            </EntitlementsProvider>
-          </OrganizationProvider>
-        </AuthProvider>
-      </BrowserRouter>
-      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <OrganizationProvider>
+              <EntitlementsProvider>
+                <ToastProvider>
+                  <App />
+                </ToastProvider>
+              </EntitlementsProvider>
+            </OrganizationProvider>
+          </AuthProvider>
+        </BrowserRouter>
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 )
 

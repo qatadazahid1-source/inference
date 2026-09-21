@@ -389,7 +389,7 @@ export function Integrations() {
                     flex: 1,
                     padding: '10px 12px',
                     background: 'var(--color-tertiary)',
-                    borderRadius: 6,
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: 13,
                     wordBreak: 'break-all',
                   }}
@@ -405,9 +405,9 @@ export function Integrations() {
                   {copied ? <Check size={18} /> : <Copy size={18} />}
                 </button>
               </div>
-              <div style={{ background: 'var(--color-tertiary)', borderRadius: 6, padding: 12, fontSize: 13 }}>
+              <div style={{ background: 'var(--color-tertiary)', borderRadius: 'var(--radius-sm)', padding: 12, fontSize: 13 }}>
                 <div style={{ color: 'var(--color-text-secondary)', marginBottom: 6 }}>Use it from any external code:</div>
-                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
 {`from openai import OpenAI
 client = OpenAI(
   api_key="${revealedKey}",
@@ -470,14 +470,14 @@ client.chat.completions.create(
                           justifyContent: 'space-between',
                           padding: '8px 10px',
                           background: 'var(--color-tertiary)',
-                          borderRadius: 6,
+                          borderRadius: 'var(--radius-sm)',
                         }}
                       >
                         <div>
                           <div style={{ fontWeight: 'var(--fw-medium)', color: 'var(--color-text-primary)' }}>
                             {key.name}
                           </div>
-                          <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+                          <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-mono)' }}>
                             {key.keyPreview} · {key.lastUsedAt ? `Last used ${new Date(key.lastUsedAt).toLocaleDateString()}` : 'Never used'}
                           </div>
                         </div>
@@ -557,7 +557,7 @@ client.chat.completions.create(
                 padding: '12px 14px',
                 background: 'var(--color-tertiary)',
                 border: '1px solid var(--color-border)',
-                borderRadius: 6,
+                borderRadius: 'var(--radius-sm)',
                 color: 'var(--color-text-primary)',
                 fontSize: 14,
                 fontFamily: 'var(--font)',
@@ -572,7 +572,7 @@ client.chat.completions.create(
                 style={{
                   width: 32,
                   height: 32,
-                  borderRadius: 6,
+                  borderRadius: 'var(--radius-sm)',
                   background: provider.color,
                   display: 'flex',
                   alignItems: 'center',
@@ -607,7 +607,7 @@ client.chat.completions.create(
               padding: '12px 14px',
               background: 'var(--color-tertiary)',
               border: '1px solid var(--color-border)',
-              borderRadius: 6,
+              borderRadius: 'var(--radius-sm)',
               color: 'var(--color-text-primary)',
               fontSize: 14,
               fontFamily: 'var(--font)',
@@ -620,7 +620,7 @@ client.chat.completions.create(
               style={{
                 width: 32,
                 height: 32,
-                borderRadius: 6,
+                borderRadius: 'var(--radius-sm)',
                 background: 'var(--color-text-muted)',
                 display: 'flex',
                 alignItems: 'center',

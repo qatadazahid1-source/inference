@@ -38,22 +38,11 @@
   margin-bottom: 28px;
 }
 
-.logoMark {
-  width: 32px;
-  height: 32px;
-  background: var(--color-green);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-bg);
-  font-weight: var(--fw-bold);
-  font-size: 16px;
-}
-
-.logoText {
-  font-size: 18px;
-  font-weight: var(--fw-semibold);
+.logoImg {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .heading {

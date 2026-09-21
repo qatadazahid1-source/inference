@@ -5,13 +5,8 @@ import {
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useAnalytics } from '../../../hooks/queries/useDashboard';
+import { chartTheme } from '../../../utils/chartColors';
 import styles from './ROICalculator.module.css';
-
-const chartColors = {
-  green: '#22c55e',
-  grid: 'rgba(64, 80, 85, 0.3)',
-  text: '#64748b',
-};
 
 // Puts the sign before the dollar symbol for negative values
 // (-$1,234 instead of $-1,234), which is the standard financial format.
@@ -226,14 +221,14 @@ export function ROICalculator() {
             <div className={styles.chartContainer}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlyProjection}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chartColors.text }} />
-                  <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: chartTheme.text }} />
+                  <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} />
                   <Tooltip
                     contentStyle={{
-                      background: 'var(--color-card-hover)',
-                      border: '1px solid rgba(64,80,85,0.5)',
-                      borderRadius: 6,
+                      background: chartTheme.surface,
+                      border: `1px solid ${chartTheme.border}`,
+                      borderRadius: 'var(--radius-sm)',
                       fontSize: 13,
                     }}
                     labelStyle={{ color: '#f8fafc' }}
@@ -241,8 +236,8 @@ export function ROICalculator() {
                   <Area
                     type="monotone"
                     dataKey="cumulative"
-                    stroke={chartColors.green}
-                    fill={chartColors.green}
+                    stroke={chartTheme.primary}
+                    fill={chartTheme.primary}
                     fillOpacity={0.15}
                     strokeWidth={2}
                   />

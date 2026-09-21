@@ -2,14 +2,15 @@ import { DocPage } from './types'
 
 export const overviewPage: DocPage = {
   slug: 'overview',
-  title: 'Overview',
-  description: 'What Ordisum is and how the Gateway fits into your stack.',
+  seoTitle: 'Overview | Ordisum Docs',
+  title: 'Ordisum Overview',
+  description: 'What Ordisum is, how the Gateway works, and what you\'ll see in the dashboard.',
 
   sections: [
     {
       id: 'what-it-does',
       heading: 'What It Does',
-      body: 'Ordisum provides a unified GraphQL & REST Gateway. We sit between your application and various AI providers (OpenAI, Anthropic, Google, Mistral). You send your requests to our Gateway, and we route them to the appropriate model, handling API keys, tracking latency, applying budget limits, and aggregating costs in real time.',
+      body: 'Ordisum is an AI API cost management Gateway. This page covers the core concepts before you start. \n\n Ordisum provides a unified GraphQL & REST Gateway. We sit between your application and various AI providers (OpenAI, Anthropic, Google, Mistral). You send your requests to our Gateway, and we route them to the appropriate model, handling API keys, tracking latency, applying budget limits, and aggregating costs in real time.',
     },
     {
       id: 'why-it-matters',
@@ -24,7 +25,7 @@ export const overviewPage: DocPage = {
         type: 'info',
         title: 'Core Features',
         text:
-          '**Unified Gateway**: Send all inference requests to `https://api.inference-intelligence.com/v1/chat/completions`. We handle the routing based on the model name.\n' +
+          '**Unified Gateway**: Send all inference requests to `https://api.ordisum.com/v1/chat/completions`. We handle the routing based on the model name.\n' +
           '**Zero-Code Instrumentation**: Just change your base URL and use our API key. We automatically track every token and millisecond of latency.\n' +
           '**Budget Enforcement**: Hard stop limits prevent unexpected bills if a model spikes or a key leaks.',
       },

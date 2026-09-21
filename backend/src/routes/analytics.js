@@ -66,15 +66,17 @@ router.get('/', attachEntitlements, async (req, res) => {
     }
 
     const organization_id = await getUserOrgId(req.user.id);
-    const { period = '30d' } = req.query; // '7d', '30d', 'all'
+    const { period = '30d' } = req.query; // '7d', '30d', '90d', 'all'
 
     // Compute date cutoff
-    let dateCutoff = new Date(0).toISOString(); // all time
+    let dateCutoff = new Date(0).toISOString(); // all time (default for 'all' / unrecognised)
     const now = new Date();
     if (period === '7d') {
       dateCutoff = new Date(now.setDate(now.getDate() - 7)).toISOString();
     } else if (period === '30d') {
       dateCutoff = new Date(now.setDate(now.getDate() - 30)).toISOString();
+    } else if (period === '90d') {
+      dateCutoff = new Date(now.setDate(now.getDate() - 90)).toISOString();
     }
 
     // Fetch raw usage logs for the org

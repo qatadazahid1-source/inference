@@ -4,34 +4,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// All available free models from the API, in priority order (best → fallback).
+// All available models from the LLM provider, in priority order (best → fallback).
 // If one model fails, the system automatically tries the next one.
 const FREE_MODELS = [
+  'zai-org/GLM-5.3-Flash',
+  'deepseek-ai/DeepSeek-V4-Flash-0731',
+  'MiniMaxAI/MiniMax-M2.7',
   'gpt-4o',
   'gpt-4o-mini',
-  'gpt-5-mini',
-  'gpt-5.5',
-  'gpt-5.2-chat',
   'mistralai/mistral-large',
-  'mistralai/mistral-medium-3.5-128b',
-  'mistralai/mistral-large-3-675b-instruct-2512',
   'qwen/qwen3.5-397b-a17b',
-  'qwen/qwen3-coder-480b-a35b-instruct',
-  'deepseek-ai/deepseek-v4-pro',
   'deepseek-ai/deepseek-v4-flash',
-  'deepseek-v4-flash',
-  'meta/llama-3.1-70b-instruct',
   'meta/llama-3.3-70b-instruct',
   'z-ai/glm-5.2',
-  'z-ai/glm-5.1',
-  'z-ai/glm5',
   'minimaxai/minimax-m2.7',
-  'mimo-v2.5',
-  'kimi-k2.5',
-  'moonshotai/kimi-k2.6',
-  'gemma-4',
-  'google/gemma-4-31b-it',
-  'stepfun-ai/step-3.5-flash',
 ];
 
 // Lazy init: OpenAI client is only created when actually needed (not at module load time).
@@ -42,7 +28,7 @@ function getOpenAIClient() {
     throw new Error('LLM_API_KEY is not set in backend .env file. Please add it to use the AI scraper.');
   }
   return new OpenAI({
-    baseURL: process.env.LLM_BASE_URL || 'https://api.bluesminds.com/v1',
+    baseURL: process.env.LLM_BASE_URL || 'https://inference.dahl.global/v1',
     apiKey,
   });
 }

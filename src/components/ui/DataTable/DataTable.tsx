@@ -29,12 +29,12 @@ export function DataTable<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   if (isLoading) {
     return (
-      <div className={styles.wrapper}>
+      <div className={styles.wrapper} tabIndex={0} role="region" aria-label="Data table scroll container">
         <table className={styles.table}>
           <thead>
             <tr>
               {columns.map((col) => (
-                <th key={col.accessorKey}>{col.header}</th>
+                <th key={col.accessorKey} scope="col">{col.header}</th>
               ))}
             </tr>
           </thead>
@@ -56,12 +56,12 @@ export function DataTable<T extends Record<string, any>>({
 
   if (!data || data.length === 0) {
     return (
-      <div className={styles.wrapper}>
+      <div className={styles.wrapper} tabIndex={0} role="region" aria-label="Data table scroll container">
         <table className={styles.table}>
           <thead>
             <tr>
               {columns.map((col) => (
-                <th key={col.accessorKey}>{col.header}</th>
+                <th key={col.accessorKey} scope="col">{col.header}</th>
               ))}
             </tr>
           </thead>
@@ -72,12 +72,12 @@ export function DataTable<T extends Record<string, any>>({
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} tabIndex={0} role="region" aria-label="Data table scroll container">
       <table className={styles.table}>
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.accessorKey}>{col.header}</th>
+              <th key={col.accessorKey} scope="col">{col.header}</th>
             ))}
           </tr>
         </thead>

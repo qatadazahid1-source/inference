@@ -4,7 +4,7 @@
   font-size: 12px;
   font-weight: var(--fw-medium);
   padding: 2px 10px;
-  border-radius: 100px;
+  border-radius: var(--radius-sm);
   line-height: 1.4;
 }
 

@@ -543,6 +543,7 @@ export function AdminUsersPage() {
             className={styles.btnIcon}
             title="View details"
             onClick={() => setSelectedUserId(row.id)}
+            aria-label={`View details for ${row.full_name || row.email}`}
           >
             <Eye size={13} /> View
           </button>
@@ -562,6 +563,7 @@ export function AdminUsersPage() {
           className={styles.btnSecondary}
           onClick={() => fetchUsers()}
           disabled={isRefreshing}
+          aria-label="Refresh user list"
         >
           <RefreshCw size={16} className={isRefreshing ? styles.spin : ''} />
           {isRefreshing ? 'Refreshing...' : 'Refresh'}
@@ -570,11 +572,12 @@ export function AdminUsersPage() {
 
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper}>
-          <Search size={14} className={styles.searchIcon} />
+          <Search size={14} className={styles.searchIcon} aria-hidden="true" />
           <input
             type="text"
             className={styles.searchInput}
             placeholder="Search by name or email…"
+            aria-label="Search users by name or email"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />

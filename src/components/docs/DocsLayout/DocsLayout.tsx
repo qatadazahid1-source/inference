@@ -106,7 +106,7 @@ export default function DocsLayout({ page }: Props) {
   return (
     <div className={styles.root}>
       <Seo
-        title={`${page.title} | ${SITE_NAME} Docs`}
+        title={page.seoTitle || `${page.title} | ${SITE_NAME} Docs`}
         description={page.description}
         keywords={`${page.title}, documentation, ${SITE_NAME}, AI API cost management, docs`}
         canonical={canonical}

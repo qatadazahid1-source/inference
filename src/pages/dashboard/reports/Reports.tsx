@@ -5,6 +5,8 @@ import { Button } from '../../../components/ui/Button/Button';
 import { Badge } from '../../../components/ui/Badge/Badge';
 import { Modal } from '../../../components/ui/Modal/Modal';
 import { Spinner } from '../../../components/ui/Spinner/Spinner';
+import { GridContainer, GridItem } from '../../../components/layout/Grid';
+import { KPICard } from '../../../components/dashboard/KPICard/KPICard';
 import {
   useReports,
   useGenerateReport,
@@ -63,6 +65,10 @@ export function Reports() {
   const filteredReports = activeTab === 'all'
     ? allReports
     : allReports.filter((r) => r.type === activeTab);
+
+  const totalGenerated = allReports.length;
+  const scheduledCount = allReports.filter((r) => r.recurring || r.status === 'scheduled').length;
+  const readyCount = allReports.filter((r) => r.status === 'ready').length;
 
   function toggleProvider(p: string) {
     setSelectedProviders((prev) =>
@@ -219,6 +225,33 @@ export function Reports() {
         </Button>
       </div>
 
+      {!isLoading && allReports.length > 0 && (
+        <GridContainer className={styles.summaryGrid}>
+          <GridItem span={6}>
+            <KPICard
+              data={{
+                label: 'Total Generated Reports',
+                value: String(totalGenerated),
+                icon: 'FileText',
+                isPrimary: true,
+                trendText: `${readyCount} ready for download`,
+              }}
+            />
+          </GridItem>
+          <GridItem span={6}>
+            <KPICard
+              data={{
+                label: 'Scheduled Reports',
+                value: String(scheduledCount),
+                icon: 'Clock',
+                isPrimary: false,
+                trendText: 'Automated delivery',
+              }}
+            />
+          </GridItem>
+        </GridContainer>
+      )}
+
       <div className={styles.tabs}>
         {tabs.map((tab) => (
           <button
@@ -257,7 +290,7 @@ export function Reports() {
                   <td>{report.name}</td>
                   <td><Badge variant="neutral">{formatLabel(report.type)}</Badge></td>
                   <td><Badge variant="neutral">{report.format}</Badge></td>
-                  <td>{report.created ? new Date(report.created).toLocaleDateString() : '—'}</td>
+                  <td style={{ fontFamily: 'var(--font-mono)' }}>{report.created ? new Date(report.created).toLocaleDateString() : '—'}</td>
                   <td>{statusBadge(report.status, report.isEmpty)}</td>
                   <td>
                     {report.status === 'ready' && (

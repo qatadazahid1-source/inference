@@ -2,8 +2,9 @@ import { DocPage } from './types'
 
 export const troubleshootingPage: DocPage = {
   slug: 'troubleshooting',
+  seoTitle: 'Troubleshooting | Ordisum Docs',
   title: 'Troubleshooting',
-  description: 'Fix common integration issues.',
+  description: 'Fix common Ordisum integration issues.',
 
   sections: [
     {

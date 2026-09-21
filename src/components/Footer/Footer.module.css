@@ -28,18 +28,11 @@
   color: var(--color-text-primary);
   margin-bottom: 16px;
 }
-.logoIcon {
-  width: 20px; height: 20px;
-  border-radius: 4px;
-  background: var(--color-green-btn);
-  position: relative;
-}
-.logoInner {
-  position: absolute;
-  width: 8px; height: 8px;
-  background: white;
-  border-radius: 2px;
-  top: 6px; left: 6px;
+.logoImg {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 .tagline {
   font-family: var(--font-body);

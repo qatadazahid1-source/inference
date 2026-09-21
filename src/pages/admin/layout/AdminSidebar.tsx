@@ -50,12 +50,13 @@ export function AdminSidebar() {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className={styles.logo}>
-        <div className={styles.logoMark}>A</div>
+        <img
+          src="/ordisum-logo.png"
+          alt="ORDISUM Admin"
+          className={expanded ? styles.logoImg : styles.logoImgCollapsed}
+        />
         {expanded && (
-          <div>
-            <div className={styles.logoText}>Inference Intel.</div>
-            <div className={styles.logoSubText}>Admin Panel</div>
-          </div>
+          <div className={styles.adminBadge}>Admin</div>
         )}
       </div>
 

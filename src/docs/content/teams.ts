@@ -2,13 +2,15 @@ import { DocPage } from './types'
 
 export const teamsPage: DocPage = {
   slug: 'teams',
-  title: 'Teams',
-  description: 'Manage teams and projects for cost attribution.',
+  seoTitle: 'Teams | Ordisum Docs',
+  title: 'Managing Teams',
+  description: 'Manage teams and projects for per-team cost attribution in Ordisum.',
 
   sections: [
     {
       id: 'roles',
       heading: 'Roles & Permissions',
+      body: 'Set up teams and projects before connecting your application to get clean cost attribution from day one.',
       table: {
         headers: ['Role', 'Can Do', 'Cannot Do'],
         rows: [

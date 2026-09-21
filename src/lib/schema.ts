@@ -71,6 +71,7 @@ export function buildOrganization(opts?: {
         name: SITE_NAME,
         url: SITE_URL,
         description: (opts?.description || DEFAULT_DESCRIPTION).trim(),
+        foundingDate: '2026',
     };
 
     const logo = absoluteUrl(opts?.logo || undefined);

@@ -91,22 +91,26 @@ function SearchableSelect({
 
   return (
     <div className={styles.field}>
-      <span className={styles.label}>{label}</span>
+      <span className={styles.label} id={`${label.toLowerCase()}-label`}>{label}</span>
       <div ref={ref} className={styles.selectWrap}>
         <button
           type="button"
           className={styles.select}
           onClick={() => setOpen(!open)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-labelledby={`${label.toLowerCase()}-label`}
         >
           <span>{selected ? selected.label : 'Select...'}</span>
-          <span className={styles.arrow}>{open ? '▲' : '▼'}</span>
+          <span className={styles.arrow} aria-hidden="true">{open ? '▲' : '▼'}</span>
         </button>
         {open && (
-          <div className={styles.dropdown}>
+          <div className={styles.dropdown} role="listbox" aria-labelledby={`${label.toLowerCase()}-label`}>
             <input
               type="text"
               className={styles.searchInput}
               placeholder="Search..."
+              aria-label={`Search ${label}`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -116,6 +120,8 @@ function SearchableSelect({
                 <button
                   key={opt.value}
                   type="button"
+                  role="option"
+                  aria-selected={opt.value === value}
                   className={`${styles.option} ${opt.value === value ? styles.optionActive : ''}`}
                   onClick={() => {
                     onChange(opt.value);
@@ -163,9 +169,6 @@ export function Profile() {
   // Change email modal
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
-
-  // Note: no password change UI — platform is Google OAuth only, there's
-  // no password-based sign-in for a changed password to be used with.
 
   // Delete account
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -221,8 +224,6 @@ export function Profile() {
 
     setIsUploadingAvatar(true);
     try {
-      // Valid Supabase-direct: uploads to the 'user-content' Storage bucket
-      // (see src/services/users.ts). Deliberately NOT migrated to Axios.
       const { url, error: uploadError } = await uploadAvatar(user.id, file);
       if (uploadError || !url) throw new Error(uploadError || 'Upload failed');
       setAvatarUrl(url);
@@ -303,18 +304,24 @@ export function Profile() {
         <h2 className={styles.sectionTitle}>Personal Information</h2>
 
         <div className={styles.avatarWrap}>
-          <div className={styles.avatarUpload} onClick={handleAvatarClick}>
+          <button
+            type="button"
+            className={styles.avatarUpload}
+            onClick={handleAvatarClick}
+            aria-label="Upload new profile picture"
+          >
             <Avatar src={avatarUrl} name={form.fullName || 'User'} size="xl" />
             <div className={styles.avatarOverlay}>
               <span>{isUploadingAvatar ? '...' : 'Change'}</span>
             </div>
-          </div>
+          </button>
           <input
             ref={fileInputRef}
             type="file"
             accept=".jpg,.jpeg,.png"
             style={{ display: 'none' }}
             onChange={handleFileChange}
+            aria-label="Profile photo file input"
           />
           <div>
             <div className={styles.avatarName}>{form.fullName || 'Your Name'}</div>
@@ -328,12 +335,14 @@ export function Profile() {
             value={form.fullName}
             onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
             placeholder="Enter your full name"
+            autoComplete="name"
           />
           <Input
             label="Job Title"
             value={form.jobTitle}
             onChange={(e) => setForm((f) => ({ ...f, jobTitle: e.target.value }))}
             placeholder="e.g. AI Engineer"
+            autoComplete="organization-title"
           />
         </div>
 
@@ -353,6 +362,7 @@ export function Profile() {
             value={form.phone}
             onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
             placeholder="+1 (555) 000-0000"
+            autoComplete="tel"
           />
           <SearchableSelect
             label="Timezone"
@@ -403,6 +413,7 @@ export function Profile() {
             type="text"
             className={styles.dangerInput}
             placeholder='Type "DELETE" to confirm'
+            aria-label='Type "DELETE" to confirm account deletion'
             value={deleteConfirm}
             onChange={(e) => setDeleteConfirm(e.target.value)}
           />

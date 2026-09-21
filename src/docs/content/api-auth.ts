@@ -2,15 +2,16 @@ import { DocPage } from './types'
 
 export const apiAuthPage: DocPage = {
   slug: 'api-auth',
-  title: 'API Authentication',
-  description: 'Authenticate requests to the Ordisum API and Gateway.',
+  seoTitle: 'API Authentication | Ordisum Docs',
+  title: 'Authenticating with the API',
+  description: 'How to authenticate requests to the Ordisum Gateway — Ordisum API keys and platform keys explained.',
 
   sections: [
     {
       id: 'overview',
       heading: 'Overview',
       body:
-        'The Ordisum API uses Bearer token authentication. ' +
+        'Covers Ordisum API keys for Gateway authentication and platform keys (`ii_sk_...`) for the External API Gateway. \n\n The Ordisum API uses Bearer token authentication. ' +
         'All requests must include a valid API key in the Authorization header. ' +
         'API keys are scoped to your workspace and carry the permissions of the ' +
         'user who created them.',

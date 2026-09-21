@@ -90,6 +90,9 @@ export function DashboardLayout() {
 
   return (
     <div className={styles.layout}>
+      <a href="#main-content" className="skipLink">
+        Skip to main content
+      </a>
       <PrivateNoIndex />
       <Sidebar
         mobileOpen={mobileOpen}
@@ -98,7 +101,7 @@ export function DashboardLayout() {
       <div className={styles.main}>
         <Topbar title={title} onMenuToggle={() => setMobileOpen(true)} />
         {access?.source === 'trial' && access.daysLeft !== undefined && (
-          <div className={styles.trialBanner}>
+          <div className={styles.trialBanner} role="status">
             {access.daysLeft === 0
               ? 'Your trial ends today.'
               : `${access.daysLeft} day${access.daysLeft === 1 ? '' : 's'} left in your free trial.`}
@@ -108,9 +111,9 @@ export function DashboardLayout() {
             </button>
           </div>
         )}
-        <div className={styles.content}>
+        <main id="main-content" className={styles.content} tabIndex={-1}>
           <Outlet />
-        </div>
+        </main>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@
 
 .title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   margin: 0 0 8px 0;
   display: flex;
@@ -22,7 +22,7 @@
 
 .subtitle {
   font-size: 14px;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   margin: 0;
 }
 
@@ -30,12 +30,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   text-decoration: none;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: var(--fw-medium);
   margin-bottom: 16px;
-  transition: color 200ms;
+  transition: color 200ms ease;
 }
 
 .backLink:hover {
@@ -51,15 +51,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger-border);
   padding: 10px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: all 200ms;
+  transition: background 200ms ease;
 }
 
 .btnDanger:hover {
@@ -70,15 +70,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  border: 1px solid rgba(34, 197, 94, 0.2);
+  background: var(--color-signal-bg);
+  color: var(--color-signal);
+  border: 1px solid var(--color-signal-border);
   padding: 10px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: all 200ms;
+  transition: background 200ms ease;
 }
 
 .btnSuccess:hover {
@@ -93,26 +93,34 @@
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
   padding: 10px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: all 200ms;
+  transition: background 200ms ease, border-color 200ms ease;
 }
 
 .btnSecondary:hover {
-  background: var(--color-border);
+  background: var(--color-card-hover);
+  border-color: var(--color-border-strong);
 }
 
 .btnPrimary {
-  background: var(--color-green);
-  color: #fff;
-  border: none;
+  background: var(--silver);
+  color: var(--color-bg);
+  border: 1px solid var(--silver);
   padding: 10px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: var(--fw-medium);
+  font-family: var(--font);
   cursor: pointer;
+  transition: background 200ms ease;
+}
+
+.btnPrimary:hover {
+  background: var(--silver2);
+  border-color: var(--silver2);
 }
 
 .grid {
@@ -124,24 +132,23 @@
 .badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
 }
 
-.badgeActive { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
-.badgeSuspended { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.badgeTrialing { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
-.badgeCancelled { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
-.badgeNoPlan { background: var(--color-tertiary); color: var(--color-text-tertiary); }
+.badgeActive { background: var(--color-signal-bg); color: var(--color-signal); border: 1px solid var(--color-signal-border); }
+.badgeSuspended { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
+.badgeTrialing { background: var(--color-warning-bg); color: var(--color-warning); border: 1px solid var(--color-warning-border); }
+.badgeCancelled { background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid var(--color-danger-border); }
+.badgeNoPlan { background: var(--color-tertiary); color: var(--color-text-tertiary); border: 1px solid var(--color-border); }
 
 /* Modals */
 .modalOverlay {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -151,11 +158,10 @@
 
 .modalContent {
   background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
 }
@@ -170,7 +176,7 @@
 .modalHeader h2 {
   margin: 0;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
 }
 
@@ -190,12 +196,18 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 
 @media (max-width: 1024px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backLink, .btnDanger, .btnSuccess, .btnSecondary, .btnPrimary {
+    transition: none;
   }
 }

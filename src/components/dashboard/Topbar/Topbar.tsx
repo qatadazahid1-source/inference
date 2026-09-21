@@ -39,14 +39,19 @@ export function Topbar({ title, onMenuToggle }: TopbarProps) {
       </div>
 
       <div className={styles.right}>
-        <button className={styles.orgSwitcher} onClick={() => navigate('/settings/organization')}>
+        <button
+          type="button"
+          className={styles.orgSwitcher}
+          onClick={() => navigate('/settings/organization')}
+          aria-label={`Switch organization. Current organization: ${organization.name}`}
+        >
           {organization.name}
           <ChevronDown size={14} />
         </button>
 
         <button className={styles.notifBtn} aria-label="Notifications" onClick={() => navigate('/dashboard/alerts')}>
           <Bell size={20} />
-          <span className={styles.notifBadge} />
+          <span className={styles.notifBadge} aria-hidden="true" />
         </button>
 
         <div className={styles.userMenu} ref={menuRef}>
@@ -54,19 +59,22 @@ export function Topbar({ title, onMenuToggle }: TopbarProps) {
             type="button"
             className={styles.avatarBtn}
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Account menu"
+            aria-label="User account menu"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
           >
             <Avatar name={user?.full_name ?? 'User'} src={user?.avatar_url ?? undefined} size="md" />
           </button>
 
           {menuOpen && (
-            <div className={styles.userDropdown}>
+            <div className={styles.userDropdown} role="menu" aria-label="Account options">
               <div className={styles.userDropdownHeader}>
                 <div className={styles.userDropdownName}>{user?.full_name ?? 'User'}</div>
                 <div className={styles.userDropdownEmail}>{user?.email ?? ''}</div>
               </div>
               <button
                 type="button"
+                role="menuitem"
                 className={styles.userDropdownItem}
                 onClick={() => { setMenuOpen(false); navigate('/settings/profile'); }}
               >
@@ -75,15 +83,17 @@ export function Topbar({ title, onMenuToggle }: TopbarProps) {
               </button>
               <button
                 type="button"
+                role="menuitem"
                 className={styles.userDropdownItem}
                 onClick={() => { setMenuOpen(false); navigate('/settings/organization'); }}
               >
                 <Building2 size={16} />
                 Organization Settings
               </button>
-              <div className={styles.userDropdownDivider} />
+              <div className={styles.userDropdownDivider} role="separator" />
               <button
                 type="button"
+                role="menuitem"
                 className={`${styles.userDropdownItem} ${styles.userDropdownDanger}`}
                 onClick={() => { setMenuOpen(false); signOut(); }}
               >

@@ -373,12 +373,12 @@ export function Billing() {
               {invoices.length > 0 ? (
                 invoices.map((inv) => (
                   <tr key={inv.id}>
-                    <td style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--fw-medium)' as string }}>
+                    <td style={{ color: 'var(--color-text-primary)', fontWeight: 'var(--fw-medium)' as string, fontFamily: 'var(--font-mono)' }}>
                       {inv.invoice_number}
                     </td>
-                    <td>{new Date(inv.created_at).toLocaleDateString()}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)' }}>{new Date(inv.created_at).toLocaleDateString()}</td>
                     <td>{inv.description || '—'}</td>
-                    <td>${Number(inv.amount).toFixed(2)}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>${Number(inv.amount).toFixed(2)}</td>
                     <td>
                       <Badge variant={statusVariant[inv.status]}>
                         {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}

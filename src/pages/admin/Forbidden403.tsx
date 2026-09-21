@@ -17,20 +17,20 @@ export function Forbidden403() {
     }}>
       <div style={{
         background: 'var(--color-card)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border-strong)',
+        borderRadius: 'var(--radius-sm)',
         padding: '40px',
         maxWidth: 480,
         width: '100%',
-        textAlign: 'center',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+        textAlign: 'center'
       }}>
         <div style={{
           width: 64,
           height: 64,
-          background: 'rgba(239, 68, 68, 0.1)',
-          color: '#ef4444',
-          borderRadius: '50%',
+          background: 'var(--color-danger-bg)',
+          color: 'var(--color-danger)',
+          borderRadius: 'var(--radius-sm)',
+          border: '1px solid var(--color-danger-border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -39,8 +39,8 @@ export function Forbidden403() {
           <ShieldAlert size={32} />
         </div>
         
-        <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}>Access Denied</h1>
-        <p style={{ color: 'var(--color-text-secondary)', marginBottom: 32, lineHeight: 1.6 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 'var(--fw-extrabold)' as any, marginBottom: 12 }}>Access Denied</h1>
+        <p style={{ color: 'var(--color-text-tertiary)', marginBottom: 32, lineHeight: 1.6, fontSize: 14 }}>
           You do not have permission to view the Platform Admin Panel. This area is restricted to Ordisum operators.
         </p>
 
@@ -50,18 +50,18 @@ export function Forbidden403() {
             display: 'inline-flex',
             alignItems: 'center',
             gap: 8,
-            background: 'var(--color-green)',
-            color: '#fff',
-            border: 'none',
-            padding: '12px 24px',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 15,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'background 200ms'
+            background: 'var(--silver)',
+            color: 'var(--color-bg)',
+            border: '1px solid var(--silver)',
+            padding: '10px 20px',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 14,
+            fontWeight: 'var(--fw-medium)' as any,
+            fontFamily: 'var(--font)',
+            cursor: 'pointer'
           }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={16} />
           Back to Dashboard
         </button>
       </div>

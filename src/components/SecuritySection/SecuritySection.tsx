@@ -53,12 +53,12 @@ interface SecurityItem {
 // that create real liability if published while untrue. Verify each line
 // against reality (or your admin-editable trust page) before shipping.
 const items: SecurityItem[] = [
-  { icon: 'badge', title: 'SOC 2 Type II', body: 'Certification in progress, with an annual third-party security audit.' },
+  { icon: 'badge', title: 'Enterprise Security Posture', body: 'Built following SOC 2 and ISO 27001 security principles with strict access controls.' },
   { icon: 'lock', title: 'AES-256 Encryption', body: 'Data encrypted at rest using AES-256.' },
-  { icon: 'connection', title: 'TLS 1.3 in Transit', body: 'Every connection is secured with TLS 1.3.' },
+  { icon: 'connection', title: 'TLS 1.3 in Transit', body: 'Every connection is secured with TLS 1.3 encryption.' },
   { icon: 'key', title: 'Zero-Knowledge API Keys', body: 'Your provider API keys are never stored in plaintext.' },
-  { icon: 'globe', title: 'GDPR & CCPA', body: 'Data residency options available in the US, EU, and APAC.' },
-  { icon: 'scan', title: 'Annual Penetration Testing', body: 'Independent penetration testing conducted annually.' },
+  { icon: 'globe', title: 'Data Privacy Controls', body: 'Configurable data handling aligned with global privacy standards.' },
+  { icon: 'scan', title: 'Continuous Security Audit', body: 'Automated vulnerability scanning and secret detection across all pipelines.' },
 ];
 
 const SecuritySection: React.FC = () => {

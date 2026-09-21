@@ -5,23 +5,8 @@ import {
 } from 'recharts';
 import { useAnalytics, useApiUsage } from '../../../hooks/queries/useDashboard';
 import { exportToCSV } from '../../../utils/exportUtils';
+import { chartTheme, getProviderColor } from '../../../utils/chartColors';
 import styles from './CostAnalytics.module.css';
-
-const chartColors = {
-  green: '#22c55e',
-  teal: '#14b8a6',
-  emerald: '#10b981',
-  grid: 'rgba(64, 80, 85, 0.3)',
-  text: '#64748b',
-};
-
-
-
-const pieColors = ['#22c55e', '#14b8a6', '#10b981', '#64748b', '#475569'];
-
-// Same palette reused for the daily-spend line chart, since the set of
-// providers shown there is now dynamic rather than three fixed names.
-const lineColors = ['#22c55e', '#14b8a6', '#10b981', '#f59e0b', '#a855f7', '#64748b'];
 
 // Standard 2-decimal formatting rounds any amount under half a cent down to
 // "$0.00", which made real spend (e.g. $0.0001) look like zero on the KPI
@@ -52,7 +37,7 @@ export function CostAnalytics() {
     switch (activeTab) {
       case '7D': return 7;
       case '90D': return 90;
-      case 'YTD': return 365;
+      case 'All': return 365; // maps to period=all (all historical data)
       case '30D':
       default: return 30;
     }
@@ -146,7 +131,7 @@ export function CostAnalytics() {
   };
 
   if (isLoading && !dailySpend.length) {
-    return <div style={{ color: chartColors.text, padding: '2rem' }}>Loading cost analytics...</div>;
+    return <div style={{ color: chartTheme.text, padding: '2rem' }}>Loading cost analytics...</div>;
   }
 
   return (
@@ -154,7 +139,7 @@ export function CostAnalytics() {
       <div className={styles.header}>
         <h1>Cost Analytics</h1>
         <div className={styles.dateTabs}>
-          {['7D', '30D', '90D', 'YTD'].map((tab) => (
+          {(['7D', '30D', '90D', 'All'] as const).map((tab) => (
             <button
               key={tab}
               className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
@@ -190,26 +175,26 @@ export function CostAnalytics() {
         {dailySpend.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={dailySpend}>
-              <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: chartColors.text }} interval={4} />
-              <YAxis tick={{ fontSize: 11, fill: chartColors.text }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: chartTheme.text }} interval={4} />
+              <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} />
               <Tooltip
                 contentStyle={{
-                  background: 'var(--color-card-hover)',
-                  border: '1px solid rgba(64,80,85,0.5)',
-                  borderRadius: 6,
+                  background: chartTheme.surface,
+                  border: `1px solid ${chartTheme.border}`,
+                  borderRadius: 'var(--radius-sm)',
                   fontSize: 13,
                 }}
                 labelStyle={{ color: '#f8fafc' }}
               />
               <Legend />
               {chartProviders.length > 0 ? (
-                chartProviders.map((provider, index) => (
+                chartProviders.map((provider) => (
                   <Line
                     key={provider}
                     type="monotone"
                     dataKey={provider}
-                    stroke={lineColors[index % lineColors.length]}
+                    stroke={getProviderColor(provider)}
                     strokeWidth={2}
                     dot={false}
                     name={provider.charAt(0).toUpperCase() + provider.slice(1)}
@@ -218,12 +203,12 @@ export function CostAnalytics() {
               ) : (
                 // No per-provider breakdown available (e.g. very old cached
                 // data) — fall back to the total so the chart isn't empty.
-                <Line type="monotone" dataKey="daily_cost" stroke={chartColors.green} strokeWidth={2} dot={false} name="Total" />
+                <Line type="monotone" dataKey="daily_cost" stroke={chartTheme.primary} strokeWidth={2} dot={false} name="Total" />
               )}
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartColors.text }}>
+          <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartTheme.text }}>
             No cost data yet
           </div>
         )}
@@ -244,15 +229,15 @@ export function CostAnalytics() {
                   paddingAngle={3}
                   dataKey="value"
                 >
-                  {providerCostData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  {providerCostData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={getProviderColor(entry.name)} />
                   ))}
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--color-card-hover)',
-                    border: '1px solid rgba(64,80,85,0.5)',
-                    borderRadius: 6,
+                    background: chartTheme.surface,
+                    border: `1px solid ${chartTheme.border}`,
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: 13,
                   }}
                 />
@@ -260,7 +245,7 @@ export function CostAnalytics() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartColors.text }}>
+            <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartTheme.text }}>
               No cost data yet
             </div>
           )}
@@ -271,22 +256,22 @@ export function CostAnalytics() {
           {topModels.length > 0 ? (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={topModels} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: chartColors.text }} />
-                <YAxis type="category" dataKey="model" tick={{ fontSize: 11, fill: chartColors.text }} width={120} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} horizontal={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: chartTheme.text }} />
+                <YAxis type="category" dataKey="model" tick={{ fontSize: 11, fill: chartTheme.text }} width={120} />
                 <Tooltip
                   contentStyle={{
-                    background: 'var(--color-card-hover)',
-                    border: '1px solid rgba(64,80,85,0.5)',
-                    borderRadius: 6,
+                    background: chartTheme.surface,
+                    border: `1px solid ${chartTheme.border}`,
+                    borderRadius: 'var(--radius-sm)',
                     fontSize: 13,
                   }}
                 />
-                <Bar dataKey="total_cost" fill={chartColors.green} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="total_cost" fill={chartTheme.primary} radius={[0, 2, 2, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartColors.text }}>
+            <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', color: chartTheme.text }}>
               No cost data yet
             </div>
           )}
@@ -328,7 +313,7 @@ export function CostAnalytics() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', color: chartColors.text, padding: '2rem 0' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', color: chartTheme.text, padding: '2rem 0' }}>
                     No cost data yet
                   </td>
                 </tr>

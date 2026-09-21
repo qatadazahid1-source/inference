@@ -13,14 +13,14 @@
 
 .title {
   font-size: 24px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   margin: 0 0 4px 0;
 }
 
 .subtitle {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin: 0;
 }
 
@@ -35,7 +35,7 @@
 .kpiCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   padding: 20px 24px;
 }
 
@@ -44,23 +44,24 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin-bottom: 10px;
 }
 
 .kpiValue {
   font-size: 28px;
-  font-weight: 700;
+  font-weight: var(--fw-extrabold);
   color: var(--color-text-primary);
   line-height: 1;
+  font-family: var(--font-mono);
 }
 
 .kpiSub {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin-top: 6px;
 }
 
@@ -75,7 +76,7 @@
 .chartCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -89,7 +90,7 @@
 
 .chartTitle {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
   margin: 0;
 }
@@ -122,23 +123,24 @@
 }
 
 .barTrack {
-  height: 8px;
+  height: 6px;
   background: var(--color-tertiary);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
 .barFill {
   height: 100%;
-  background: #16a34a;
-  border-radius: 4px;
-  transition: width 0.6s ease;
+  background: var(--color-signal);
+  border-radius: var(--radius-sm);
+  transition: width 0.4s ease;
 }
 
 .barValue {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   text-align: right;
+  font-family: var(--font-mono);
 }
 
 /* ── Trend Sparkline ────────────────────────────────────────────── */
@@ -157,8 +159,8 @@
 
 .sparkBar {
   flex: 1;
-  background: #16a34a;
-  border-radius: 3px 3px 0 0;
+  background: var(--color-signal);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   opacity: 0.8;
   transition: opacity 0.2s;
   min-height: 3px;
@@ -173,8 +175,9 @@
   display: flex;
   justify-content: space-between;
   font-size: 10px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   margin-top: 6px;
+  font-family: var(--font-mono);
 }
 
 /* ── Provider Pills ─────────────────────────────────────────────── */
@@ -193,15 +196,16 @@
 
 .providerName {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
   text-transform: capitalize;
 }
 
 .providerRequests {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   text-align: right;
+  font-family: var(--font-mono);
 }
 
 /* ── Refresh Button ─────────────────────────────────────────────── */
@@ -212,7 +216,7 @@
   padding: 8px 16px;
   background: transparent;
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   font-size: 14px;
   cursor: pointer;
@@ -223,6 +227,7 @@
 .btnSecondary:hover:not(:disabled) {
   background: var(--color-tertiary);
   color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
 }
 
 .btnSecondary:disabled {
@@ -234,7 +239,7 @@
 .tableCard {
   background: var(--color-card);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   overflow: hidden;
   margin-bottom: 24px;
 }
@@ -249,7 +254,7 @@
 
 .tableTitle {
   font-size: 15px;
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
   color: var(--color-text-primary);
   margin: 0;
 }
@@ -264,7 +269,7 @@
 
 .skeleton {
   height: 14px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--color-tertiary) 25%, var(--color-border) 50%, var(--color-tertiary) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
@@ -275,9 +280,14 @@
   100% { background-position: -200% 0; }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .spin, .skeleton { animation: none; }
+  .btnSecondary, .barFill, .sparkBar { transition: none; }
+}
+
 .empty {
   text-align: center;
   padding: 32px;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   font-size: 14px;
 }

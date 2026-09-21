@@ -74,11 +74,8 @@ const Footer: React.FC = () => {
       <div className={styles.container}>
         <div className={styles.top}>
           <div className={styles.brand}>
-            <a href="#" className={styles.logo}>
-              <span className={styles.logoIcon}>
-                <span className={styles.logoInner} />
-              </span>
-              Ordisum
+            <a href="/" className={styles.logo} aria-label="ORDISUM Home">
+              <img src="/ordisum-logo.png" alt="ORDISUM" className={styles.logoImg} />
             </a>
             <p className={styles.tagline}>
               Every AI invoice, reconciled into one clear number.
