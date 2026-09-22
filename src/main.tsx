@@ -54,8 +54,23 @@ const app = (
   </React.StrictMode>
 )
 
-if (rootEl.hasChildNodes()) {
-  hydrateRoot(rootEl, app)
+// If the URL contains an OAuth callback token (e.g. Supabase redirected here with
+// #access_token=... instead of to /auth/callback), react-snap's pre-rendered HTML
+// will be stale/wrong — hydrating it causes React errors #418 and #423.
+// In that case, always do a fresh createRoot render to avoid the mismatch.
+const hasOAuthHash = window.location.hash.includes('access_token') ||
+  window.location.hash.includes('error_description');
+
+if (!hasOAuthHash && rootEl.hasChildNodes()) {
+  // Normal hydration path — pre-rendered HTML matches current render
+  try {
+    hydrateRoot(rootEl, app);
+  } catch {
+    // Hydration failed (stale snapshot) — clear and re-render cleanly
+    rootEl.innerHTML = '';
+    createRoot(rootEl).render(app);
+  }
 } else {
-  createRoot(rootEl).render(app)
+  // Either OAuth callback or no pre-rendered HTML — always fresh render
+  createRoot(rootEl).render(app);
 }
