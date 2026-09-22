@@ -87,6 +87,8 @@ const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: proces
 
 // Dahl provider model priority list for the pricing agent
 const DAHL_AGENT_MODELS = [
+  ...(process.env.LLM_DEFAULT_MODEL ? [process.env.LLM_DEFAULT_MODEL] : []),
+  'Atria-Dawn-Preview', // Added based on user preference
   'zai-org/GLM-5.3-Flash',
   'deepseek-ai/DeepSeek-V4-Flash-0731',
   'MiniMaxAI/MiniMax-M2.7',
@@ -150,10 +152,33 @@ Make sure system_limits strictly follows the schema. Ensure 'null' is used for u
           tool_choice: 'required'
         });
 
-        const toolCall = completion.choices[0].message.tool_calls[0];
+        let actionName, argsObj;
+
+        if (completion.choices[0].message.tool_calls && completion.choices[0].message.tool_calls.length > 0) {
+          const toolCall = completion.choices[0].message.tool_calls[0];
+          actionName = toolCall.function.name;
+          argsObj = JSON.parse(toolCall.function.arguments);
+        } else if (completion.choices[0].message.content) {
+          // Fallback: Some providers return the tool call as a raw JSON string in the content
+          let content = completion.choices[0].message.content.trim();
+          if (content.startsWith('```json')) content = content.replace(/```json/g, '').replace(/```/g, '').trim();
+          else if (content.startsWith('```')) content = content.replace(/```/g, '').trim();
+          
+          argsObj = JSON.parse(content);
+          // Infer action based on presence of plan_id
+          actionName = argsObj.plan_id ? 'update_plan' : 'create_plan';
+          
+          // If the model wrapped the payload in 'updates', extract it
+          if (actionName === 'create_plan' && argsObj.updates) {
+             argsObj = argsObj.updates;
+          }
+        } else {
+           throw new Error('LLM returned an empty response without tool calls');
+        }
+
         return {
-          action: toolCall.function.name,
-          args: JSON.parse(toolCall.function.arguments),
+          action: actionName,
+          args: argsObj,
           provider: `dahl/${model}`
         };
       } catch (err) {
