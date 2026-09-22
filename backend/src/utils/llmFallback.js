@@ -133,6 +133,8 @@ Make sure system_limits strictly follows the schema. Ensure 'null' is used for u
     }
   ];
 
+  let lastError = null;
+
   // 1. Try Dahl (primary provider) across supported models
   if (dahlClient) {
     for (const model of DAHL_AGENT_MODELS) {
@@ -155,6 +157,7 @@ Make sure system_limits strictly follows the schema. Ensure 'null' is used for u
           provider: `dahl/${model}`
         };
       } catch (err) {
+        lastError = err;
         console.warn(`[PricingAgent] Dahl model ${model} failed: ${err.message}. Trying next...`);
       }
     }
@@ -182,6 +185,7 @@ Make sure system_limits strictly follows the schema. Ensure 'null' is used for u
         provider: 'openai'
       };
     } catch (err) {
+      lastError = err;
       console.error('[PricingAgent] OpenAI fallback failed:', err.message);
     }
   }
@@ -229,8 +233,12 @@ Make sure system_limits strictly follows the schema. Ensure 'null' is used for u
       };
     } catch (err) {
       console.error('[PricingAgent] Anthropic failed:', err.message);
-      throw new Error('All LLM providers (Dahl, OpenAI, Anthropic) failed or are unavailable.');
+      lastError = err;
     }
+  }
+
+  if (lastError) {
+    throw new Error(`LLM API request failed: ${lastError.message}`);
   }
 
   throw new Error('No LLM API keys configured for Pricing Agent. Set LLM_API_KEY to use the Dahl provider.');
