@@ -1,8 +1,9 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AdminRoute } from './components/admin/AdminRoute';
 import { Spinner } from './components/ui/Spinner/Spinner';
+import { supabase } from './lib/supabase';
 
 // ── Route-level code splitting (SEO-25) ──────────────────────────────
 // All page components are lazy-loaded so that public routes (landing,
@@ -176,9 +177,36 @@ function RouteFallback() {
   );
 }
 
+function GlobalAuthRedirector() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If the user lands on a public page but they just signed in (e.g. Supabase
+    // redirected them to the root URL instead of /auth/callback due to misconfiguration),
+    // we want to catch the SIGNED_IN event and send them to the dashboard/onboarding.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        // Prevent redirect loop if they are already in the app
+        const isPublicRoute = ['/', '/auth/signin', '/auth/signup', '/signin', '/signup'].includes(location.pathname);
+        if (isPublicRoute) {
+          // They might need onboarding, but ProtectedRoute will handle that redirect.
+          // Just get them off the public page.
+          navigate('/dashboard', { replace: true });
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, location.pathname]);
+
+  return null;
+}
+
 export default function App() {
   return (
     <Suspense fallback={<RouteFallback />}>
+      <GlobalAuthRedirector />
       <Routes>
         {/* ── Landing Page ─────────────────────────────── */}
         <Route path="/" element={<LandingPage />} />
