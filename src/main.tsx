@@ -26,11 +26,34 @@ const rootEl = document.getElementById('root')!
 
 // Inject Plausible Analytics only if configured
 if (import.meta.env.VITE_PLAUSIBLE_DOMAIN) {
-  const script = document.createElement('script');
-  script.defer = true;
-  script.dataset.domain = import.meta.env.VITE_PLAUSIBLE_DOMAIN;
-  script.src = 'https://plausible.io/js/script.js';
-  document.head.appendChild(script);
+  if (!document.querySelector(`script[src="https://plausible.io/js/script.js"]`)) {
+    const script = document.createElement('script');
+    script.defer = true;
+    script.dataset.domain = import.meta.env.VITE_PLAUSIBLE_DOMAIN;
+    script.src = 'https://plausible.io/js/script.js';
+    document.head.appendChild(script);
+  }
+}
+
+// Inject Google Analytics 4
+const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID || 'G-466X7SK5SX';
+if (gaMeasurementId) {
+  // Prevent duplicate injections (important for hydration after react-snap prerendering)
+  if (!document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`)) {
+    const gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`;
+    document.head.appendChild(gaScript);
+
+    const gaInitScript = document.createElement('script');
+    gaInitScript.innerHTML = `
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '${gaMeasurementId}');
+    `;
+    document.head.appendChild(gaInitScript);
+  }
 }
 
 const app = (
