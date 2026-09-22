@@ -26,8 +26,19 @@ export default function AuthCallback() {
       }
     })
 
+    // Safety net: if session never resolves within 10 seconds (e.g. silent
+    // rejection due to clock skew or misconfigured redirect URL), send the
+    // user back to sign-in rather than stranding them on a blank screen.
+    const timeout = setTimeout(() => {
+      if (!hasHandled.current) {
+        console.warn('[AuthCallback] Session did not resolve within 10s — redirecting to sign-in')
+        navigate('/auth/signin', { replace: true })
+      }
+    }, 10_000)
+
     return () => {
       subscription.unsubscribe()
+      clearTimeout(timeout)
     }
   }, [])
 
