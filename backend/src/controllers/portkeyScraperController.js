@@ -1,5 +1,6 @@
 import { ApifyClient } from 'apify-client';
-import fetch from 'node-fetch';
+
+// node-fetch nahi chahiye — Node.js 18+ mein fetch natively built-in hai
 
 const APIFY_TOKEN = process.env.APIFY_TOKEN;
 const ATRIA_API_KEY = process.env.ATRIA_API_KEY;
