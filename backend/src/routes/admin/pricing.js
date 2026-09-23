@@ -1,7 +1,7 @@
 import express from 'express';
 import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
-import { fetchPortkeyPricing, runPortkeySync } from '../../controllers/portkeyScraperController.js';
+import { runPortkeySync } from '../../controllers/portkeyScraperController.js';
 
 const router = express.Router();
 
