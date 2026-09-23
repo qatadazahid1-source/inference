@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   DollarSign, Building2, BarChart2, Activity,
-  Users, PiggyBank, Plug, FileText, ArrowLeft, Link as LinkIcon, Tag, FileCode, Server, Bot, Newspaper,
+  Users, PiggyBank, Plug, FileText, ArrowLeft, Link as LinkIcon, Tag, FileCode, Server, Bot, Newspaper, DownloadCloud,
 } from 'lucide-react';
 import styles from './AdminSidebar.module.css';
 
@@ -14,6 +14,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Pricing',       path: '/admin/pricing',       icon: <DollarSign size={18} /> },
+  { label: 'Portkey Fetch', path: '/admin/portkey-fetch', icon: <DownloadCloud size={18} /> },
   { label: 'Organizations', path: '/admin/organizations', icon: <Building2 size={18} /> },
   { label: 'Analytics',     path: '/admin/analytics',     icon: <BarChart2 size={18} /> },
   { label: 'System Health', path: '/admin/health',        icon: <Activity size={18} /> },

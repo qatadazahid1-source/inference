@@ -1,6 +1,7 @@
-﻿import express from 'express';
+import express from 'express';
 import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
+import { fetchPortkeyPricing } from '../../controllers/portkeyScraperController.js';
 
 const router = express.Router();
 
@@ -142,6 +143,10 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'An internal server error occurred.' });
   }
 });
+
+// â”€â”€â”€ POST /api/admin/pricing/portkey-fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Fetches portkey pricing using Apify + Atria LLM for a specific provider
+router.post('/portkey-fetch', fetchPortkeyPricing);
 
 // â”€â”€â”€ POST /api/admin/pricing/sync-openrouter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Fetches latest pricing from OpenRouter API and updates DB
