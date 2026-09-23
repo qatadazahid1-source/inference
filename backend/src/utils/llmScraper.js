@@ -1,11 +1,9 @@
-import { chromium } from 'playwright';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
 // All available models from the LLM provider, in priority order (best → fallback).
-// If one model fails, the system automatically tries the next one.
 const FREE_MODELS = [
   ...(process.env.LLM_DEFAULT_MODEL ? [process.env.LLM_DEFAULT_MODEL] : []),
   'Atria-Dawn-Preview',
@@ -15,19 +13,14 @@ const FREE_MODELS = [
   'gpt-4o',
   'gpt-4o-mini',
   'mistralai/mistral-large',
-  'qwen/qwen3.5-397b-a17b',
-  'deepseek-ai/deepseek-v4-flash',
   'meta/llama-3.3-70b-instruct',
-  'z-ai/glm-5.2',
-  'minimaxai/minimax-m2.7',
 ];
 
-// Lazy init: OpenAI client is only created when actually needed (not at module load time).
-// This prevents a crash on server startup if LLM_API_KEY is not yet configured.
+// Lazy init: OpenAI client is only created when actually needed.
 function getOpenAIClient() {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) {
-    throw new Error('LLM_API_KEY is not set in backend .env file. Please add it to use the AI scraper.');
+    throw new Error('LLM_API_KEY is not set. Please add it to use the AI scraper.');
   }
   return new OpenAI({
     baseURL: process.env.LLM_BASE_URL || 'https://inference.dahl.global/v1',
@@ -36,53 +29,86 @@ function getOpenAIClient() {
 }
 
 /**
- * Scrapes a URL using headless chromium to bypass basic bot protection
- * and wait for JS to render. Uses network-idle strategy for SPAs.
+ * Strategy 1: Jina AI Reader — converts any URL (including SPAs) to clean markdown.
+ * Free, no auth required, works great for pricing pages.
+ * https://jina.ai/reader/
+ */
+async function scrapeWithJina(url) {
+  const jinaUrl = `https://r.jina.ai/${url}`;
+  console.log(`[Scraper] Trying Jina AI Reader for: ${url}`);
+  const response = await fetch(jinaUrl, {
+    headers: {
+      'Accept': 'text/plain',
+      'X-Timeout': '30',
+      'X-Wait-For-Selector': 'body',
+    },
+    signal: AbortSignal.timeout(45000),
+  });
+  if (!response.ok) {
+    throw new Error(`Jina AI returned ${response.status}: ${response.statusText}`);
+  }
+  const text = await response.text();
+  if (!text || text.trim().length < 100) {
+    throw new Error('Jina returned empty or too short content');
+  }
+  console.log(`[Scraper] Jina AI succeeded. Got ${text.length} chars.`);
+  return text;
+}
+
+/**
+ * Strategy 2: Direct HTTP fetch — works for server-rendered pages.
+ */
+async function scrapeWithFetch(url) {
+  console.log(`[Scraper] Trying direct HTTP fetch for: ${url}`);
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.5',
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) {
+    throw new Error(`HTTP fetch returned ${response.status}`);
+  }
+  const html = await response.text();
+  // Strip HTML tags to get readable text
+  const text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (text.length < 100) {
+    throw new Error('Direct fetch returned too little content (likely a SPA)');
+  }
+  console.log(`[Scraper] Direct fetch succeeded. Got ${text.length} chars.`);
+  return text;
+}
+
+/**
+ * Main scrape function: tries Jina first, falls back to direct fetch.
+ * No Playwright/Chromium needed — works on any Node.js server including Render.
  */
 async function scrapeText(url) {
-  let browser;
+  // Strategy 1: Jina AI Reader (best for SPAs like portkey.ai)
   try {
-    browser = await chromium.launch({ headless: true });
-    const context = await browser.newContext({
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      viewport: { width: 1280, height: 900 },
-    });
-    const page = await context.newPage();
+    return await scrapeWithJina(url);
+  } catch (err) {
+    console.warn(`[Scraper] Jina AI failed: ${err.message}. Trying direct fetch...`);
+  }
 
-    // 1. Navigate and wait for domcontentloaded first (fast)
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 40000 });
-
-    // 2. Then wait for the network to go idle (catches SPA route renders)
-    try {
-      await page.waitForLoadState('networkidle', { timeout: 15000 });
-    } catch (_) {
-      // networkidle timed out — page may still have useful content, continue
-      console.warn(`[Scraper] networkidle timed out for ${url} — continuing anyway`);
-    }
-
-    // 3. Extra settle time for JS frameworks to paint pricing tables
-    await new Promise(r => setTimeout(r, 5000));
-
-    // 4. Extract all visible text (innerText respects CSS visibility)
-    const text = await page.evaluate(() => {
-      // Remove script/style/noscript tags before extracting
-      document.querySelectorAll('script, style, noscript, svg').forEach(el => el.remove());
-      return document.body.innerText;
-    });
-
-    await browser.close();
-    return text;
-  } catch (error) {
-    console.error(`[Scraper] Error scraping ${url}:`, error.message);
-    if (browser) await browser.close().catch(() => {});
+  // Strategy 2: Direct HTTP fetch (good for static/SSR pages)
+  try {
+    return await scrapeWithFetch(url);
+  } catch (err) {
+    console.error(`[Scraper] Direct fetch also failed: ${err.message}`);
     return null;
   }
 }
 
-
 /**
- * Tries to call the LLM with automatic fallback across all available free models.
- * If a model fails (API error OR invalid/non-JSON response), it automatically moves to the next one.
+ * Tries to call the LLM with automatic fallback across all available models.
  */
 async function callLLMWithFallback(openai, messages) {
   let lastError = null;
@@ -105,10 +131,15 @@ async function callLLMWithFallback(openai, messages) {
         content = content.replace(/```/g, '').trim();
       }
 
-      // Try to parse JSON — if it fails, treat this model as failed and try the next
+      // Find JSON array in the response (handles leading/trailing text)
+      const arrayStart = content.indexOf('[');
+      const arrayEnd = content.lastIndexOf(']');
+      if (arrayStart !== -1 && arrayEnd !== -1) {
+        content = content.substring(arrayStart, arrayEnd + 1);
+      }
+
       const parsed = JSON.parse(content);
 
-      // Must be an array
       if (!Array.isArray(parsed)) {
         throw new Error(`Expected JSON array but got ${typeof parsed}`);
       }
@@ -116,24 +147,23 @@ async function callLLMWithFallback(openai, messages) {
       console.log(`[Scraper] Model ${model} succeeded. Extracted ${parsed.length} models.`);
       return parsed;
     } catch (err) {
-      console.warn(`[Scraper] Model ${model} failed: ${err.message}. Trying next model...`);
+      console.warn(`[Scraper] Model ${model} failed: ${err.message}. Trying next...`);
       lastError = err;
     }
   }
 
-  // All models exhausted
-  throw new Error(`All ${FREE_MODELS.length} models failed. Last error: ${lastError?.message}`);
+  throw new Error(`All models failed. Last error: ${lastError?.message}`);
 }
 
 /**
- * Extracts all models and their prompt/completion pricing from the scraped text.
+ * Extracts all models and their prompt/completion pricing from the given URL.
  */
 export async function extractPricingFromUrl(providerName, url) {
   try {
-    console.log(`[Scraper] Scraping URL for provider ${providerName}: ${url}`);
+    console.log(`[Scraper] Starting extraction for provider "${providerName}": ${url}`);
     const text = await scrapeText(url);
     if (!text) {
-      return { error: 'Failed to scrape page' };
+      return { error: 'Failed to scrape page — all strategies exhausted' };
     }
 
     const messages = [
@@ -141,38 +171,33 @@ export async function extractPricingFromUrl(providerName, url) {
         role: 'user',
         content: `You are a strict data extraction bot.
 Your goal is to extract the API pricing (per 1M tokens) for ALL models mentioned in the text below for the provider "${providerName}".
-If the price is given per 1k tokens, multiply it by 1000 to get the price per 1M tokens.
+If the price is given per 1k tokens, multiply by 1000 to get per 1M. If given per token, multiply by 1,000,000.
 
-Return ONLY a valid JSON array in this exact format, with NO markdown formatting, NO \`\`\`json blocks, and NO extra text:
+Return ONLY a valid JSON array in this exact format, with NO markdown, NO \`\`\`json blocks, and NO extra text outside the array:
 [
   {
     "modelName": "model-name-1",
     "promptPrice": "$X.XX",
     "completionPrice": "$Y.YY"
-  },
-  {
-    "modelName": "model-name-2",
-    "promptPrice": "$X.XX",
-    "completionPrice": "$Y.YY"
   }
 ]
 
-If you cannot find any pricing, return an empty array [].
+If you cannot find any pricing data, return an empty array: []
 
 Text to analyze:
 ----------------
-${text.substring(0, 20000)}
+${text.substring(0, 25000)}
 ----------------`,
       },
     ];
 
-    console.log(`[Scraper] Extracting pricing using LLM for ${providerName}...`);
+    console.log(`[Scraper] Sending to LLM for extraction (${providerName})...`);
     const openai = getOpenAIClient();
     const parsed = await callLLMWithFallback(openai, messages);
 
     return { data: parsed };
   } catch (error) {
-    console.error(`[Scraper] LLM Error for ${providerName}:`, error.message);
-    return { error: 'LLM extraction failed: ' + error.message };
+    console.error(`[Scraper] Failed for provider "${providerName}":`, error.message);
+    return { error: 'Extraction failed: ' + error.message };
   }
 }
