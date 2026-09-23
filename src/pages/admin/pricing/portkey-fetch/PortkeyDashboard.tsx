@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../../../../components/ui/Card/Card';
-import { DataTable } from '../../../../components/ui/DataTable/DataTable';
-import { Button } from '../../../../components/ui/Button/Button';
-import { Spinner } from '../../../../components/ui/Spinner/Spinner';
-import { Download, RefreshCw, AlertTriangle } from 'lucide-react';
+import { axiosClient } from '../../../../lib/axios';
+import { Download, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react';
 import styles from './PortkeyDashboard.module.css';
 
-// Pre-defined list of common providers on Portkey based on docs
+// Pre-defined list of common providers on Portkey
 const PROVIDERS = [
   'All', 'OpenAI', 'Anthropic', 'Google', 'AWS Bedrock', 'Azure OpenAI',
   'Google Vertex AI', 'Together AI', 'OpenRouter', 'Fireworks AI',
@@ -31,7 +28,6 @@ export function PortkeyDashboard() {
 
   const handleFetch = async () => {
     const providerToFetch = selectedProvider === 'custom' ? customProvider : selectedProvider;
-    
     if (!providerToFetch) {
       setError('Please select or enter a provider name.');
       return;
@@ -41,31 +37,12 @@ export function PortkeyDashboard() {
     setError(null);
 
     try {
-      // In a real implementation this will point to your backend url if different
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-      
-      const token = localStorage.getItem('supabase.auth.token');
-      // If we use supabase auth session:
-      const authHeader = token ? { Authorization: `Bearer ${JSON.parse(token).access_token}` } : {};
-
-      const response = await fetch(`${API_URL}/admin/pricing/portkey-fetch`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...authHeader
-        },
-        body: JSON.stringify({ provider: providerToFetch })
+      const response = await axiosClient.post('/api/admin/pricing/portkey-fetch', {
+        provider: providerToFetch,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch from Portkey');
-      }
-
-      setModels(data.models || []);
+      setModels(response.data.models || []);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to fetch data.');
     } finally {
       setIsLoading(false);
     }
@@ -73,13 +50,13 @@ export function PortkeyDashboard() {
 
   const exportToCSV = () => {
     if (models.length === 0) return;
-    
     const headers = ['Provider', 'Model Name', 'Endpoint', 'Input Price (per 1M)', 'Output Price (per 1M)'];
     const csvContent = [
       headers.join(','),
-      ...models.map(m => `"${m.providerName}","${m.modelName}","${m.endpoint || 'chat'}","${m.promptPrice}","${m.completionPrice}"`)
+      ...models.map(m =>
+        `"${m.providerName}","${m.modelName}","${m.endpoint || 'chat'}","${m.promptPrice}","${m.completionPrice}"`
+      ),
     ].join('\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -90,91 +67,113 @@ export function PortkeyDashboard() {
     document.body.removeChild(link);
   };
 
-  const columns = [
-    { header: 'Provider', accessor: 'providerName' as keyof FetchedModel },
-    { header: 'Model', accessor: 'modelName' as keyof FetchedModel },
-    { header: 'Endpoint', accessor: 'endpoint' as keyof FetchedModel },
-    { header: 'Input Price ($/1M)', accessor: 'promptPrice' as keyof FetchedModel },
-    { header: 'Output Price ($/1M)', accessor: 'completionPrice' as keyof FetchedModel },
-  ];
-
   return (
     <div className={styles.container}>
+      {/* Header */}
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Portkey Pricing Fetcher</h1>
           <p className={styles.subtitle}>Scrape live pricing directly from Portkey Catalog</p>
         </div>
-        <Button onClick={exportToCSV} disabled={models.length === 0} variant="outline" className={styles.exportBtn}>
-          <Download className="w-4 h-4 mr-2" />
+        <button
+          className={styles.exportBtn}
+          onClick={exportToCSV}
+          disabled={models.length === 0}
+        >
+          <Download size={16} />
           Export CSV
-        </Button>
+        </button>
       </div>
 
-      <Card className={styles.controlCard}>
-        <CardContent className={styles.controlContent}>
-          <div className={styles.inputGroup}>
-            <label className={styles.label}>Select Provider</label>
-            <div className={styles.providerRow}>
-              <select 
-                className={styles.select}
-                value={selectedProvider}
-                onChange={(e) => setSelectedProvider(e.target.value)}
-              >
-                {PROVIDERS.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-                <option value="custom">Custom (Type below)...</option>
-              </select>
-              
-              {selectedProvider === 'custom' && (
-                <input 
-                  type="text" 
-                  placeholder="e.g. together-ai"
-                  className={styles.input}
-                  value={customProvider}
-                  onChange={(e) => setCustomProvider(e.target.value)}
-                />
-              )}
+      {/* Controls */}
+      <div className={styles.controlCard}>
+        <div className={styles.inputGroup}>
+          <label className={styles.label}>Select Provider</label>
+          <div className={styles.providerRow}>
+            <select
+              className={styles.select}
+              value={selectedProvider}
+              onChange={(e) => setSelectedProvider(e.target.value)}
+            >
+              {PROVIDERS.map(p => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+              <option value="custom">Custom (Type below)...</option>
+            </select>
 
-              <Button onClick={handleFetch} disabled={isLoading} className={styles.fetchBtn}>
-                {isLoading ? <Spinner size="sm" className="mr-2" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                Fetch Models
-              </Button>
-            </div>
+            {selectedProvider === 'custom' && (
+              <input
+                type="text"
+                placeholder="e.g. together-ai"
+                className={styles.input}
+                value={customProvider}
+                onChange={(e) => setCustomProvider(e.target.value)}
+              />
+            )}
+
+            <button
+              className={styles.fetchBtn}
+              onClick={handleFetch}
+              disabled={isLoading}
+            >
+              {isLoading
+                ? <><Loader2 size={16} className={styles.spin} /> Fetching...</>
+                : <><RefreshCw size={16} /> Fetch Models</>
+              }
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
+      {/* Error */}
       {error && (
         <div className={styles.errorAlert}>
-          <AlertTriangle className="w-5 h-5 mr-2" />
+          <AlertTriangle size={18} />
           {error}
         </div>
       )}
 
-      <Card className={styles.dataCard}>
-        <CardHeader>
-          <CardTitle>Results ({models.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className={styles.loadingState}>
-              <Spinner size="lg" />
-              <p>Scraping with Apify & Atria LLM...</p>
-            </div>
-          ) : models.length > 0 ? (
-            <DataTable 
-              columns={columns} 
-              data={models} 
-            />
-          ) : (
-            <div className={styles.emptyState}>
-              <p>No data fetched yet. Select a provider and click Fetch.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Results */}
+      <div className={styles.dataCard}>
+        <div className={styles.dataCardHeader}>
+          Results ({models.length})
+        </div>
+        {isLoading ? (
+          <div className={styles.loadingState}>
+            <Loader2 size={36} className={styles.spin} />
+            <p>Scraping with Apify &amp; Atria LLM... (this may take 30–60 seconds)</p>
+          </div>
+        ) : models.length > 0 ? (
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Model</th>
+                  <th>Endpoint</th>
+                  <th>Input ($/1M)</th>
+                  <th>Output ($/1M)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {models.map((m, i) => (
+                  <tr key={i}>
+                    <td>{m.providerName}</td>
+                    <td><code>{m.modelName}</code></td>
+                    <td>{m.endpoint || 'chat'}</td>
+                    <td>{m.promptPrice}</td>
+                    <td>{m.completionPrice}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className={styles.emptyState}>
+            <p>No data fetched yet. Select a provider and click Fetch.</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
