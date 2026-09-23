@@ -7,8 +7,9 @@
   justify-content: space-between;
   padding: 0 48px;
   height: 60px;
-  background: rgba(0, 0, 0, 0.94);
-  backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -89,12 +90,98 @@
   border-color: var(--color-signal-hover);
 }
 
+.hamburgerBtn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.hamburgerBtn:hover {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mobileMenu {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .nav {
     padding: 0 20px;
   }
   .links {
     display: none;
+  }
+  .btnGhost, .btnPrimary {
+    display: none; /* Hide desktop buttons on mobile */
+  }
+  .hamburgerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .mobileMenu {
+    display: block;
+    position: fixed;
+    top: 60px; /* Below navbar */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.98);
+    z-index: 99;
+    padding: 24px;
+    overflow-y: auto;
+  }
+
+  .mobileLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .mobileLinks a {
+    font-size: 18px;
+    font-weight: var(--fw-medium);
+    color: var(--color-text-primary);
+    text-decoration: none;
+    display: block;
+  }
+
+  .mobileBtnGhost {
+    margin-top: 16px;
+    font-size: 16px;
+    font-weight: var(--fw-medium);
+    color: var(--color-text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--color-border);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    display: block;
+    text-align: center;
+  }
+
+  .mobileBtnPrimary {
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: var(--fw-semibold);
+    color: var(--color-bg);
+    background: var(--color-signal);
+    border: 1px solid var(--color-signal);
+    padding: 12px;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    display: block;
+    text-align: center;
   }
 }
 
