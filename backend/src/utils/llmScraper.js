@@ -7,6 +7,8 @@ dotenv.config();
 // All available models from the LLM provider, in priority order (best → fallback).
 // If one model fails, the system automatically tries the next one.
 const FREE_MODELS = [
+  ...(process.env.LLM_DEFAULT_MODEL ? [process.env.LLM_DEFAULT_MODEL] : []),
+  'Atria-Dawn-Preview',
   'zai-org/GLM-5.3-Flash',
   'deepseek-ai/DeepSeek-V4-Flash-0731',
   'MiniMaxAI/MiniMax-M2.7',
@@ -35,24 +37,48 @@ function getOpenAIClient() {
 
 /**
  * Scrapes a URL using headless chromium to bypass basic bot protection
- * and wait for JS to render.
+ * and wait for JS to render. Uses network-idle strategy for SPAs.
  */
 async function scrapeText(url) {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
+  let browser;
   try {
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    // Wait for JS to populate prices
-    await new Promise(r => setTimeout(r, 3000));
-    const text = await page.evaluate(() => document.body.innerText);
+    browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      viewport: { width: 1280, height: 900 },
+    });
+    const page = await context.newPage();
+
+    // 1. Navigate and wait for domcontentloaded first (fast)
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 40000 });
+
+    // 2. Then wait for the network to go idle (catches SPA route renders)
+    try {
+      await page.waitForLoadState('networkidle', { timeout: 15000 });
+    } catch (_) {
+      // networkidle timed out — page may still have useful content, continue
+      console.warn(`[Scraper] networkidle timed out for ${url} — continuing anyway`);
+    }
+
+    // 3. Extra settle time for JS frameworks to paint pricing tables
+    await new Promise(r => setTimeout(r, 5000));
+
+    // 4. Extract all visible text (innerText respects CSS visibility)
+    const text = await page.evaluate(() => {
+      // Remove script/style/noscript tags before extracting
+      document.querySelectorAll('script, style, noscript, svg').forEach(el => el.remove());
+      return document.body.innerText;
+    });
+
     await browser.close();
     return text;
   } catch (error) {
     console.error(`[Scraper] Error scraping ${url}:`, error.message);
-    await browser.close();
+    if (browser) await browser.close().catch(() => {});
     return null;
   }
 }
+
 
 /**
  * Tries to call the LLM with automatic fallback across all available free models.
