@@ -1,62 +1,96 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { axiosClient } from '../../../../lib/axios';
-import { Download, RefreshCw, AlertTriangle, Loader2 } from 'lucide-react';
+import { Terminal, Download, Loader2 } from 'lucide-react';
 import styles from './PortkeyDashboard.module.css';
 
-// Pre-defined list of common providers on Portkey
-const PROVIDERS = [
-  'All', 'OpenAI', 'Anthropic', 'Google', 'AWS Bedrock', 'Azure OpenAI',
-  'Google Vertex AI', 'Together AI', 'OpenRouter', 'Fireworks AI',
-  'Predibase', 'DeepSeek', 'Mistral', 'Cohere', 'AI21',
-  'Groq', 'Perplexity', 'Baseten', 'Nomic', 'Anyscale'
-];
-
 interface FetchedModel {
-  providerName: string;
-  modelName: string;
-  endpoint?: string;
-  promptPrice: string;
-  completionPrice: string;
+  provider: string;
+  model: string;
+  input_usd_per_1k: number | null;
+  output_usd_per_1k: number | null;
+  cache_read_usd_per_1k: number | null;
+  cache_write_usd_per_1k: number | null;
 }
 
 export function PortkeyDashboard() {
-  const [selectedProvider, setSelectedProvider] = useState<string>('All');
-  const [customProvider, setCustomProvider] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [command, setCommand] = useState('');
+  const [logs, setLogs] = useState<string[]>(['Welcome to Portkey Pricing Sync Terminal.', 'Type "help" for a list of commands.']);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [models, setModels] = useState<FetchedModel[]>([]);
+  const logsEndRef = useRef<HTMLDivElement>(null);
 
-  const handleFetch = async () => {
-    const providerToFetch = selectedProvider === 'custom' ? customProvider : selectedProvider;
-    if (!providerToFetch) {
-      setError('Please select or enter a provider name.');
-      return;
+  // Auto-scroll terminal
+  useEffect(() => {
+    if (logsEndRef.current) {
+      logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
+  }, [logs]);
 
-    setIsLoading(true);
-    setError(null);
+  const addLog = (msg: string) => {
+    setLogs(prev => [...prev, msg]);
+  };
+
+  const runSync = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setModels([]);
+    
+    addLog('> sync');
+    addLog('Initiating sync with Portkey GitHub repository...');
+    addLog('Please wait, this might take up to 60 seconds...');
 
     try {
-      const response = await axiosClient.post('/api/admin/pricing/portkey-fetch', {
-        provider: providerToFetch,
-      });
-      setModels(response.data.models || []);
+      const response = await axiosClient.post('/api/admin/pricing/run-portkey-sync');
+      
+      if (response.data.logs) {
+        response.data.logs.forEach((logLine: string) => addLog(logLine));
+      }
+      
+      if (response.data.models) {
+        setModels(response.data.models);
+        addLog(`\n✅ Sync complete. Successfully loaded ${response.data.models.length} models.`);
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch data.');
+      addLog(`\n❌ Error: ${err.message || 'Failed to execute sync script.'}`);
     } finally {
-      setIsLoading(false);
+      setIsSyncing(false);
+    }
+  };
+
+  const handleCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmd = command.trim().toLowerCase();
+    setCommand('');
+
+    if (!cmd) return;
+
+    if (cmd === 'clear') {
+      setLogs([]);
+      setModels([]);
+    } else if (cmd === 'help') {
+      addLog('> help');
+      addLog('Available commands:');
+      addLog('  sync  - Fetch all provider pricing from Portkey GitHub');
+      addLog('  clear - Clear the terminal and data table');
+      addLog('  help  - Show this help message');
+    } else if (cmd === 'sync') {
+      runSync();
+    } else {
+      addLog(`> ${cmd}`);
+      addLog(`Unknown command: ${cmd}. Type "help" for a list of commands.`);
     }
   };
 
   const exportToCSV = () => {
     if (models.length === 0) return;
-    const headers = ['Provider', 'Model Name', 'Endpoint', 'Input Price (per 1M)', 'Output Price (per 1M)'];
+    const headers = ['Provider', 'Model', 'Input ($/1K)', 'Output ($/1K)', 'Cache Read ($/1K)', 'Cache Write ($/1K)'];
     const csvContent = [
       headers.join(','),
-      ...models.map(m =>
-        `"${m.providerName}","${m.modelName}","${m.endpoint || 'chat'}","${m.promptPrice}","${m.completionPrice}"`
+      ...models.map(m => 
+        `"${m.provider}","${m.model}",${m.input_usd_per_1k || ''},${m.output_usd_per_1k || ''},${m.cache_read_usd_per_1k || ''},${m.cache_write_usd_per_1k || ''}`
       ),
     ].join('\n');
+    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -69,111 +103,92 @@ export function PortkeyDashboard() {
 
   return (
     <div className={styles.container}>
-      {/* Header */}
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Portkey Pricing Fetcher</h1>
-          <p className={styles.subtitle}>Scrape live pricing directly from Portkey Catalog</p>
+          <h1 className={styles.title}>Portkey Sync Terminal</h1>
+          <p className={styles.subtitle}>Direct GitHub Sync (USD per 1K Tokens)</p>
         </div>
-        <button
-          className={styles.exportBtn}
+        <button 
+          className={styles.exportBtn} 
           onClick={exportToCSV}
           disabled={models.length === 0}
         >
-          <Download size={16} />
-          Export CSV
+          <Download size={16} /> Export CSV
         </button>
       </div>
 
-      {/* Controls */}
-      <div className={styles.controlCard}>
-        <div className={styles.inputGroup}>
-          <label className={styles.label}>Select Provider</label>
-          <div className={styles.providerRow}>
-            <select
-              className={styles.select}
-              value={selectedProvider}
-              onChange={(e) => setSelectedProvider(e.target.value)}
-            >
-              {PROVIDERS.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-              <option value="custom">Custom (Type below)...</option>
-            </select>
-
-            {selectedProvider === 'custom' && (
-              <input
-                type="text"
-                placeholder="e.g. together-ai"
-                className={styles.input}
-                value={customProvider}
-                onChange={(e) => setCustomProvider(e.target.value)}
-              />
+      {/* Terminal UI */}
+      <div className={styles.terminalContainer}>
+        <div className={styles.terminalHeader}>
+          <Terminal size={16} /> ordisum@portkey-sync:~
+        </div>
+        
+        <div className={styles.terminalBody}>
+          <div className={styles.logs}>
+            {logs.map((log, i) => (
+              <div key={i} className={log.includes('Error') || log.includes('FAILED') ? styles.logError : log.startsWith('>') ? styles.logCommand : styles.logLine}>
+                {log}
+              </div>
+            ))}
+            {isSyncing && (
+              <div className={styles.logLine}>
+                <Loader2 size={12} className={styles.spin} /> 
+                <span style={{marginLeft: '8px'}}>Executing sync script...</span>
+              </div>
             )}
-
-            <button
-              className={styles.fetchBtn}
-              onClick={handleFetch}
-              disabled={isLoading}
-            >
-              {isLoading
-                ? <><Loader2 size={16} className={styles.spin} /> Fetching...</>
-                : <><RefreshCw size={16} /> Fetch Models</>
-              }
-            </button>
+            <div ref={logsEndRef} />
           </div>
+
+          <form onSubmit={handleCommand} className={styles.inputForm}>
+            <span className={styles.prompt}>$</span>
+            <input
+              type="text"
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              className={styles.terminalInput}
+              placeholder="Type a command (sync, clear, help)..."
+              disabled={isSyncing}
+              autoFocus
+              autoComplete="off"
+            />
+          </form>
         </div>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className={styles.errorAlert}>
-          <AlertTriangle size={18} />
-          {error}
-        </div>
-      )}
-
-      {/* Results */}
-      <div className={styles.dataCard}>
-        <div className={styles.dataCardHeader}>
-          Results ({models.length})
-        </div>
-        {isLoading ? (
-          <div className={styles.loadingState}>
-            <Loader2 size={36} className={styles.spin} />
-            <p>Scraping with Apify &amp; Atria LLM... (this may take 30–60 seconds)</p>
+      {/* Data Table */}
+      {models.length > 0 && (
+        <div className={styles.dataCard}>
+          <div className={styles.dataCardHeader}>
+            Results ({models.length} models)
           </div>
-        ) : models.length > 0 ? (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
                 <tr>
                   <th>Provider</th>
                   <th>Model</th>
-                  <th>Endpoint</th>
-                  <th>Input ($/1M)</th>
-                  <th>Output ($/1M)</th>
+                  <th>Input ($/1K)</th>
+                  <th>Output ($/1K)</th>
+                  <th>Cache Read</th>
+                  <th>Cache Write</th>
                 </tr>
               </thead>
               <tbody>
                 {models.map((m, i) => (
                   <tr key={i}>
-                    <td>{m.providerName}</td>
-                    <td><code>{m.modelName}</code></td>
-                    <td>{m.endpoint || 'chat'}</td>
-                    <td>{m.promptPrice}</td>
-                    <td>{m.completionPrice}</td>
+                    <td><span className={styles.providerBadge}>{m.provider}</span></td>
+                    <td><code>{m.model}</code></td>
+                    <td>{m.input_usd_per_1k !== null ? `$${m.input_usd_per_1k}` : '-'}</td>
+                    <td>{m.output_usd_per_1k !== null ? `$${m.output_usd_per_1k}` : '-'}</td>
+                    <td>{m.cache_read_usd_per_1k !== null ? `$${m.cache_read_usd_per_1k}` : '-'}</td>
+                    <td>{m.cache_write_usd_per_1k !== null ? `$${m.cache_write_usd_per_1k}` : '-'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        ) : (
-          <div className={styles.emptyState}>
-            <p>No data fetched yet. Select a provider and click Fetch.</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

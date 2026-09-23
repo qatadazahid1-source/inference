@@ -1,119 +1,98 @@
-import { ApifyClient } from 'apify-client';
+import { execFile } from 'node:child_process';
+import { readFile, access } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-// node-fetch nahi chahiye — Node.js 18+ mein fetch natively built-in hai
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const APIFY_TOKEN = process.env.APIFY_TOKEN;
-const ATRIA_API_KEY = process.env.ATRIA_API_KEY;
-const ATRIA_BASE_URL = 'https://api.atria-asi.ai/v1';
-const ATRIA_MODEL = 'Atria-Dawn-Preview';
+// Project root is 3 levels up from backend/src/controllers/
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
+const SCRIPT_PATH = path.join(PROJECT_ROOT, 'scripts', 'sync-portkey-pricing.mjs');
+const OUTPUT_PATH = path.join(PROJECT_ROOT, 'data', 'portkey-pricing.json');
 
-export const fetchPortkeyPricing = async (req, res) => {
+/**
+ * Converts USD per 1M tokens → USD per 1K tokens
+ * e.g. 1.75 → 0.00175
+ */
+function per1mToPer1k(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return null;
+  return Number((value / 1000).toFixed(10));
+}
+
+export const runPortkeySync = async (req, res) => {
+  console.log('[Portkey Sync] Starting sync from Portkey GitHub...');
+
   try {
-    const { provider } = req.body;
-    
-    if (!provider) {
-      return res.status(400).json({ error: 'Provider name is required.' });
-    }
-
-    console.log(`[Portkey Fetch] Starting fetch for provider: ${provider}`);
-    
-    // We target the specific provider's page on portkey, or the main models page if "all"
-    const targetUrl = provider.toLowerCase() === 'all' 
-      ? 'https://portkey.ai/models'
-      : `https://portkey.ai/models/${provider.toLowerCase().replace(/\s+/g, '-')}`;
-
-    // 1. Scrape with Apify (using website-content-crawler which returns text/markdown)
-    console.log(`[Portkey Fetch] Using Apify to scrape: ${targetUrl}`);
-    const client = new ApifyClient({ token: APIFY_TOKEN });
-    
-    // We use a lightweight scraper to just get the markdown/text of the page
-    const run = await client.actor("apify/website-content-crawler").call({
-        startUrls: [{ url: targetUrl }],
-        maxCrawlPages: 1,
-        crawlerType: "playwright:adaptive",
+    // Verify script exists
+    await access(SCRIPT_PATH);
+  } catch {
+    return res.status(500).json({
+      success: false,
+      error: `Sync script not found at: ${SCRIPT_PATH}. Ensure scripts/sync-portkey-pricing.mjs exists.`,
     });
-
-    const { items } = await client.dataset(run.defaultDatasetId).listItems();
-    
-    if (!items || items.length === 0 || !items[0].markdown) {
-      throw new Error("Failed to extract content via Apify.");
-    }
-
-    const scrapedText = items[0].markdown;
-    console.log(`[Portkey Fetch] Apify returned ${scrapedText.length} characters of markdown.`);
-
-    // 2. Parse with Atria LLM
-    console.log(`[Portkey Fetch] Sending to Atria LLM (${ATRIA_MODEL}) for parsing...`);
-    
-    const extractionPrompt = `You are a strict data extraction bot.
-Extract ALL models listed in the pricing table for the provider "${provider}". Each row usually has a Provider, Model ID, Input price, and Output price.
-Prices are in dollars per 1M tokens. If given per 1k tokens, multiply by 1000.
-
-Return ONLY a valid JSON array — NO markdown, NO \`\`\`json, NO extra text:
-[
-  {
-    "providerName": "${provider}",
-    "modelName": "model-name",
-    "endpoint": "chat",
-    "promptPrice": "$X.XX",
-    "completionPrice": "$Y.YY"
   }
-]
 
-IMPORTANT: Include ALL rows you can find in the text. If a price shows "Free" use "$0.00".
-If no pricing data found at all, return: []
+  // Run the sync script and collect its output
+  const logs = await new Promise((resolve, reject) => {
+    const collectedLogs = [];
 
-Text to analyze (first 30000 chars):
-----------------
-${scrapedText.substring(0, 30000)}
-----------------`;
-
-    const atriaResponse = await fetch(`${ATRIA_BASE_URL}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ATRIA_API_KEY}`
+    execFile(
+      process.execPath, // node binary
+      [SCRIPT_PATH, '--out', OUTPUT_PATH],
+      {
+        cwd: PROJECT_ROOT,
+        timeout: 120_000, // 2 minutes max
+        maxBuffer: 10 * 1024 * 1024, // 10MB output buffer
       },
-      body: JSON.stringify({
-        model: ATRIA_MODEL,
-        messages: [{ role: 'user', content: extractionPrompt }],
-        temperature: 0,
-      })
+      (error, stdout, stderr) => {
+        if (stdout) collectedLogs.push(...stdout.split('\n').filter(Boolean));
+        if (stderr) collectedLogs.push(...stderr.split('\n').filter(Boolean).map(l => `[ERR] ${l}`));
+
+        if (error && error.code !== 2) {
+          // Exit code 2 = some providers failed but partial success (acceptable)
+          reject(new Error(`Script failed (exit ${error.code}): ${error.message}\n${stderr}`));
+        } else {
+          resolve(collectedLogs);
+        }
+      }
+    );
+  }).catch(err => {
+    throw err;
+  });
+
+  // Read generated JSON
+  let rawData;
+  try {
+    const jsonText = await readFile(OUTPUT_PATH, 'utf8');
+    rawData = JSON.parse(jsonText);
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      logs,
+      error: `Failed to read generated pricing data: ${err.message}`,
     });
-
-    if (!atriaResponse.ok) {
-      const errBody = await atriaResponse.text();
-      throw new Error(`Atria API error: ${atriaResponse.status} ${errBody}`);
-    }
-
-    const atriaData = await atriaResponse.json();
-    let content = atriaData.choices[0].message.content.trim();
-
-    // Clean up markdown block if the LLM adds it
-    if (content.startsWith('```json')) {
-      content = content.replace(/```json/g, '').replace(/```/g, '').trim();
-    } else if (content.startsWith('```')) {
-      content = content.replace(/```/g, '').trim();
-    }
-
-    // Find JSON array bounds
-    const arrayStart = content.indexOf('[');
-    const arrayEnd = content.lastIndexOf(']');
-    if (arrayStart !== -1 && arrayEnd !== -1) {
-      content = content.substring(arrayStart, arrayEnd + 1);
-    }
-
-    const parsed = JSON.parse(content);
-    if (!Array.isArray(parsed)) {
-      throw new Error(`Expected JSON array but got ${typeof parsed}`);
-    }
-
-    console.log(`[Portkey Fetch] Atria successfully parsed ${parsed.length} models.`);
-    
-    res.json({ success: true, models: parsed });
-
-  } catch (error) {
-    console.error(`[Portkey Fetch] Error:`, error);
-    res.status(500).json({ success: false, error: error.message });
   }
+
+  // Convert per 1M → per 1K and build clean model list
+  const models = (rawData.models || []).map(m => ({
+    provider: m.provider,
+    model: m.model,
+    input_usd_per_1k:       per1mToPer1k(m.input_usd_per_1m),
+    output_usd_per_1k:      per1mToPer1k(m.output_usd_per_1m),
+    cache_read_usd_per_1k:  per1mToPer1k(m.cache_read_usd_per_1m),
+    cache_write_usd_per_1k: per1mToPer1k(m.cache_write_usd_per_1m),
+    audio_input_usd_per_1k: per1mToPer1k(m.audio_input_usd_per_1m),
+    audio_output_usd_per_1k:per1mToPer1k(m.audio_output_usd_per_1m),
+    currency: m.currency,
+  }));
+
+  console.log(`[Portkey Sync] Done. ${models.length} models from ${rawData.summary?.successful_provider_files ?? '?'} providers.`);
+
+  res.json({
+    success: true,
+    logs,
+    summary: rawData.summary,
+    generated_at: rawData.generated_at,
+    models,
+  });
 };
