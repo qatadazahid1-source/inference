@@ -166,27 +166,36 @@ export async function extractPricingFromUrl(providerName, url) {
       return { error: 'Failed to scrape page — all strategies exhausted' };
     }
 
+    // Detect if this is a multi-provider page (like portkey.ai/models which lists all providers)
+    // In that case, extract ALL models from the table, not just one provider
+    const isMultiProviderPage = text.includes('| Provider |') || text.includes('3,701 models') || text.includes('1,000 models');
+
+    const extractionScope = isMultiProviderPage
+      ? `Extract ALL models listed in the pricing table below. Each row has a Provider, Model ID, Input price, and Output price.`
+      : `Extract the API pricing for ALL models listed for the provider "${providerName}".`;
+
     const messages = [
       {
         role: 'user',
         content: `You are a strict data extraction bot.
-Your goal is to extract the API pricing (per 1M tokens) for ALL models mentioned in the text below for the provider "${providerName}".
-If the price is given per 1k tokens, multiply by 1000 to get per 1M. If given per token, multiply by 1,000,000.
+${extractionScope}
+Prices are in dollars per 1M tokens. If given per 1k tokens, multiply by 1000.
 
-Return ONLY a valid JSON array in this exact format, with NO markdown, NO \`\`\`json blocks, and NO extra text outside the array:
+Return ONLY a valid JSON array — NO markdown, NO \`\`\`json, NO extra text:
 [
   {
-    "modelName": "model-name-1",
+    "modelName": "provider/model-name",
     "promptPrice": "$X.XX",
     "completionPrice": "$Y.YY"
   }
 ]
 
-If you cannot find any pricing data, return an empty array: []
+IMPORTANT: Include ALL rows from the table, not just a few. If a price shows "Free" use "$0.00".
+If no pricing data found at all, return: []
 
-Text to analyze:
+Text to analyze (first 28000 chars):
 ----------------
-${text.substring(0, 25000)}
+${text.substring(0, 28000)}
 ----------------`,
       },
     ];
@@ -195,6 +204,7 @@ ${text.substring(0, 25000)}
     const openai = getOpenAIClient();
     const parsed = await callLLMWithFallback(openai, messages);
 
+    // Empty array is NOT an error — it means page has no pricing data
     return { data: parsed };
   } catch (error) {
     console.error(`[Scraper] Failed for provider "${providerName}":`, error.message);

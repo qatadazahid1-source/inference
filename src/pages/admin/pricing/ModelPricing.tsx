@@ -122,35 +122,39 @@ export function ModelPricingPage() {
       const result = await adminService.syncCustomUrlsPricing(validProviders);
       
       let alertMsg = '';
-      
-      // If nothing was updated or inserted
-      if (result.updatedCount === 0 && result.insertedCount === 0) {
-        alertMsg += 'Results are same so nothing is changed.\n\n';
-        result.providerResults.forEach(pr => {
-          if (pr.unchanged > 0) {
-            alertMsg += `${pr.providerName} ${pr.unchanged} models are unchanged.\n`;
-          }
+
+      // Show failures prominently at the top
+      if (result.failedProviders && result.failedProviders.length > 0) {
+        alertMsg += `❌ Failed to scrape (${result.failedProviders.length} provider${result.failedProviders.length > 1 ? 's' : ''}):\n`;
+        result.failedProviders.forEach((p: any) => {
+          alertMsg += `  • ${p.providerName}: ${p.error || 'Unknown error'}\n`;
         });
-      } else {
-        alertMsg += `Sync Complete!\n\nOverall: Updated: ${result.updatedCount}, New: ${result.insertedCount}\n\n`;
-        result.providerResults.forEach(pr => {
-          if (pr.unchanged > 0) {
-            alertMsg += `${pr.providerName} ${pr.unchanged} models are unchanged.\n`;
-          }
-          if (pr.updated > 0) {
-            alertMsg += `${pr.providerName} ${pr.updated} models are updated.\n`;
-          }
-          if (pr.newModels > 0) {
-            alertMsg += `${pr.providerName} ${pr.newModels} models are added as new.\n`;
-          }
-        });
+        alertMsg += '\n';
       }
 
-      if (result.failedProviders && result.failedProviders.length > 0) {
-        alertMsg += `\nFailed Providers: ${result.failedProviders.map(p => p.providerName).join(', ')}`;
+      // Show results
+      if (result.updatedCount === 0 && result.insertedCount === 0) {
+        if (!result.failedProviders || result.failedProviders.length === 0) {
+          alertMsg += '✅ All models already up-to-date. No changes needed.\n';
+        }
+        if (result.providerResults && result.providerResults.length > 0) {
+          result.providerResults.forEach((pr: any) => {
+            if (pr.unchanged > 0) {
+              alertMsg += `  • ${pr.providerName}: ${pr.unchanged} models unchanged\n`;
+            }
+          });
+        }
+      } else {
+        alertMsg += `✅ Sync Complete! Updated: ${result.updatedCount} | New: ${result.insertedCount}\n\n`;
+        result.providerResults.forEach((pr: any) => {
+          if (pr.newModels > 0) alertMsg += `  • ${pr.providerName}: +${pr.newModels} new models\n`;
+          if (pr.updated > 0) alertMsg += `  • ${pr.providerName}: ${pr.updated} prices updated\n`;
+          if (pr.unchanged > 0) alertMsg += `  • ${pr.providerName}: ${pr.unchanged} unchanged\n`;
+        });
       }
       
-      alert(alertMsg);
+      alert(alertMsg.trim());
+
       setShowSyncModal(false);
       setCustomProviders([{ providerName: '', url: '' }]);
       fetchPricing();
