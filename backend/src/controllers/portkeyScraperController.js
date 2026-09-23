@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Project root is 3 levels up from backend/src/controllers/
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
+const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..');
 const SCRIPT_PATH = path.join(PROJECT_ROOT, 'scripts', 'sync-portkey-pricing.mjs');
 const OUTPUT_PATH = path.join(PROJECT_ROOT, 'data', 'portkey-pricing.json');
 
