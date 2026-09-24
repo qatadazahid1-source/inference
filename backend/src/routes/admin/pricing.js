@@ -1,7 +1,7 @@
 import express from 'express';
 import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
-import { runPortkeySync } from '../../controllers/portkeyScraperController.js';
+import { runPortkeySync, applyPortkeySyncToDB } from '../../controllers/portkeyScraperController.js';
 
 const router = express.Router();
 
@@ -144,10 +144,16 @@ router.post('/', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ POST /api/admin/pricing/portkey-fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// Fetches portkey pricing using Apify + Atria LLM for a specific provider
+// ─── POST /api/admin/pricing/portkey-fetch (legacy alias) ──────────────────
+// ─── POST /api/admin/pricing/run-portkey-sync ──────────────────────────────
+// Runs sync-portkey-pricing.mjs → fetches ALL providers from Portkey GitHub
+// Returns models priced in USD per 1K tokens. No API key needed.
 router.post('/portkey-fetch', runPortkeySync);
 router.post('/run-portkey-sync', runPortkeySync);
+
+// ─── POST /api/admin/pricing/apply-portkey-sync ────────────────────────────
+// Applies previously fetched Portkey models to the DB
+router.post('/apply-portkey-sync', applyPortkeySyncToDB);
 
 // â”€â”€â”€ POST /api/admin/pricing/sync-openrouter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Fetches latest pricing from OpenRouter API and updates DB

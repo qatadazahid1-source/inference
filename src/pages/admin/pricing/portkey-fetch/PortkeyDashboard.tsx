@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { axiosClient } from '../../../../lib/axios';
-import { Terminal, Download, Loader2 } from 'lucide-react';
+import { Terminal, Download, Loader2, Database } from 'lucide-react';
 import styles from './PortkeyDashboard.module.css';
 
 interface FetchedModel {
@@ -16,6 +16,7 @@ export function PortkeyDashboard() {
   const [command, setCommand] = useState('');
   const [logs, setLogs] = useState<string[]>(['Welcome to Portkey Pricing Sync Terminal.', 'Type "help" for a list of commands.']);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const [models, setModels] = useState<FetchedModel[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +58,36 @@ export function PortkeyDashboard() {
     }
   };
 
+  const runApply = async () => {
+    if (isApplying) return;
+    if (models.length === 0) {
+      addLog('> apply');
+      addLog('❌ Error: No synced models found. Run "sync" first.');
+      return;
+    }
+
+    setIsApplying(true);
+    addLog('> apply');
+    addLog('Analyzing differences and applying updates to database...');
+    
+    try {
+      const response = await axiosClient.post('/api/admin/pricing/apply-portkey-sync');
+      
+      if (response.data.success) {
+        addLog(`✅ Auto-Apply Complete!`);
+        addLog(`- ${response.data.updatedCount} existing models updated`);
+        addLog(`- ${response.data.insertedCount} new models added`);
+        addLog(`Total models processed: ${response.data.totalProcessed}`);
+      } else {
+        addLog(`❌ Failed: ${response.data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      addLog(`❌ Error: ${err.message || 'Failed to apply to DB.'}`);
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault();
     const cmd = command.trim().toLowerCase();
@@ -71,10 +102,13 @@ export function PortkeyDashboard() {
       addLog('> help');
       addLog('Available commands:');
       addLog('  sync  - Fetch all provider pricing from Portkey GitHub');
+      addLog('  apply - Apply synced models to the database');
       addLog('  clear - Clear the terminal and data table');
       addLog('  help  - Show this help message');
     } else if (cmd === 'sync') {
       runSync();
+    } else if (cmd === 'apply') {
+      runApply();
     } else {
       addLog(`> ${cmd}`);
       addLog(`Unknown command: ${cmd}. Type "help" for a list of commands.`);
@@ -108,13 +142,23 @@ export function PortkeyDashboard() {
           <h1 className={styles.title}>Portkey Sync Terminal</h1>
           <p className={styles.subtitle}>Direct GitHub Sync (USD per 1K Tokens)</p>
         </div>
-        <button 
-          className={styles.exportBtn} 
-          onClick={exportToCSV}
-          disabled={models.length === 0}
-        >
-          <Download size={16} /> Export CSV
-        </button>
+        <div className={styles.headerActions}>
+          <button 
+            className={styles.applyBtn} 
+            onClick={runApply}
+            disabled={models.length === 0 || isApplying || isSyncing}
+          >
+            {isApplying ? <Loader2 size={16} className={styles.spin} /> : <Database size={16} />}
+            Apply to DB
+          </button>
+          <button 
+            className={styles.exportBtn} 
+            onClick={exportToCSV}
+            disabled={models.length === 0}
+          >
+            <Download size={16} /> Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Terminal UI */}
@@ -146,8 +190,8 @@ export function PortkeyDashboard() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               className={styles.terminalInput}
-              placeholder="Type a command (sync, clear, help)..."
-              disabled={isSyncing}
+              placeholder="Type a command (sync, apply, clear, help)..."
+              disabled={isSyncing || isApplying}
               autoFocus
               autoComplete="off"
             />
