@@ -150,10 +150,10 @@ export const applyPortkeySyncToDB = async (req, res) => {
       if (existing) {
         // Check if pricing actually changed
         // Treat undefined/null/0 as equivalent if they both mean no cost
-        const existingIn = existing.input_cost_per_1k ?? null;
-        const existingOut = existing.output_cost_per_1k ?? null;
-        const fetchedIn = fm.input_usd_per_1k ?? null;
-        const fetchedOut = fm.output_usd_per_1k ?? null;
+        const existingIn = existing.input_cost_per_1k ?? 0;
+        const existingOut = existing.output_cost_per_1k ?? 0;
+        const fetchedIn = fm.input_usd_per_1k ?? 0;
+        const fetchedOut = fm.output_usd_per_1k ?? 0;
 
         if (existingIn !== fetchedIn || existingOut !== fetchedOut) {
           toUpdate.push({
@@ -170,8 +170,8 @@ export const applyPortkeySyncToDB = async (req, res) => {
         toInsert.push({
           provider: fm.provider,
           model: fm.model,
-          input_cost_per_1k: fm.input_usd_per_1k ?? null,
-          output_cost_per_1k: fm.output_usd_per_1k ?? null,
+          input_cost_per_1k: fm.input_usd_per_1k ?? 0,
+          output_cost_per_1k: fm.output_usd_per_1k ?? 0,
           context_window: null,
           is_active: true,
         });
