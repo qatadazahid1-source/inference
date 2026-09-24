@@ -2,6 +2,7 @@ import express from 'express';
 import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
 import { runPortkeySync, applyPortkeySyncToDB } from '../../controllers/portkeyScraperController.js';
+import { runOpenRouterSync, applyOpenRouterSyncToDB } from '../../controllers/openrouterScraperController.js';
 
 const router = express.Router();
 
@@ -155,7 +156,15 @@ router.post('/run-portkey-sync', runPortkeySync);
 // Applies previously fetched Portkey models to the DB
 router.post('/apply-portkey-sync', applyPortkeySyncToDB);
 
-// â”€â”€â”€ POST /api/admin/pricing/sync-openrouter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST /api/admin/pricing/run-openrouter-sync ───────────────────────────
+// Runs scripts/sync-models.mjs -> fetches from OpenRouter API
+router.post('/run-openrouter-sync', runOpenRouterSync);
+
+// ─── POST /api/admin/pricing/apply-openrouter-sync ─────────────────────────
+// Applies previously fetched OpenRouter models to the DB
+router.post('/apply-openrouter-sync', applyOpenRouterSyncToDB);
+
+// ─── POST /api/admin/pricing/sync-openrouter (legacy) ───────────────────────
 // Fetches latest pricing from OpenRouter API and updates DB
 router.post('/sync-openrouter', async (req, res) => {
   try {

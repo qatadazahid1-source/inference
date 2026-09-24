@@ -14,10 +14,11 @@ interface FetchedModel {
 
 export function PortkeyDashboard() {
   const [command, setCommand] = useState('');
-  const [logs, setLogs] = useState<string[]>(['Welcome to Portkey Pricing Sync Terminal.', 'Type "help" for a list of commands.']);
+  const [logs, setLogs] = useState<string[]>(['Welcome to Pricing Sync Terminal.', 'Type "help" for a list of commands.']);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
   const [models, setModels] = useState<FetchedModel[]>([]);
+  const [lastSyncedSource, setLastSyncedSource] = useState<'portkey' | 'openrouter' | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll terminal
@@ -31,17 +32,22 @@ export function PortkeyDashboard() {
     setLogs(prev => [...prev, msg]);
   };
 
-  const runSync = async () => {
+  const runSync = async (source: 'portkey' | 'openrouter') => {
     if (isSyncing) return;
     setIsSyncing(true);
     setModels([]);
+    setLastSyncedSource(null);
     
-    addLog('> sync');
-    addLog('Initiating sync with Portkey GitHub repository...');
+    addLog(`> ${source === 'portkey' ? 'sync' : 'openrouter sync'}`);
+    addLog(`Initiating sync with ${source === 'portkey' ? 'Portkey GitHub repository' : 'OpenRouter API'}...`);
     addLog('Please wait, this might take up to 60 seconds...');
 
     try {
-      const response = await axiosClient.post('/api/admin/pricing/run-portkey-sync');
+      const endpoint = source === 'portkey' 
+        ? '/api/admin/pricing/run-portkey-sync' 
+        : '/api/admin/pricing/run-openrouter-sync';
+        
+      const response = await axiosClient.post(endpoint);
       
       if (response.data.logs) {
         response.data.logs.forEach((logLine: string) => addLog(logLine));
@@ -49,6 +55,7 @@ export function PortkeyDashboard() {
       
       if (response.data.models) {
         setModels(response.data.models);
+        setLastSyncedSource(source);
         addLog(`\n✅ Sync complete. Successfully loaded ${response.data.models.length} models.`);
       }
     } catch (err: any) {
@@ -58,20 +65,27 @@ export function PortkeyDashboard() {
     }
   };
 
-  const runApply = async () => {
+  const runApply = async (sourceOverride?: 'portkey' | 'openrouter') => {
     if (isApplying) return;
-    if (models.length === 0) {
-      addLog('> apply');
-      addLog('❌ Error: No synced models found. Run "sync" first.');
+    
+    const sourceToApply = sourceOverride || lastSyncedSource;
+    
+    if (!sourceToApply || models.length === 0) {
+      addLog(`> ${sourceOverride === 'openrouter' ? 'openrouter apply' : 'apply'}`);
+      addLog('❌ Error: No synced models found to apply. Run "sync" or "openrouter sync" first.');
       return;
     }
 
     setIsApplying(true);
-    addLog('> apply');
-    addLog('Analyzing differences and applying updates to database...');
+    addLog(`> ${sourceToApply === 'portkey' ? 'apply' : 'openrouter apply'}`);
+    addLog(`Analyzing differences and applying ${sourceToApply} updates to database...`);
     
     try {
-      const response = await axiosClient.post('/api/admin/pricing/apply-portkey-sync');
+      const endpoint = sourceToApply === 'portkey' 
+        ? '/api/admin/pricing/apply-portkey-sync'
+        : '/api/admin/pricing/apply-openrouter-sync';
+        
+      const response = await axiosClient.post(endpoint);
       
       if (response.data.success) {
         addLog(`✅ Auto-Apply Complete!`);
@@ -98,17 +112,24 @@ export function PortkeyDashboard() {
     if (cmd === 'clear') {
       setLogs([]);
       setModels([]);
+      setLastSyncedSource(null);
     } else if (cmd === 'help') {
       addLog('> help');
       addLog('Available commands:');
-      addLog('  sync  - Fetch all provider pricing from Portkey GitHub');
-      addLog('  apply - Apply synced models to the database');
-      addLog('  clear - Clear the terminal and data table');
-      addLog('  help  - Show this help message');
+      addLog('  sync              - Fetch pricing from Portkey GitHub');
+      addLog('  apply             - Apply synced Portkey models to database');
+      addLog('  openrouter sync   - Fetch pricing from OpenRouter API');
+      addLog('  openrouter apply  - Apply synced OpenRouter models to database');
+      addLog('  clear             - Clear the terminal and data table');
+      addLog('  help              - Show this help message');
     } else if (cmd === 'sync') {
-      runSync();
+      runSync('portkey');
+    } else if (cmd === 'openrouter sync') {
+      runSync('openrouter');
     } else if (cmd === 'apply') {
-      runApply();
+      runApply('portkey');
+    } else if (cmd === 'openrouter apply') {
+      runApply('openrouter');
     } else {
       addLog(`> ${cmd}`);
       addLog(`Unknown command: ${cmd}. Type "help" for a list of commands.`);
@@ -139,13 +160,13 @@ export function PortkeyDashboard() {
     <div className={styles.container}>
       <div className={styles.header}>
         <div>
-          <h1 className={styles.title}>Portkey Sync Terminal</h1>
-          <p className={styles.subtitle}>Direct GitHub Sync (USD per 1K Tokens)</p>
+          <h1 className={styles.title}>Pricing Sync Terminal</h1>
+          <p className={styles.subtitle}>Unified Hub for Portkey & OpenRouter Pricing</p>
         </div>
         <div className={styles.headerActions}>
           <button 
             className={styles.applyBtn} 
-            onClick={runApply}
+            onClick={() => runApply()}
             disabled={models.length === 0 || isApplying || isSyncing}
           >
             {isApplying ? <Loader2 size={16} className={styles.spin} /> : <Database size={16} />}
@@ -164,7 +185,7 @@ export function PortkeyDashboard() {
       {/* Terminal UI */}
       <div className={styles.terminalContainer}>
         <div className={styles.terminalHeader}>
-          <Terminal size={16} /> ordisum@portkey-sync:~
+          <Terminal size={16} /> ordisum@pricing-sync:~
         </div>
         
         <div className={styles.terminalBody}>
