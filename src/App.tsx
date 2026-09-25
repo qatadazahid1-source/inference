@@ -27,6 +27,8 @@ const FeaturesPage = lazy(() => import('./pages/public/Features'));
 const PricingPage = lazy(() => import('./pages/public/Pricing'));
 const SecurityPage = lazy(() => import('./pages/public/Security'));
 const TermsOfService = lazy(() => import('./pages/public/TermsOfService'));
+const PrivacyPolicy = lazy(() => import('./pages/public/PrivacyPolicy'));
+const RefundPolicy = lazy(() => import('./pages/public/RefundPolicy'));
 
 const HeliconePage = lazy(() => import('./pages/public/alternatives/Helicone'));
 const LangfusePage = lazy(() => import('./pages/public/alternatives/Langfuse'));
@@ -324,10 +326,10 @@ export default function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/security" element={<SecurityPage />} />
 
-        {/* ── Legal Pages (CMS-driven fallbacks, explicit routes before catch-all) ── */}
-        <Route path="/privacy-policy" element={<StaticPage />} />
+        {/* ── Legal Pages (Static pre-rendered components) ── */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
-        <Route path="/refund-policy" element={<StaticPage />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
 
         {/* ── Dynamic Marketing Templates (with static overrides) ── */}
         <Route path="/alternatives/helicone" element={<HeliconePage />} />
