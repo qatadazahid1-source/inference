@@ -22,7 +22,7 @@ const otherPublicRoutes = [
 
 const allRoutes = [...mandatoryLegalRoutes.map(r => r.route), ...otherPublicRoutes];
 
-console.log('[postbuild] Creating flat .html pre-rendered files for direct static server matching...');
+console.log('[postbuild] Creating flat .html and flat extensionless pre-rendered files for native Render static matching...');
 
 let buildErrors = [];
 
@@ -30,6 +30,7 @@ for (const route of allRoutes) {
   const dirPath = path.join(distDir, route);
   const indexPath = path.join(dirPath, 'index.html');
   const htmlPath = path.join(distDir, `${route}.html`);
+  const flatFilePath = path.join(distDir, route);
 
   if (fs.existsSync(indexPath)) {
     const htmlContent = fs.readFileSync(indexPath, 'utf8');
@@ -37,7 +38,13 @@ for (const route of allRoutes) {
     // 1. Create flat .html file (e.g. dist/terms.html)
     fs.writeFileSync(htmlPath, htmlContent, 'utf8');
 
-    console.log(`  ✓ Successfully copied pre-rendered HTML to 'dist/${route}.html' (kept 'dist/${route}/index.html')`);
+    // 2. Remove directory (e.g. dist/terms/) so we can place a flat extensionless file in its place
+    fs.rmSync(dirPath, { recursive: true, force: true });
+
+    // 3. Create flat extensionless file (e.g. dist/terms)
+    fs.writeFileSync(flatFilePath, htmlContent, 'utf8');
+
+    console.log(`  ✓ Created flat static files 'dist/${route}' and 'dist/${route}.html'`);
   } else {
     console.warn(`  ⚠️ Warning: Pre-rendered file ${indexPath} not found`);
   }
@@ -48,15 +55,15 @@ console.log('\n[postbuild] Validating mandatory legal route HTML files...');
 // Validation step for mandatory legal routes
 for (const { route, expectedTitle, expectedH1 } of mandatoryLegalRoutes) {
   const htmlPath = path.join(distDir, `${route}.html`);
-  const indexPath = path.join(distDir, route, 'index.html');
+  const flatFilePath = path.join(distDir, route);
 
   if (!fs.existsSync(htmlPath)) {
     buildErrors.push(`[VALIDATION ERROR] Required file missing: dist/${route}.html`);
     continue;
   }
 
-  if (!fs.existsSync(indexPath)) {
-    buildErrors.push(`[VALIDATION ERROR] Required file missing: dist/${route}/index.html`);
+  if (!fs.existsSync(flatFilePath)) {
+    buildErrors.push(`[VALIDATION ERROR] Required file missing: dist/${route}`);
     continue;
   }
 
@@ -68,7 +75,6 @@ for (const { route, expectedTitle, expectedH1 } of mandatoryLegalRoutes) {
   }
 
   // Check 2: Does it contain homepage main hero title instead of legal content?
-  // Homepage main hero has "AI API Cost Observability" or similar hero headline without legal content
   if (content.includes('<h1>AI API Cost') && !content.includes(expectedH1)) {
     buildErrors.push(`[VALIDATION ERROR] dist/${route}.html accidentally contains the homepage hero instead of ${expectedTitle}`);
   }
@@ -81,5 +87,5 @@ if (buildErrors.length > 0) {
   }
   process.exit(1);
 } else {
-  console.log('  ✓ All mandatory legal page HTML files verified successfully (terms.html, privacy-policy.html, refund-policy.html).\n');
+  console.log('  ✓ All mandatory legal page HTML files verified successfully (terms, terms.html, privacy-policy, privacy-policy.html, refund-policy, refund-policy.html).\n');
 }
