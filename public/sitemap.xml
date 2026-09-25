@@ -58,6 +58,23 @@
     <priority>0.8</priority>
   </url>
 
+  <!-- ── Legal pages ────────────────────────────────────────────────── -->
+  <url>
+    <loc>https://ordisum.com/terms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/privacy-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://ordisum.com/refund-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
   <!-- ── Documentation (/docs/:slug) ────────────────────────────────────── -->
   <url>
     <loc>https://ordisum.com/docs/overview</loc>
