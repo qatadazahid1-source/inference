@@ -1,7 +1,15 @@
 {
   "cleanUrls": true,
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/terms", "destination": "/terms/index.html" },
+    { "source": "/privacy-policy", "destination": "/privacy-policy/index.html" },
+    { "source": "/refund-policy", "destination": "/refund-policy/index.html" },
+    { "source": "/features", "destination": "/features/index.html" },
+    { "source": "/pricing", "destination": "/pricing/index.html" },
+    { "source": "/security", "destination": "/security/index.html" },
+    { "source": "/contact-sales", "destination": "/contact-sales/index.html" },
+    { "source": "/blog", "destination": "/blog/index.html" },
+    { "source": "/docs", "destination": "/docs/index.html" },
+    { "source": "/((?!api/|assets/|images/|favicon.png|logo.png|ordisum-logo.png|robots.txt|sitemap.xml|llms.txt).*)", "destination": "/index.html" }
   ]
 }

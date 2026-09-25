@@ -8,7 +8,7 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:all": "npx concurrently \"npm run dev\" \"npm run dev:backend\"",
     "build": "vite build",
-    "postbuild": "react-snap",
+    "postbuild": "react-snap && node scripts/copy-prerendered.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
