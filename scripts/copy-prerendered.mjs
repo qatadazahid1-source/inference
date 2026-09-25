@@ -14,15 +14,27 @@ const routes = [
   'docs'
 ];
 
-console.log('[postbuild] Copying pre-rendered index.html files to flat .html files for clean URL resolution...');
+console.log('[postbuild] Creating flat extensionless and .html pre-rendered files for direct static server matching...');
 
 for (const route of routes) {
-  const indexPath = path.join(distDir, route, 'index.html');
+  const dirPath = path.join(distDir, route);
+  const indexPath = path.join(dirPath, 'index.html');
   const htmlPath = path.join(distDir, `${route}.html`);
+  const flatFilePath = path.join(distDir, route);
 
   if (fs.existsSync(indexPath)) {
-    fs.copyFileSync(indexPath, htmlPath);
-    console.log(`  ✓ Copied ${route}/index.html -> ${route}.html`);
+    const htmlContent = fs.readFileSync(indexPath, 'utf8');
+
+    // 1. Create flat .html file (e.g. dist/terms.html)
+    fs.writeFileSync(htmlPath, htmlContent, 'utf8');
+
+    // 2. Remove directory (e.g. dist/terms/) so we can place a flat extensionless file in its place
+    fs.rmSync(dirPath, { recursive: true, force: true });
+
+    // 3. Create flat extensionless file (e.g. dist/terms)
+    fs.writeFileSync(flatFilePath, htmlContent, 'utf8');
+
+    console.log(`  ✓ Successfully created flat static files 'dist/${route}' and 'dist/${route}.html'`);
   } else {
     console.warn(`  ⚠️ Warning: ${indexPath} not found`);
   }
