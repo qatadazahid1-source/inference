@@ -26,6 +26,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 const FeaturesPage = lazy(() => import('./pages/public/Features'));
 const PricingPage = lazy(() => import('./pages/public/Pricing'));
 const SecurityPage = lazy(() => import('./pages/public/Security'));
+const TermsOfService = lazy(() => import('./pages/public/TermsOfService'));
 
 const HeliconePage = lazy(() => import('./pages/public/alternatives/Helicone'));
 const LangfusePage = lazy(() => import('./pages/public/alternatives/Langfuse'));
@@ -325,7 +326,7 @@ export default function App() {
 
         {/* ── Legal Pages (CMS-driven fallbacks, explicit routes before catch-all) ── */}
         <Route path="/privacy-policy" element={<StaticPage />} />
-        <Route path="/terms" element={<StaticPage />} />
+        <Route path="/terms" element={<TermsOfService />} />
         <Route path="/refund-policy" element={<StaticPage />} />
 
         {/* ── Dynamic Marketing Templates (with static overrides) ── */}
