@@ -11,12 +11,20 @@
 #
 # SPA private routes continue to use the /* /index.html 200 catch-all fallback.
 
-/terms /terms.html 200
-/privacy-policy /privacy-policy.html 200
-/refund-policy /refund-policy.html 200
-/features /features.html 200
-/pricing /pricing.html 200
-/security /security.html 200
-/contact-sales /contact-sales.html 200
-/blog /blog.html 200
+/terms /terms.html 200!
+/terms/ /terms.html 200!
+/privacy-policy /privacy-policy.html 200!
+/privacy-policy/ /privacy-policy.html 200!
+/refund-policy /refund-policy.html 200!
+/refund-policy/ /refund-policy.html 200!
+/features /features.html 200!
+/features/ /features.html 200!
+/pricing /pricing.html 200!
+/pricing/ /pricing.html 200!
+/security /security.html 200!
+/security/ /security.html 200!
+/contact-sales /contact-sales.html 200!
+/contact-sales/ /contact-sales.html 200!
+/blog /blog.html 200!
+/blog/ /blog.html 200!
 /* /index.html 200
