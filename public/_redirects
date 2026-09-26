@@ -2,29 +2,14 @@
 #
 # ARCHITECTURE:
 # react-snap pre-renders each public route into dist/<route>.html
-# _redirects rewrites clean URLs to the .html files.
-# Render serves .html files natively with Content-Type: text/html.
+# Render serves .html files natively with Clean URLs enabled (so dist/terms.html is served at /terms).
 #
 # DO NOT use flat extensionless files (dist/terms, etc.)
-# If they exist, Render ignores _redirects and serves them as binary/octet-stream.
-# That causes browser downloads. We removed them in postbuild.
+# If they exist, Render serves them as binary/octet-stream causing browser downloads.
+#
+# DO NOT add manual rewrites for pre-rendered pages like /terms /terms.html 200!
+# Render's automatic Clean URLs will handle them natively without falling into SPA loops.
 #
 # SPA private routes continue to use the /* /index.html 200 catch-all fallback.
 
-/terms /terms.html 200!
-/terms/ /terms.html 200!
-/privacy-policy /privacy-policy.html 200!
-/privacy-policy/ /privacy-policy.html 200!
-/refund-policy /refund-policy.html 200!
-/refund-policy/ /refund-policy.html 200!
-/features /features.html 200!
-/features/ /features.html 200!
-/pricing /pricing.html 200!
-/pricing/ /pricing.html 200!
-/security /security.html 200!
-/security/ /security.html 200!
-/contact-sales /contact-sales.html 200!
-/contact-sales/ /contact-sales.html 200!
-/blog /blog.html 200!
-/blog/ /blog.html 200!
 /* /index.html 200
