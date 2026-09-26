@@ -127,11 +127,24 @@ export const applyPortkeySyncToDB = async (req, res) => {
     }
 
     // 2. Fetch current DB models
-    const { data: dbModels, error: fetchErr } = await supabase
-      .from('model_pricing')
-      .select('id, provider, model, input_cost_per_1k, output_cost_per_1k');
-
-    if (fetchErr) throw fetchErr;
+    let dbModels = [];
+    let from = 0;
+    let limit = 1000;
+    let hasMore = true;
+    while(hasMore) {
+      const { data, error: fetchErr } = await supabase
+        .from('model_pricing')
+        .select('id, provider, model, input_cost_per_1k, output_cost_per_1k')
+        .range(from, from + limit - 1);
+      if (fetchErr) throw fetchErr;
+      if (data.length === 0) {
+        hasMore = false;
+      } else {
+        dbModels = dbModels.concat(data);
+        if (data.length < limit) hasMore = false;
+        from += limit;
+      }
+    }
 
     // Build a map of existing models for fast lookup: key = provider:model
     const dbModelMap = new Map();

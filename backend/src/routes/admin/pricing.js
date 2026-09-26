@@ -32,14 +32,30 @@ async function logPricingChange({ changedBy, modelPricingId, provider, modelName
 // All model_pricing rows, ordered by provider then model name.
 router.get('/', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('model_pricing')
-      .select('*')
-      .order('provider', { ascending: true })
-      .order('model', { ascending: true });
+    let allData = [];
+    let from = 0;
+    let limit = 1000;
+    let hasMore = true;
 
-    if (error) throw error;
-    res.json({ data });
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from('model_pricing')
+        .select('*')
+        .order('provider', { ascending: true })
+        .order('model', { ascending: true })
+        .range(from, from + limit - 1);
+
+      if (error) throw error;
+      if (data.length === 0) {
+        hasMore = false;
+      } else {
+        allData = allData.concat(data);
+        if (data.length < limit) hasMore = false;
+        from += limit;
+      }
+    }
+
+    res.json({ data: allData });
   } catch (err) {
     console.error('[admin/pricing] GET error:', err.message);
     res.status(500).json({ error: 'An internal server error occurred.' });
@@ -229,11 +245,24 @@ router.post('/sync-openrouter', async (req, res) => {
     }
 
     // Fetch existing pricing
-    const { data: existingPricing, error: fetchErr } = await supabase
-      .from('model_pricing')
-      .select('id, provider, model, input_cost_per_1k, output_cost_per_1k');
-
-    if (fetchErr) throw fetchErr;
+    let existingPricing = [];
+    let from = 0;
+    let limit = 1000;
+    let hasMore = true;
+    while(hasMore) {
+      const { data, error: fetchErr } = await supabase
+        .from('model_pricing')
+        .select('id, provider, model, input_cost_per_1k, output_cost_per_1k')
+        .range(from, from + limit - 1);
+      if (fetchErr) throw fetchErr;
+      if (data.length === 0) {
+        hasMore = false;
+      } else {
+        existingPricing = existingPricing.concat(data);
+        if (data.length < limit) hasMore = false;
+        from += limit;
+      }
+    }
 
     const existingMap = new Map();
     for (const row of existingPricing) {
@@ -332,11 +361,24 @@ router.post('/sync-custom-urls', async (req, res) => {
     let providerResults = []; // To track per-provider stats
 
     // Fetch existing pricing once to compare
-    const { data: existingPricing, error: fetchErr } = await supabase
-      .from('model_pricing')
-      .select('id, provider, model, input_cost_per_1k, output_cost_per_1k');
-
-    if (fetchErr) throw fetchErr;
+    let existingPricing = [];
+    let from = 0;
+    let limit = 1000;
+    let hasMore = true;
+    while(hasMore) {
+      const { data, error: fetchErr } = await supabase
+        .from('model_pricing')
+        .select('id, provider, model, input_cost_per_1k, output_cost_per_1k')
+        .range(from, from + limit - 1);
+      if (fetchErr) throw fetchErr;
+      if (data.length === 0) {
+        hasMore = false;
+      } else {
+        existingPricing = existingPricing.concat(data);
+        if (data.length < limit) hasMore = false;
+        from += limit;
+      }
+    }
 
     const existingMap = new Map();
     for (const row of existingPricing) {
