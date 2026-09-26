@@ -22,7 +22,9 @@ const otherPublicRoutes = [
 
 const allRoutes = [...mandatoryLegalRoutes.map(r => r.route), ...otherPublicRoutes];
 
-console.log('[postbuild] Creating flat .html and flat extensionless pre-rendered files for native Render static matching...');
+console.log('[postbuild] Copying pre-rendered HTML into dist/<route>.html files...');
+console.log('[postbuild] NOTE: dist/<route>/index.html directories are PRESERVED for correct Render Content-Type serving.');
+console.log('[postbuild] NOTE: Flat extensionless files are NOT created (they cause binary/octet-stream Content-Type on Render).\n');
 
 let buildErrors = [];
 
@@ -32,21 +34,26 @@ for (const route of allRoutes) {
   const htmlPath = path.join(distDir, `${route}.html`);
   const flatFilePath = path.join(distDir, route);
 
+  // CRITICAL: Remove flat extensionless file if it exists from a previous build.
+  // Render's static server finds dist/<route> (binary) BEFORE evaluating _redirects,
+  // causing Content-Type: binary/octet-stream which makes browsers download the file.
+  if (fs.existsSync(flatFilePath) && !fs.statSync(flatFilePath).isDirectory()) {
+    fs.unlinkSync(flatFilePath);
+    console.log(`  🗑️  Removed flat extensionless file 'dist/${route}' (was causing binary Content-Type download bug)`);
+  }
+
   if (fs.existsSync(indexPath)) {
     const htmlContent = fs.readFileSync(indexPath, 'utf8');
 
-    // 1. Create flat .html file (e.g. dist/terms.html)
+    // Create flat .html file (e.g. dist/terms.html) — kept as backup but not used for routing
     fs.writeFileSync(htmlPath, htmlContent, 'utf8');
 
-    // 2. Remove directory (e.g. dist/terms/) so we can place a flat extensionless file in its place
-    fs.rmSync(dirPath, { recursive: true, force: true });
-
-    // 3. Create flat extensionless file (e.g. dist/terms)
-    fs.writeFileSync(flatFilePath, htmlContent, 'utf8');
-
-    console.log(`  ✓ Created flat static files 'dist/${route}' and 'dist/${route}.html'`);
+    // IMPORTANT: Keep dist/<route>/index.html directory INTACT.
+    // _redirects rewrites /terms → /terms/index.html
+    // Render serves dist/terms/index.html with Content-Type: text/html (correct!)
+    console.log(`  ✓ Created 'dist/${route}.html' | Preserved 'dist/${route}/index.html'`);
   } else {
-    console.warn(`  ⚠️ Warning: Pre-rendered file ${indexPath} not found`);
+    console.warn(`  ⚠️  Warning: Pre-rendered file ${indexPath} not found`);
   }
 }
 
@@ -54,29 +61,43 @@ console.log('\n[postbuild] Validating mandatory legal route HTML files...');
 
 // Validation step for mandatory legal routes
 for (const { route, expectedTitle, expectedH1 } of mandatoryLegalRoutes) {
+  const indexPath = path.join(distDir, route, 'index.html');
   const htmlPath = path.join(distDir, `${route}.html`);
   const flatFilePath = path.join(distDir, route);
 
+  // Flat extensionless file must NOT exist
+  if (fs.existsSync(flatFilePath) && !fs.statSync(flatFilePath).isDirectory()) {
+    buildErrors.push(`[VALIDATION ERROR] Flat extensionless file 'dist/${route}' exists — this will cause binary/octet-stream Content-Type! Remove it.`);
+  }
+
+  // dist/<route>/index.html must exist (for _redirects → /route/index.html rewrite)
+  if (!fs.existsSync(indexPath)) {
+    buildErrors.push(`[VALIDATION ERROR] Required file missing: dist/${route}/index.html`);
+    continue;
+  }
+
+  // dist/<route>.html must exist (backup copy)
   if (!fs.existsSync(htmlPath)) {
     buildErrors.push(`[VALIDATION ERROR] Required file missing: dist/${route}.html`);
     continue;
   }
 
-  if (!fs.existsSync(flatFilePath)) {
-    buildErrors.push(`[VALIDATION ERROR] Required file missing: dist/${route}`);
-    continue;
-  }
+  const content = fs.readFileSync(indexPath, 'utf8');
 
-  const content = fs.readFileSync(htmlPath, 'utf8');
-
-  // Check 1: Does it contain expected title/heading?
+  // Check 1: Must contain the expected legal page heading
   if (!content.toLowerCase().includes(expectedTitle.toLowerCase()) && !content.toLowerCase().includes(expectedH1.toLowerCase())) {
-    buildErrors.push(`[VALIDATION ERROR] dist/${route}.html does not contain expected title/heading "${expectedTitle}"`);
+    buildErrors.push(`[VALIDATION ERROR] dist/${route}/index.html does not contain expected heading "${expectedTitle}"`);
   }
 
-  // Check 2: Does it contain homepage main hero title instead of legal content?
-  if (content.includes('<h1>AI API Cost') && !content.includes(expectedH1)) {
-    buildErrors.push(`[VALIDATION ERROR] dist/${route}.html accidentally contains the homepage hero instead of ${expectedTitle}`);
+  // Check 2: Must NOT contain homepage hero text
+  if (content.includes('AI API Cost Observability') && !content.includes(expectedH1)) {
+    buildErrors.push(`[VALIDATION ERROR] dist/${route}/index.html accidentally contains homepage hero instead of ${expectedTitle}`);
+  }
+
+  // Check 3: Canonical URL must point to the clean route
+  if (!content.includes(`canonical" href="https://ordisum.com/${route}`) && 
+      !content.includes(`rel="canonical" href="https://ordisum.com/${route}`)) {
+    console.warn(`  ⚠️  Warning: canonical URL for /${route} may be missing or incorrect`);
   }
 }
 
@@ -87,5 +108,7 @@ if (buildErrors.length > 0) {
   }
   process.exit(1);
 } else {
-  console.log('  ✓ All mandatory legal page HTML files verified successfully (terms, terms.html, privacy-policy, privacy-policy.html, refund-policy, refund-policy.html).\n');
+  console.log('  ✓ All mandatory legal page HTML files verified successfully.');
+  console.log('  ✓ No flat extensionless files exist (binary Content-Type bug prevented).');
+  console.log('  ✓ dist/terms/index.html, dist/privacy-policy/index.html, dist/refund-policy/index.html all present.\n');
 }

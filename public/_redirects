@@ -1,19 +1,33 @@
-/terms /terms.html 200!
-/terms/ /terms.html 200!
-/privacy-policy /privacy-policy.html 200!
-/privacy-policy/ /privacy-policy.html 200!
-/refund-policy /refund-policy.html 200!
-/refund-policy/ /refund-policy.html 200!
-/features /features.html 200!
-/features/ /features.html 200!
-/pricing /pricing.html 200!
-/pricing/ /pricing.html 200!
-/security /security.html 200!
-/security/ /security.html 200!
-/contact-sales /contact-sales.html 200!
-/contact-sales/ /contact-sales.html 200!
-/blog /blog.html 200!
-/blog/ /blog.html 200!
-/docs /docs.html 200!
-/docs/ /docs.html 200!
+# Render Static Site Redirect Rules
+#
+# ARCHITECTURE:
+# react-snap pre-renders each public route into dist/<route>/index.html
+# _redirects rewrites clean URLs to the index.html inside each directory.
+# Render serves dist/<route>/index.html with Content-Type: text/html (correct!)
+#
+# DO NOT use flat extensionless files (dist/terms, dist/privacy-policy etc.)
+# Render serves those as Content-Type: binary/octet-stream, causing browser downloads.
+#
+# DO NOT rewrite to dist/<route>.html for public routes — same octet-stream issue.
+# Rewrite to /<route>/index.html so Render serves the HTML file with text/html.
+#
+# SPA private routes (/dashboard, /settings, /admin etc.) continue to use the
+# /* /index.html 200 catch-all fallback.
+
+/terms /terms/index.html 200!
+/terms/ /terms/index.html 200!
+/privacy-policy /privacy-policy/index.html 200!
+/privacy-policy/ /privacy-policy/index.html 200!
+/refund-policy /refund-policy/index.html 200!
+/refund-policy/ /refund-policy/index.html 200!
+/features /features/index.html 200!
+/features/ /features/index.html 200!
+/pricing /pricing/index.html 200!
+/pricing/ /pricing/index.html 200!
+/security /security/index.html 200!
+/security/ /security/index.html 200!
+/contact-sales /contact-sales/index.html 200!
+/contact-sales/ /contact-sales/index.html 200!
+/blog /blog/index.html 200!
+/blog/ /blog/index.html 200!
 /* /index.html 200
