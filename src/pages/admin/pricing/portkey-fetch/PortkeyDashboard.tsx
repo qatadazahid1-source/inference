@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { axiosClient } from '../../../../lib/axios';
-import { Terminal, Download, Loader2, Database } from 'lucide-react';
+import { Terminal, Download, Loader2, Database, RefreshCw } from 'lucide-react';
 import styles from './PortkeyDashboard.module.css';
 
 interface FetchedModel {
@@ -17,6 +17,7 @@ export function PortkeyDashboard() {
   const [logs, setLogs] = useState<string[]>(['Welcome to Pricing Sync Terminal.', 'Type "help" for a list of commands.']);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
+  const [isGroqSyncing, setIsGroqSyncing] = useState(false);
   const [models, setModels] = useState<FetchedModel[]>([]);
   const [lastSyncedSource, setLastSyncedSource] = useState<'portkey' | 'openrouter' | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
@@ -102,6 +103,31 @@ export function PortkeyDashboard() {
     }
   };
 
+  const runGroqSync = async () => {
+    if (isGroqSyncing) return;
+    setIsGroqSyncing(true);
+    addLog('> groq sync');
+    addLog('Fetching live model list from Groq API...');
+    try {
+      const response = await axiosClient.post('/api/admin/pricing/sync-groq');
+      if (response.data.success) {
+        addLog(`✅ Groq Sync Complete!`);
+        addLog(`  Total live Groq models: ${response.data.totalLiveGroqModels}`);
+        addLog(`  Activated (re-enabled):  ${response.data.activated}`);
+        addLog(`  Deactivated (removed):   ${response.data.deactivated}`);
+        addLog(`  Inserted (brand-new):    ${response.data.inserted}`);
+        addLog('  Live model IDs:');
+        (response.data.liveModels || []).forEach((id: string) => addLog(`    - ${id}`));
+      } else {
+        addLog(`❌ Failed: ${response.data.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      addLog(`❌ Error: ${err.response?.data?.error || err.message || 'Failed to sync Groq models.'}`);
+    } finally {
+      setIsGroqSyncing(false);
+    }
+  };
+
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault();
     const cmd = command.trim().toLowerCase();
@@ -120,6 +146,7 @@ export function PortkeyDashboard() {
       addLog('  apply             - Apply synced Portkey models to database');
       addLog('  openrouter sync   - Fetch pricing from OpenRouter API');
       addLog('  openrouter apply  - Apply synced OpenRouter models to database');
+      addLog('  groq sync         - Sync live models from Groq API (activate/deactivate/insert)');
       addLog('  clear             - Clear the terminal and data table');
       addLog('  help              - Show this help message');
     } else if (cmd === 'sync') {
@@ -130,6 +157,8 @@ export function PortkeyDashboard() {
       runApply('portkey');
     } else if (cmd === 'openrouter apply') {
       runApply('openrouter');
+    } else if (cmd === 'groq sync') {
+      runGroqSync();
     } else {
       addLog(`> ${cmd}`);
       addLog(`Unknown command: ${cmd}. Type "help" for a list of commands.`);
@@ -161,9 +190,18 @@ export function PortkeyDashboard() {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Pricing Sync Terminal</h1>
-          <p className={styles.subtitle}>Unified Hub for Portkey & OpenRouter Pricing</p>
+          <p className={styles.subtitle}>Unified Hub for Portkey, OpenRouter & Groq Pricing</p>
         </div>
         <div className={styles.headerActions}>
+          <button
+            className={styles.groqSyncBtn}
+            onClick={runGroqSync}
+            disabled={isGroqSyncing || isSyncing || isApplying}
+            title="Fetch live models from Groq API and sync DB"
+          >
+            {isGroqSyncing ? <Loader2 size={16} className={styles.spin} /> : <RefreshCw size={16} />}
+            Sync Groq
+          </button>
           <button 
             className={styles.applyBtn} 
             onClick={() => runApply()}
@@ -211,8 +249,8 @@ export function PortkeyDashboard() {
               value={command}
               onChange={(e) => setCommand(e.target.value)}
               className={styles.terminalInput}
-              placeholder="Type a command (sync, apply, clear, help)..."
-              disabled={isSyncing || isApplying}
+              placeholder="Type a command (sync, apply, groq sync, clear, help)..."
+              disabled={isSyncing || isApplying || isGroqSyncing}
               autoFocus
               autoComplete="off"
             />
