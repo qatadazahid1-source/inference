@@ -1,0 +1,16 @@
+[
+  {
+    "provider": "cerebras",
+    "model_id": "gpt-oss-120b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": 8192
+  },
+  {
+    "provider": "cerebras",
+    "model_id": "qwen-3.8-27b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": 8192
+  }
+]

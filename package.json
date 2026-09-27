@@ -13,8 +13,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "check:links": "node scripts/check-links.mjs",
-    "sync:pricing": "node scripts/sync-portkey-pricing.mjs",
-    "sync:models": "node scripts/sync-models.mjs"
+    "sync:pricing": "node scripts/sync.mjs",
+    "sync:models": "node scripts/sync-models.mjs",
+    "sync": "node scripts/sync.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

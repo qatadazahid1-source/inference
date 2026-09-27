@@ -1,0 +1,2697 @@
+[
+  {
+    "provider": "deepinfra",
+    "model_id": "microsoft/phi-4-reasoning-plus",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.7-R2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3-0324-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-2.0-flash-001",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Sao10K/L3.1-70B-Euryale-v2.2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-32B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "run-diffusion/Juggernaut-Lightning-Flux",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/gpt-oss-120b-Ultra",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "thenlper/gte-base",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "cognitivecomputations/dolphin-2.6-mixtral-8x7b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ibm-granite/granite-4.2-3b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/clip-vit-base-patch32",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "allenai/olmOCR-7B-1025",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-3-pro-image",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-4.6",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Llama-3.1-Nemotron-70B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-ASR-0.6B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "intfloat/e5-large-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V4-Pro-0813",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "PrunaAI/p-image",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "canopylabs/orpheus-3b-0.1-ft",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-4-31B-it-turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "PrunaAI/p-image-Edit",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V4-Flash-Vision-Exp",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "allenai/olmOCR-7B-0725-FP8",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-2-pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V4-Flash-0731",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/fibo_edit-1.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-4B-Thinking",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/video_increase_resolution",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "stepfun-ai/Step-3.5-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ibm-granite/granite-4.2-30b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.8-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-2-70b-chat-hf",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.7-Image-Edit",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-OCR",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3.5-ASR-Streaming-Multilingual-0.6b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "allenai/olmOCR-2-7B-1025",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/all-mpnet-base-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-3-7-sonnet-latest",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Pixverse/Pixverse-6-T2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/video_mask_by_key_points",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "tencent/Hy3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "PrunaAI/p-video",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "MiniMaxAI/MiniMax-M3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seedance-1.5-Pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-3.7-flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-Small-24B-Instruct-2501",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-14B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "thinkingmachines/Inkling-Small",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-4.7-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3-0324",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "CompVis/stable-diffusion-v1-4",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/veo-3.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-8B-Thinking",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inworld-ai/inworld-tts-1.5-max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "BAAI/bge-m3-multi-8k",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Sao10K/L3-8B-Lunaris-v1-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-4B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3.1-70B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-Guard-4-12B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-2B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "PrunaAI/p-video-avatar",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-R1-0528",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Gryphe/MythoMax-L2-13b-turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ResembleAI/chatterbox-multilingual",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "microsoft/WizardLM-2-7B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "stabilityai/sd3.5-medium",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Pixverse/Pixverse-6-I2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-TTS-VoiceDesign",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/veo-3.0",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.8-Max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen-Image-Edit-Max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/nano-banana-pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Embed-1B-BF16",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Reranker-8B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/embeddinggemma-300m",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-ASR-1.7B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-5.2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/remove_background",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-4B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "BAAI/bge-base-en-v1.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ResembleAI/chatterbox-turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-opus-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.1-T2V-1.3B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-sonnet-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mattshumer/Reflection-Llama-3.1-70B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/QVQ-72B-Preview",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mixtral-8x22B-Instruct-v0.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "allenai/olmOCR-7B-0825",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-1.1-pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "cognitivecomputations/dolphin-2.9.1-llama-3-70b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inclusionAI/Ling-3.0-flash-Fin",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-2-klein-4b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.1-T2V-14B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "MiniMaxAI/MiniMax-M2.7",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/NVIDIA-Nemotron-Nano-12B-v2-VL",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "microsoft/Phi-3-medium-4k-instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Phind/Phind-CodeLlama-34B-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "allenai/olmOCR-2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sesame/csm-1b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "thenlper/gte-large",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "thinkingmachines/Inkling",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/NVIDIA-Nemotron-Nano-9B-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-2-dev",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.5-tts-voicedesign",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-2-13b-chat-hf",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-3.1-pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "microsoft/Phi-4-multimodal-instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Reranker-4B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-2-klein-9b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "runwayml/stable-diffusion-v1-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "microsoft/phi-4",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seedance-2.0",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Embed-8B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-1.1-7b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "shibing624/text2vec-base-chinese",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Nano-30B-A3B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-2-max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-R1-0528-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/nano-banana-2-lite",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/Janus-Pro-7B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/fibo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/all-MiniLM-L6-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inclusionAI/Ming-Image-0.1-Design",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/llama-nemotron-embed-vl-1b-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-models/Muse-Glimmer-30B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "MiniMaxAI/MiniMax-M2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-4-opus",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/NVIDIA-Nemotron-3.5-Lightning",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-4-31B-it-Ultra",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Embedding-4B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-opus-4-8",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/erase",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/llama-nemotron-rerank-vl-1b-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/codegemma-7b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-2.5-flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Llama-3.3-Nemotron-Super-49B-v1.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepreinforce-ai/Ornith-1.0-35B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seed-2.0-pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-5.3-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-4.5-Air",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/enhance",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Zyphra/Zonos-v0.1-hybrid",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.6-T2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.6-T2I",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-opus-5-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "allenai/Olmo-3.1-32B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-4.7",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "tencent/Hy4-preview",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-TTS",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.8-2.4T-A95B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen-Image-Edit",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.7-I2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "stabilityai/stable-diffusion-2-1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2-Thinking",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.5-tts",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-2-27b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.2-T2V-A14B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Sao10K/L3-8B-Lunaris-v1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-1-schnell",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inclusionAI/Ming-Image-0.1-Design-Layer",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V4-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-3.2-3B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inworld-ai/realtime-tts-1.5-mini",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ACE-Step/acestep-v15-xl-sft",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-fable-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openbmb/MiniCPM-Llama3-V-2_5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "FastVideo/FastWan2.2-TI2V-5B-FullAttn-Diffusers",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Sao10K/L3.3-70B-Euryale-v2.3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "MiniMaxAI/MiniMax-M2.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "BAAI/bge-en-icl",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "BAAI/bge-m3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.5-tts-voiceclone",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-122B-A10B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-large-v3-turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-4-31B-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Embedding-8B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/veo-3.1-fast",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan3.0-Video",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "hexgrad/Kokoro-82M",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-3-4b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Cosmos3-Super",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-2-9b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2.5-Coder-32B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-Nemo-Instruct-2407",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "bigcode/starcoder2-15b-instruct-v0.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-small.en",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX.1-Kontext-dev",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/veo-3.0-fast",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/video_remove_background",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-3.2-1B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.8-27B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openchat/openchat_3.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "BAAI/bge-large-en-v1.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/QwQ-32B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V4-Pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2.6",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Thinking",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Audio8/Audio8-TTS-Preview-0.6b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-3.5-flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-large-v3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.7-Max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Reranker-0.6B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-3-27b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-397B-A17B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Cosmos3-Nano",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/clip-vit-large-patch14-336",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/erase_foreground",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.6-35B-A3B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seed-2.0-mini",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-medium.en",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/Bria-3.2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "stabilityai/sd3.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Diarization-preview",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3.2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inworld-ai/inworld-tts-1.5-mini",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/gpt-oss-120b-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seedream-4.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ResembleAI/chatterbox",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-30B-A3B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-3-12b-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2-72B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/gpt-oss-120b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-35B-A3B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-base",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Gryphe/MythoMax-L2-13b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-sonnet-4-6",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "MiniMaxAI/MiniMax-M2.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/Bria-3.2-vector",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-R1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-235B-A22B-Thinking",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3-8B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Max-Thinking",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-1-dev",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3.1-Terminus",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-haiku-4-5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3-70B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2.7-Code",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/video_eraser",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "MiniMaxAI/MiniMax-M2.7-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-235B-A22B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-R1-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XpucT/Deliberate",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/expand",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Embed-1B-NVFP4",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "stepfun-ai/Step-3.7-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ClarityAI/crystal",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inclusionAI/Ling-3.0-flash-VL",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.6-Pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Pixverse/Pixverse-T2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.6-27B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-4.6V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V3.2-Exp",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "PaddlePaddle/PaddleOCR-VL-0.9B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "NousResearch/Hermes-3-Llama-3.1-70B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/gen_fill",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seedream-5.0-Pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/paraphrase-MiniLM-L6-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "FastVideo/LTX2-Distilled-Diffusers",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seed-2.0-code",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.6-Image-Edit",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.6-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-tiny.en",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Embedding-0.6B-batch",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/clip-ViT-B-32",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/nano-banana-2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/blur_background",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-opus-4-7",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-2.5-pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inclusionAI/Ling-3.0-flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-V4.1-Flash",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Pixverse/Pixverse-T2V-HD",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/all-MiniLM-L12-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Embedding-4B-batch",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Devstral-Small-2505",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Embedding-8B-batch",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemini-3.1-flash-lite",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inworld-ai/realtime-tts-2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-Guard-3-8B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "lizpreciatior/lzlv_70b_fp16_hf",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/video_mask_by_prompt",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-3.3-70B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-0.8B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3.5-27B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-5.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/QwQ-32B-Preview",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-4-340B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/gpt-oss-20b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "intfloat/multilingual-e5-large-instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-Prover-V2-671B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "black-forest-labs/FLUX-1-Redux-dev",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seed-1.8",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openchat/openchat-3.6-8b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Voxtral-Small-24B-2507",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-timestamped-medium.en",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-4-E4B-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2.5-Coder-7B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ClarityAI/flux",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-VL-8B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "FastVideo/FastWan-QAD-FP8-1.3B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-7B-Instruct-v0.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/Janus-Pro-1B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ClarityAI/creative",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "stabilityai/sdxl-turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "inworld-ai/realtime-tts-1.5-max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "NousResearch/Hermes-3-Llama-3.1-405B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Llama-4-Maverick-17B-128E-Instruct-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Wan-AI/Wan2.6-I2V",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-base.en",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-4.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/clip-ViT-B-32-multilingual-v1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "intfloat/multilingual-e5-large",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "KoboldAI/LLaMA2-13B-Tiefighter",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2.5-72B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "anthropic/claude-4-sonnet",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Embedding-0.6B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Coder-480B-A35B-Instruct-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/fibo-1.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "NovaSky-AI/Sky-T1-32B-Preview",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "microsoft/WizardLM-2-8x22B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "zai-org/GLM-5.3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "bosonai/HiggsAudioV2.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Nano-Omni-30B-A3B-Reasoning",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Devstral-Small-2507",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "intfloat/e5-base-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ByteDance/Seedream-4",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Sao10K/L3-70B-Euryale-v2.1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-30B-A3B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "openai/whisper-timestamped-medium",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/video_foreground_mask",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Zyphra/Zonos-v0.1-transformer",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen-Image-Max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Voxtral-Mini-3B-2507",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Austism/chronos-hermes-13b-v2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen2-7B-Instruct",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "BAAI/bge-m3-multi",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "google/gemma-4-26B-A4B-it",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "sentence-transformers/multi-qa-mpnet-base-dot-v1",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/replace_background",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Bria/fibo_edit",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-Max",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "ibm-granite/granite-4.2-8b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-3-Diarization",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K3",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2.5-Turbo",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B-BF16",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "mistralai/Mistral-7B-Instruct-v0.2",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.5-Pro",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "nvidia/Nemotron-Content-Safety-3.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "deepinfra/airoboros-70b",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "Qwen/Qwen3-235B-A22B",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "XiaomiMiMo/MiMo-V2.5",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "moonshotai/Kimi-K2-Instruct-0905",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  },
+  {
+    "provider": "deepinfra",
+    "model_id": "run-diffusion/Juggernaut-Flux",
+    "input_cost_per_1k": 0,
+    "output_cost_per_1k": 0,
+    "context_window": null
+  }
+]
