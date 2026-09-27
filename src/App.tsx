@@ -49,6 +49,9 @@ const ModelPricingPage = lazy(() =>
 const PortkeyFetchDashboard = lazy(() =>
   import('./pages/admin/pricing/portkey-fetch/PortkeyDashboard').then((m) => ({ default: m.PortkeyDashboard }))
 );
+const PricePerTokenSyncPage = lazy(() =>
+  import('./pages/admin/pricing/pricepertoken/PricePerTokenSync').then((m) => ({ default: m.PricePerTokenSync }))
+);
 const OrganizationsPage = lazy(() =>
   import('./pages/admin/organizations/Organizations').then((m) => ({ default: m.OrganizationsPage }))
 );
@@ -301,6 +304,7 @@ export default function App() {
           <Route index element={<Navigate to="/admin/pricing" replace />} />
           <Route path="pricing" element={<ModelPricingPage />} />
           <Route path="portkey-fetch" element={<PortkeyFetchDashboard />} />
+          <Route path="pricepertoken-sync" element={<PricePerTokenSyncPage />} />
           <Route path="organizations" element={<OrganizationsPage />} />
           <Route path="organizations/:id" element={<OrganizationDetailPage />} />
           <Route path="health" element={<SystemHealthPage />} />

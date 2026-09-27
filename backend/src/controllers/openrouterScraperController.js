@@ -20,6 +20,8 @@ function perTokenToPer1k(value) {
   return Number((value * 1000).toFixed(10));
 }
 
+import { stageRecords, buildDiff, applyDiff, getImportSummary } from '../services/sync/importEngine.js';
+
 export const runOpenRouterSync = async (req, res) => {
   console.log('[OpenRouter Sync] Starting sync...');
 
@@ -84,7 +86,29 @@ export const runOpenRouterSync = async (req, res) => {
     capabilities: m.capabilities
   }));
 
-  console.log(`[OpenRouter Sync] Done. ${models.length} models.`);
+  console.log(`[OpenRouter Sync] Fetched ${models.length} models. Normalizing and staging...`);
+
+  const normalizedRecords = rawData.map(m => ({
+    provider: m.provider,
+    model_id: m.model_id,
+    input_cost_per_1k: perTokenToPer1k(m.pricing?.input) ?? 0,
+    output_cost_per_1k: perTokenToPer1k(m.pricing?.output) ?? 0,
+    context_window: m.context_length,
+  }));
+
+  let stageResult, diffResult, summary;
+  try {
+    stageResult = await stageRecords(normalizedRecords, 'openrouter', 'OpenRouter API', supabase);
+    diffResult = await buildDiff(stageResult.importId, supabase);
+    summary = await getImportSummary(stageResult.importId, supabase);
+  } catch (err) {
+    console.error('[OpenRouter Sync] Staging/diff failed:', err.message);
+    return res.status(500).json({
+      success: false,
+      logs,
+      error: `Staging/diff failed: ${err.message}`,
+    });
+  }
 
   res.json({
     success: true,
@@ -92,128 +116,64 @@ export const runOpenRouterSync = async (req, res) => {
     summary: { count: models.length },
     generated_at: new Date().toISOString(),
     models,
+    importId: stageResult.importId,
+    diffCounts: diffResult.counts,
   });
 };
 
 export const applyOpenRouterSyncToDB = async (req, res) => {
   console.log('[OpenRouter Sync] Applying pricing to database...');
 
+  let { importId } = req.body || {};
+
   try {
-    let rawData;
-    try {
-      const jsonText = await readFile(OUTPUT_PATH, 'utf8');
-      rawData = JSON.parse(jsonText);
-    } catch (err) {
-      return res.status(500).json({
-        success: false,
-        error: `No synced data found. Please run 'openrouter sync' first. (${err.message})`,
-      });
-    }
-
-    const fetchedModels = rawData.map(m => ({
-      provider: m.provider,
-      model: m.model_id,
-      input_cost_per_1k: perTokenToPer1k(m.pricing?.input) ?? 0,
-      output_cost_per_1k: perTokenToPer1k(m.pricing?.output) ?? 0,
-      context_window: m.context_length,
-    }));
-
-    if (fetchedModels.length === 0) {
-      return res.status(400).json({ success: false, error: 'Fetched data is empty.' });
-    }
-
-    // 2. Fetch current DB models
-    let dbModels = [];
-    let from = 0;
-    let limit = 1000;
-    let hasMore = true;
-    while(hasMore) {
-      const { data, error: fetchErr } = await supabase
-        .from('model_pricing')
-        .select('id, provider, model, input_cost_per_1k, output_cost_per_1k')
-        .range(from, from + limit - 1);
-      if (fetchErr) throw fetchErr;
-      if (data.length === 0) {
-        hasMore = false;
-      } else {
-        dbModels = dbModels.concat(data);
-        if (data.length < limit) hasMore = false;
-        from += limit;
-      }
-    }
-
-    const dbModelMap = new Map();
-    for (const m of dbModels) {
-      dbModelMap.set(`${m.provider}:${m.model}`, m);
-    }
-
-    const toInsert = [];
-    const toUpdate = [];
-
-    // 3. Compare
-    for (const fm of fetchedModels) {
-      const key = `${fm.provider}:${fm.model}`;
-      const existing = dbModelMap.get(key);
-
-      if (existing) {
-        const existingIn = existing.input_cost_per_1k ?? 0;
-        const existingOut = existing.output_cost_per_1k ?? 0;
-        const fetchedIn = fm.input_cost_per_1k;
-        const fetchedOut = fm.output_cost_per_1k;
-
-        if (existingIn !== fetchedIn || existingOut !== fetchedOut) {
-          toUpdate.push({
-            id: existing.id,
-            provider: fm.provider,
-            model: fm.model,
-            input_cost_per_1k: fetchedIn,
-            output_cost_per_1k: fetchedOut,
-            updated_at: new Date().toISOString(),
-          });
-        }
-      } else {
-        toInsert.push({
-          provider: fm.provider,
-          model: fm.model,
-          input_cost_per_1k: fm.input_cost_per_1k,
-          output_cost_per_1k: fm.output_cost_per_1k,
-          context_window: fm.context_window,
-          is_active: true,
+    if (!importId) {
+      console.log('[OpenRouter Sync] No importId provided. Re-staging from JSON file for backward compatibility...');
+      let rawData;
+      try {
+        const jsonText = await readFile(OUTPUT_PATH, 'utf8');
+        rawData = JSON.parse(jsonText);
+      } catch (err) {
+        return res.status(500).json({
+          success: false,
+          error: `No synced data found. Please run 'openrouter sync' first. (${err.message})`,
         });
       }
-    }
 
-    // 4. Perform bulk operations
-    let updatedCount = 0;
-    let insertedCount = 0;
+      const normalizedRecords = rawData.map(m => ({
+        provider: m.provider,
+        model_id: m.model_id,
+        input_cost_per_1k: perTokenToPer1k(m.pricing?.input) ?? 0,
+        output_cost_per_1k: perTokenToPer1k(m.pricing?.output) ?? 0,
+        context_window: m.context_length,
+      }));
 
-    if (toInsert.length > 0) {
-      const chunkSize = 1000;
-      for (let i = 0; i < toInsert.length; i += chunkSize) {
-        const chunk = toInsert.slice(i, i + chunkSize);
-        const { error: insErr } = await supabase.from('model_pricing').insert(chunk);
-        if (insErr) throw insErr;
-        insertedCount += chunk.length;
+      if (normalizedRecords.length === 0) {
+        return res.status(400).json({ success: false, error: 'Fetched data is empty.' });
       }
+
+      const stageResult = await stageRecords(normalizedRecords, 'openrouter', 'OpenRouter API', supabase);
+      await buildDiff(stageResult.importId, supabase);
+      importId = stageResult.importId;
     }
 
-    if (toUpdate.length > 0) {
-      const chunkSize = 1000;
-      for (let i = 0; i < toUpdate.length; i += chunkSize) {
-        const chunk = toUpdate.slice(i, i + chunkSize);
-        const { error: updErr } = await supabase.from('model_pricing').upsert(chunk, { onConflict: 'id' });
-        if (updErr) throw updErr;
-        updatedCount += chunk.length;
-      }
-    }
+    const report = await applyDiff(importId, supabase, {
+      applyNew: true,
+      applyChanges: true,
+      applyConflicts: false,
+      changedBy: req.user?.id || 'SYSTEM',
+    });
 
-    console.log(`[OpenRouter DB Apply] Done. Inserted: ${insertedCount}, Updated: ${updatedCount}`);
+    console.log(`[OpenRouter DB Apply] Done. Applied: ${report.applied}`);
 
     res.json({
       success: true,
-      insertedCount,
-      updatedCount,
-      totalProcessed: fetchedModels.length,
+      insertedCount: report.inserted,
+      updatedCount: report.updated,
+      skippedCount: report.skipped,
+      keptCount: report.kept,
+      totalProcessed: report.applied + report.skipped + report.kept,
+      report,
     });
 
   } catch (error) {

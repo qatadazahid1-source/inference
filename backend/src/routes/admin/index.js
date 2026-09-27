@@ -2,6 +2,7 @@ import express from 'express';
 import { requirePlatformAdmin } from '../../middleware/requirePlatformAdmin.js';
 import authRouter from './auth.js';
 import pricingRouter from './pricing.js';
+import pricingPricePerTokenRouter from './pricingPricePerToken.js';
 import organizationsRouter from './organizations.js';
 import systemRouter from './system.js';
 import analyticsRouter from './analytics.js';
@@ -16,6 +17,7 @@ import providersRouter from './providers.js';
 import pricingAgentRouter from './pricingAgent.js';
 import adminsRouter from './admins.js';
 import blogRouter from './blog.js';
+
 
 const router = express.Router();
 
@@ -35,6 +37,7 @@ router.use(requirePlatformAdmin);
 // Sub-routers — mounted after the platform-admin gate
 router.use('/auth', authRouter);
 router.use('/pricing', pricingRouter);
+router.use('/pricing/pricepertoken', pricingPricePerTokenRouter);
 router.use('/organizations', organizationsRouter);
 router.use('/system', systemRouter);
 router.use('/analytics', analyticsRouter);

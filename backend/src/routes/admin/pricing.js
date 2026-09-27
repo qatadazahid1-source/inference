@@ -509,9 +509,8 @@ router.post('/sync-custom-urls', async (req, res) => {
 
 // --- POST /api/admin/pricing/sync-groq ---
 // Fetches the live model list from Groq's API, then:
-//   1. Activates groq DB models that ARE in Groq's current live list
-//   2. Deactivates groq DB models that are NO LONGER in Groq's live list
-//   3. Inserts brand-new models (not yet in DB) with $0 placeholder pricing
+//   1. Normalizes and stages them via importEngine (inserts new models with $0 placeholder).
+//   2. Deactivates groq DB models that are NO LONGER in Groq's live list.
 router.post('/sync-groq', async (req, res) => {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   if (!GROQ_API_KEY) {
@@ -558,70 +557,54 @@ router.post('/sync-groq', async (req, res) => {
     }
 
     const dbMap = new Map(dbRows.map(r => [r.model, r]));
-    let activated = 0, deactivated = 0, inserted = 0;
+
+    // 3. Normalize records for importEngine
+    const normalizedRecords = liveModels.map(id => {
+      const existing = dbMap.get(id);
+      return {
+        provider: 'groq',
+        model_id: id,
+        // Preserve existing pricing so it resolves to 'same' and doesn't conflict,
+        // or default to 0 for completely new models.
+        input_cost_per_1k: existing ? existing.input_cost_per_1k : 0,
+        output_cost_per_1k: existing ? existing.output_cost_per_1k : 0,
+        context_window: null,
+      };
+    });
+
+    const { stageRecords, buildDiff, applyDiff } = await import('../../services/sync/importEngine.js');
+
+    // 4. Run through standard import pipeline
+    let stageResult, diffResult, applyReport;
+    if (normalizedRecords.length > 0) {
+      stageResult = await stageRecords(normalizedRecords, 'groq', 'Groq Live API', supabase);
+      diffResult = await buildDiff(stageResult.importId, supabase);
+      
+      // Immediately apply to preserve 1-click behavior of Groq Sync
+      applyReport = await applyDiff(stageResult.importId, supabase, {
+        applyNew: true,
+        applyChanges: true,
+        applyConflicts: false,
+        changedBy: req.user?.id || 'SYSTEM',
+      });
+    }
+
+    // 5. Deactivate DB models that Groq no longer lists (and re-activate if they came back)
+    let activated = 0, deactivated = 0;
     const now = new Date().toISOString();
 
-    // 3. Activate models that exist in DB and appear in Groq's live list
     for (const liveId of liveModels) {
       const existing = dbMap.get(liveId);
-      if (existing) {
-        if (!existing.is_active) {
-          await supabase
-            .from('model_pricing')
-            .update({ is_active: true, updated_at: now })
-            .eq('id', existing.id);
-          activated++;
-        }
-      } else {
-        // 4. Insert brand-new models with $0 placeholder pricing
-        const { data: newRow, error: insErr } = await supabase
-          .from('model_pricing')
-          .insert({
-            provider: 'groq',
-            model: liveId,
-            input_cost_per_1k: 0,
-            output_cost_per_1k: 0,
-            is_active: true,
-          })
-          .select()
-          .single();
-
-        if (!insErr && newRow) {
-          inserted++;
-          await logPricingChange({
-            changedBy: req.user.id,
-            modelPricingId: newRow.id,
-            provider: 'groq',
-            modelName: liveId,
-            oldInputCost: null,
-            oldOutputCost: null,
-            newInputCost: 0,
-            newOutputCost: 0,
-            action: 'created',
-          });
-        }
+      if (existing && !existing.is_active) {
+        await supabase.from('model_pricing').update({ is_active: true, updated_at: now }).eq('id', existing.id);
+        activated++;
       }
     }
 
-    // 5. Deactivate DB models that Groq no longer lists
     for (const [modelId, row] of dbMap.entries()) {
       if (!liveSet.has(modelId) && row.is_active) {
-        await supabase
-          .from('model_pricing')
-          .update({ is_active: false, updated_at: now })
-          .eq('id', row.id);
+        await supabase.from('model_pricing').update({ is_active: false, updated_at: now }).eq('id', row.id);
         deactivated++;
-        await logPricingChange({
-          changedBy: req.user.id,
-          modelPricingId: row.id,
-          provider: 'groq',
-          modelName: modelId,
-          oldInputCost: row.input_cost_per_1k,
-          oldOutputCost: row.output_cost_per_1k,
-          newInputCost: row.input_cost_per_1k,
-          newOutputCost: row.output_cost_per_1k,
-          action: 'deactivated',
-        });
       }
     }
 
@@ -630,8 +613,11 @@ router.post('/sync-groq', async (req, res) => {
       totalLiveGroqModels: liveModels.length,
       activated,
       deactivated,
-      inserted,
+      inserted: applyReport ? applyReport.inserted : 0,
+      updated: applyReport ? applyReport.updated : 0,
       liveModels,
+      importId: stageResult?.importId,
+      diffCounts: diffResult?.counts,
     });
   } catch (err) {
     console.error('[admin/pricing] sync-groq error:', err.message);

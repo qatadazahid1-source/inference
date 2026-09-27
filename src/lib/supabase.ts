@@ -12,6 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     // Without this, a 1-hour drift causes "Session issued in the future" warnings
     // and silently rejects the OAuth session, sending the user back to landing page.
     // See: https://github.com/supabase/gotrue-js/issues/806
+    // @ts-ignore: clockSkewInSeconds is not yet in the official typings for AuthClientOptions
     clockSkewInSeconds: 7200,
   }
 });
