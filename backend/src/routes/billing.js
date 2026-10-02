@@ -7,6 +7,34 @@ const router = express.Router();
 const getLemonSqueezyApiKey = () => process.env.LEMONSQUEEZY_API_KEY;
 const LEMONSQUEEZY_API = 'https://api.lemonsqueezy.com/v1';
 
+// Safe startup check — logs key presence WITHOUT printing the value.
+// Visible in Render logs immediately on deploy.
+if (!getLemonSqueezyApiKey()) {
+  console.error(
+    '[billing] STARTUP WARNING: LEMONSQUEEZY_API_KEY is not set. ' +
+    'All Lemon Squeezy API calls will fail. ' +
+    'Add this variable in the Render dashboard → Environment.'
+  );
+} else {
+  console.log('[billing] LEMONSQUEEZY_API_KEY_PRESENT: true');
+}
+
+/**
+ * Guard: returns false and sends a 503 if the key is absent at request time.
+ * This gives a clear error instead of a confusing Lemon 401→502 chain.
+ */
+function guardLemonKey(res) {
+  if (!getLemonSqueezyApiKey()) {
+    console.error('[billing] Request blocked: LEMONSQUEEZY_API_KEY missing at request time');
+    res.status(503).json({
+      error: 'Billing service not configured. Contact support.',
+      code: 'lemon_key_missing',
+    });
+    return false;
+  }
+  return true;
+}
+
 // Same org-resolution pattern used elsewhere (budgets.js, organization.js, etc.)
 async function getUserOrgId(userId) {
   const { data, error } = await supabase
@@ -48,6 +76,7 @@ async function getUserOrgId(userId) {
 // subscription, and the card never passes through our backend at all.
 router.get('/payment-method-url', async (req, res) => {
   try {
+    if (!guardLemonKey(res)) return;
     const orgId = await getUserOrgId(req.user.id);
 
     const { data: subscription, error: subError } = await supabase
@@ -110,8 +139,10 @@ router.get('/payment-method-url', async (req, res) => {
 //  - DELETE .../subscriptions/{id} â†’ immediate cancel, access ends now.
 router.post('/cancel-subscription', async (req, res) => {
   try {
+    if (!guardLemonKey(res)) return;
     const orgId = await getUserOrgId(req.user.id);
     const immediate = req.body?.immediate === true;
+    console.log('[billing] cancel-subscription: LEMONSQUEEZY_API_KEY_PRESENT:', Boolean(getLemonSqueezyApiKey()));
 
     const { data: subscription, error: subError } = await supabase
       .from('subscriptions')
@@ -152,9 +183,10 @@ router.post('/cancel-subscription', async (req, res) => {
 
     if (!lsRes.ok) {
       const lsBody = await lsRes.json().catch(() => ({}));
-      console.error('[billing] Lemon Squeezy cancel error:', lsBody);
+      console.error('[billing] Lemon Squeezy cancel error — status:', lsRes.status, '— detail:', lsBody?.errors?.[0]?.detail);
       return res.status(502).json({ error: lsBody?.errors?.[0]?.detail || 'Could not cancel subscription with Lemon Squeezy' });
     }
+    console.log('[billing] cancel-subscription: Lemon Squeezy accepted cancellation, subscriptionId:', subscription.lemonsqueezy_subscription_id);
 
     // Update our own record immediately rather than waiting on the webhook â€”
     // the webhook will arrive shortly after and reconcile to the exact
@@ -191,6 +223,7 @@ router.post('/cancel-subscription', async (req, res) => {
 // re-subscribe via checkout instead.
 router.post('/resume-subscription', async (req, res) => {
   try {
+    if (!guardLemonKey(res)) return;
     const orgId = await getUserOrgId(req.user.id);
 
     const { data: subscription, error: subError } = await supabase
