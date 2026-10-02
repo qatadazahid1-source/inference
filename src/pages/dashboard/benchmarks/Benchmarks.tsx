@@ -1,13 +1,24 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
 import { Button } from '../../../components/ui/Button/Button';
-import { adminService, type ModelPricing } from '../../../api/services/admin.service';
 import { chartTheme } from '../../../utils/chartColors';
 import { GridContainer, GridItem } from '../../../components/layout/Grid';
 import { KPICard, type ExtendedKpiData } from '../../../components/dashboard/KPICard/KPICard';
+import { useEntitlements } from '../../../context/EntitlementsContext';
+import axiosClient from '../../../lib/axios';
 import styles from './Benchmarks.module.css';
+
+interface BenchmarkModel {
+  id: string;
+  provider: string;
+  model: string;
+  input_cost_per_1k: number;
+  output_cost_per_1k: number;
+  access_tier: string;
+  is_active: boolean;
+}
 
 const tooltipStyle = {
   background: chartTheme.surface,
@@ -22,19 +33,52 @@ function shortLabel(model: string) {
 }
 
 export function Benchmarks() {
-  const [pricing, setPricing]     = useState<ModelPricing[]>([]);
+  const entitlements = useEntitlements();
+  const hasFeature = entitlements.hasFeature('benchmarks');
+
+  const [pricing, setPricing]     = useState<BenchmarkModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError]         = useState<string | null>(null);
 
+  const fetchBenchmarks = useCallback(async () => {
+    if (!hasFeature) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await axiosClient.get<{ data: BenchmarkModel[] }>('/api/benchmarks');
+      setPricing(res.data.data || []);
+    } catch (err: any) {
+      console.error('Benchmarks: failed to load pricing', err);
+      setError(err?.response?.data?.error || 'Could not load model pricing benchmark data.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [hasFeature]);
+
   useEffect(() => {
-    adminService.getPricing()
-      .then((data) => setPricing(data.filter((m) => m.is_active)))
-      .catch((err) => {
-        console.error('Benchmarks: failed to load pricing', err);
-        setError('Could not load model pricing data.');
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
+    if (hasFeature) {
+      void fetchBenchmarks();
+    } else {
+      setIsLoading(false);
+    }
+  }, [hasFeature, fetchBenchmarks]);
+
+  if (!entitlements.isLoading && !hasFeature) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <h1>Benchmarks</h1>
+        </div>
+        <div className={styles.tableCard} style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 20, marginBottom: 8 }}>Model Benchmarks Locked</h2>
+          <p style={{ color: 'var(--color-text-muted)', maxWidth: 460, margin: '0 auto 24px' }}>
+            Comprehensive model performance, latency, and token pricing benchmarks are not available on your current plan. Upgrade your subscription to unlock model benchmarking.
+          </p>
+          <Button onClick={() => window.location.href = '/pricing'}>Upgrade Plan</Button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Derived chart data (real live pricing) ───────────────────────────────
   const costData = useMemo(() =>
@@ -85,7 +129,7 @@ export function Benchmarks() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1>Benchmarks</h1>
-        <Button onClick={() => { setIsLoading(true); setError(null); adminService.getPricing().then((d) => setPricing(d.filter(m => m.is_active))).catch(() => setError('Refresh failed')).finally(() => setIsLoading(false)); }}>
+        <Button onClick={() => void fetchBenchmarks()}>
           Refresh
         </Button>
       </div>

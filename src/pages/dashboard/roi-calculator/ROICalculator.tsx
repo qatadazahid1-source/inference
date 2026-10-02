@@ -5,6 +5,8 @@ import {
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useAnalytics } from '../../../hooks/queries/useDashboard';
+import { useEntitlements } from '../../../context/EntitlementsContext';
+import { Button } from '../../../components/ui/Button/Button';
 import { chartTheme } from '../../../utils/chartColors';
 import styles from './ROICalculator.module.css';
 
@@ -24,6 +26,9 @@ function sanitizeNumericInput(raw: string): number {
 }
 
 export function ROICalculator() {
+  const entitlements = useEntitlements();
+  const hasFeature = entitlements.hasFeature('roi_calculator');
+
   // Actual measured AI spend for the org over the last 30 days. This is the
   // authoritative usage/cost source (same `/api/analytics` `totalCost` the rest
   // of the dashboard uses) — NOT a duplicated cost calculation.
@@ -114,6 +119,21 @@ export function ROICalculator() {
       setIsExporting(false);
     }
   };
+
+  if (!entitlements.isLoading && !hasFeature) {
+    return (
+      <div className={styles.page}>
+        <h1 className={styles.pageTitle}>ROI Calculator</h1>
+        <div className={styles.inputCard} style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 20, marginBottom: 8 }}>ROI Calculator Feature Locked</h2>
+          <p style={{ color: 'var(--color-text-muted)', maxWidth: 460, margin: '0 auto 24px' }}>
+            Interactive AI Return on Investment (ROI) modeling and projection tools are not available on your current plan. Upgrade your plan to unlock the ROI Calculator.
+          </p>
+          <Button onClick={() => window.location.href = '/pricing'}>Upgrade Plan</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>

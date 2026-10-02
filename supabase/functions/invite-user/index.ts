@@ -55,6 +55,46 @@ serve(async (req) => {
       })
     }
 
+    // ENTITLEMENT CHECK: Enforce team_members plan limit
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('plans(system_limits)')
+      .eq('organization_id', organizationId)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    const systemLimits = sub?.plans?.system_limits || {}
+    const maxTeamMembers = systemLimits.limits?.team_members ?? null
+
+    if (maxTeamMembers !== null) {
+      const { count: currentMemberCount, error: memberCountErr } = await supabase
+        .from('organization_members')
+        .select('*', { count: 'exact', head: true })
+        .eq('organization_id', organizationId)
+        .eq('status', 'active')
+
+      if (memberCountErr) {
+        console.error('[invite-user] Error fetching member count:', memberCountErr.message)
+      } else if (currentMemberCount !== null && currentMemberCount >= maxTeamMembers) {
+        return new Response(
+          JSON.stringify({
+            error: `Plan limit reached. Your organization is allowed up to ${maxTeamMembers} team members on your current plan.`,
+            code: 'ENTITLEMENT_EXCEEDED',
+            details: {
+              limit: 'team_members',
+              current: currentMemberCount,
+              max: maxTeamMembers,
+              upgrade_required: true,
+            },
+          }),
+          {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        )
+      }
+    }
+
     // Check if user exists by getting the user_id for the email
     const { data: inviteeData } = await supabase
       .from('users')

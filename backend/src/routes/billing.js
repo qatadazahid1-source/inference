@@ -1,9 +1,10 @@
-﻿import express from 'express';
+import express from 'express';
 import { supabase } from '../index.js';
 
 const router = express.Router();
 
-const lemonSqueezyApiKey = process.env.LEMONSQUEEZY_API_KEY;
+// Note: Evaluate process.env dynamically to avoid ES module hoisting issues with dotenv
+const getLemonSqueezyApiKey = () => process.env.LEMONSQUEEZY_API_KEY;
 const LEMONSQUEEZY_API = 'https://api.lemonsqueezy.com/v1';
 
 // Same org-resolution pattern used elsewhere (budgets.js, organization.js, etc.)
@@ -74,7 +75,7 @@ router.get('/payment-method-url', async (req, res) => {
     const lsRes = await fetch(`${LEMONSQUEEZY_API}/subscriptions/${subscription.lemonsqueezy_subscription_id}`, {
       headers: {
         Accept: 'application/vnd.api+json',
-        Authorization: `Bearer ${lemonSqueezyApiKey}`,
+        Authorization: `Bearer ${getLemonSqueezyApiKey()}`,
       },
     });
 
@@ -134,7 +135,7 @@ router.post('/cancel-subscription', async (req, res) => {
       headers: {
         Accept: 'application/vnd.api+json',
         'Content-Type': 'application/vnd.api+json',
-        Authorization: `Bearer ${lemonSqueezyApiKey}`,
+        Authorization: `Bearer ${getLemonSqueezyApiKey()}`,
       },
       ...(immediate
         ? {}
@@ -213,7 +214,7 @@ router.post('/resume-subscription', async (req, res) => {
       headers: {
         Accept: 'application/vnd.api+json',
         'Content-Type': 'application/vnd.api+json',
-        Authorization: `Bearer ${lemonSqueezyApiKey}`,
+        Authorization: `Bearer ${getLemonSqueezyApiKey()}`,
       },
       body: JSON.stringify({
         data: {

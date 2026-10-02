@@ -14,6 +14,7 @@ import {
   useCancelInvitation,
   useInviteUsers,
 } from '../../../hooks/queries/useTeam';
+import { useEntitlements } from '../../../context/EntitlementsContext';
 import type { OrganizationMember } from '../../../types/database.types';
 import styles from './Team.module.css';
 
@@ -54,6 +55,7 @@ function messageFrom(err: unknown, fallback: string): string {
 
 export function Team() {
   const { addToast } = useToast();
+  const entitlements = useEntitlements();
 
   const orgQuery = useOrganizationDetail();
   const orgId = orgQuery.data?.id ?? null;
@@ -64,6 +66,9 @@ export function Team() {
 
   const members = membersQuery.data ?? [];
   const invitations = invitationsQuery.data ?? [];
+
+  const teamMemberLimit = entitlements.getLimit('team_members');
+  const isTeamLimitReached = teamMemberLimit !== null && members.length >= teamMemberLimit;
 
   const updateMemberRoleMutation = useUpdateMemberRole();
   const removeMemberMutation = useRemoveMember();
@@ -285,48 +290,69 @@ export function Team() {
 
       {canEdit && (
         <section>
-          <h2 className={styles.sectionTitle}>Invite New Members</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h2 className={styles.sectionTitle} style={{ margin: 0 }}>Invite New Members</h2>
+            {teamMemberLimit !== null && (
+              <span style={{ fontSize: 13, color: isTeamLimitReached ? '#ef4444' : 'var(--color-text-muted)' }}>
+                {members.length} / {teamMemberLimit} members used
+              </span>
+            )}
+          </div>
           <div className={styles.card}>
-            {inviteRows.map((row) => (
-              <div className={styles.inviteRow} key={row.id}>
-                <div className={styles.inviteEmail}>
-                  <Input
-                    placeholder="email@company.com"
-                    value={row.email}
-                    onChange={(e) => updateRow(row.id, 'email', e.target.value)}
-                  />
-                </div>
-                <div className={styles.inviteRole}>
-                  <select
-                    className={styles.select}
-                    value={row.role}
-                    onChange={(e) => updateRow(row.id, 'role', e.target.value)}
-                  >
-                    {roles.filter((r) => r !== 'owner').map((role) => (
-                      <option key={role} value={role}>
-                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {inviteRows.length > 1 && (
-                  <button className={styles.removeBtn} onClick={() => removeRow(row.id)} type="button" title="Remove">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
+            {isTeamLimitReached ? (
+              <div style={{ padding: '1.5rem', background: 'rgba(239, 68, 68, 0.08)', borderRadius: 8, border: '1px solid rgba(239, 68, 68, 0.2)', textAlign: 'center' }}>
+                <p style={{ margin: 0, fontWeight: 600, color: '#f87171' }}>
+                  Team member limit reached ({members.length} / {teamMemberLimit})
+                </p>
+                <p style={{ margin: '8px 0 16px', fontSize: 13, color: 'var(--color-text-muted)' }}>
+                  Your current plan allows up to {teamMemberLimit} team members. Upgrade your plan to invite additional team members.
+                </p>
+                <Button onClick={() => window.location.href = '/pricing'}>Upgrade Plan</Button>
+              </div>
+            ) : (
+              <>
+                {inviteRows.map((row) => (
+                  <div className={styles.inviteRow} key={row.id}>
+                    <div className={styles.inviteEmail}>
+                      <Input
+                        placeholder="email@company.com"
+                        value={row.email}
+                        onChange={(e) => updateRow(row.id, 'email', e.target.value)}
+                      />
+                    </div>
+                    <div className={styles.inviteRole}>
+                      <select
+                        className={styles.select}
+                        value={row.role}
+                        onChange={(e) => updateRow(row.id, 'role', e.target.value)}
+                      >
+                        {roles.filter((r) => r !== 'owner').map((role) => (
+                          <option key={role} value={role}>
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {inviteRows.length > 1 && (
+                      <button className={styles.removeBtn} onClick={() => removeRow(row.id)} type="button" title="Remove">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {inviteRows.length < 5 && (
+                  <button className={styles.addLink} onClick={addRow} type="button">
+                    + Add another
                   </button>
                 )}
-              </div>
-            ))}
-            {inviteRows.length < 5 && (
-              <button className={styles.addLink} onClick={addRow} type="button">
-                + Add another
-              </button>
+                <div style={{ marginTop: 20 }}>
+                  <Button isLoading={inviteUsersMutation.isPending} onClick={handleSendInvites}>Send Invitations</Button>
+                </div>
+              </>
             )}
-            <div style={{ marginTop: 20 }}>
-              <Button isLoading={inviteUsersMutation.isPending} onClick={handleSendInvites}>Send Invitations</Button>
-            </div>
           </div>
         </section>
       )}

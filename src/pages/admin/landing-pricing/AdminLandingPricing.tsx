@@ -535,6 +535,11 @@ export function AdminLandingPricingPage() {
                             }))} />
                           <label htmlFor={`feat_${feat}`} style={{ textTransform: 'capitalize' }}>
                             {feat.replace(/_/g, ' ')}
+                            {['cost_spike_detection', 'anomaly_detection', 'webhooks', 'slack_alerts'].includes(feat) && (
+                              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)', marginLeft: '4px', textTransform: 'none' }}>
+                                (coming soon)
+                              </span>
+                            )}
                           </label>
                         </div>
                       ))}

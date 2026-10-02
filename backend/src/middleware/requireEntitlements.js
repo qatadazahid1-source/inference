@@ -44,7 +44,7 @@ const FALLBACK_LIMITS = {
  * It reads the active subscription from the database and joins the plan limits.
  * If no active subscription exists, it provides fallback (Free/Zero) limits.
  */
-export const attachEntitlements = async (req, res, next) => {
+export async function attachEntitlements(req, res, next) {
   try {
     let orgId = req.headers['x-organization-id'];
 
@@ -135,6 +135,58 @@ export const attachEntitlements = async (req, res, next) => {
   }
 };
 
+/**
+ * Reusable middleware to require a specific feature boolean entitlement.
+ * Usage: router.get('/endpoint', attachEntitlements, requireFeature('csv_export'), handler);
+ */
+export function requireFeature(featureName) {
+  return (req, res, next) => {
+    if (!req.entitlements || !req.entitlements.hasFeature(featureName)) {
+      return res.status(403).json({
+        error: `Feature '${featureName}' is not available on your current plan.`,
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: {
+          feature: featureName,
+          upgrade_required: true,
+        },
+      });
+    }
+    next();
+  };
+}
+
+export function requireLimit(limitName, getCountFn) {
+  return async (req, res, next) => {
+    try {
+      if (!req.entitlements) {
+        return res.status(403).json({
+          error: 'Entitlements context missing.',
+          code: 'ENTITLEMENT_CONTEXT_MISSING',
+        });
+      }
+
+      const currentCount = await getCountFn(req);
+      if (!req.entitlements.checkLimit(limitName, currentCount)) {
+        const maxLimit = req.entitlements.getLimit(limitName);
+        return res.status(403).json({
+          error: `Plan limit reached. Maximum allowed ${limitName}: ${maxLimit}. Current usage: ${currentCount}.`,
+          code: 'ENTITLEMENT_EXCEEDED',
+          details: {
+            limit: limitName,
+            current: currentCount,
+            max: maxLimit,
+            upgrade_required: true,
+          },
+        });
+      }
+      next();
+    } catch (err) {
+      console.error(`[requireLimit] Error checking limit for '${limitName}':`, err.message);
+      res.status(500).json({ error: 'Failed to verify plan limit.' });
+    }
+  };
+}
+
 // Tier hierarchy for comparing a plan's model_access.tier against a model's access_tier
 const TIER_ORDER = { basic: 0, standard: 1, premium: 2, all: 3 };
 
@@ -153,7 +205,7 @@ const TIER_ORDER = { basic: 0, standard: 1, premium: 2, all: 3 };
  * behavior): if the entitlement lookup itself fails (DB hiccup etc.), the
  * request is allowed through rather than hard-failing every AI call.
  */
-export async function checkModelAndSpendEntitlement({ supabase, organization_id, provider, model }) {
+export async function checkModelAndSpendEntitlement({ supabase, organization_id, provider, model, isGateway = false }) {
   try {
     const { data: sub } = await supabase
       .from('subscriptions')
@@ -163,6 +215,16 @@ export async function checkModelAndSpendEntitlement({ supabase, organization_id,
       .maybeSingle();
 
     const limits = sub?.plans?.system_limits || {};
+
+    if (isGateway) {
+      const apiGatewayEnabled = limits.features?.api_gateway ?? false;
+      if (!apiGatewayEnabled) {
+        const err = new Error('API Gateway access is not included in your current plan. Upgrade your plan to use the external API gateway.');
+        err.isApiGatewayBlocked = true;
+        throw err;
+      }
+    }
+
     const planTier = limits.model_access?.tier ?? 'basic';
     const maxSpend = limits.limits?.monthly_spend_usd ?? null;
 
@@ -215,7 +277,7 @@ export async function checkModelAndSpendEntitlement({ supabase, organization_id,
       }
     }
   } catch (err) {
-    if (err.isBudgetBlocked || err.isEntitlementModelNotAllowed) throw err;
+    if (err.isBudgetBlocked || err.isEntitlementModelNotAllowed || err.isApiGatewayBlocked) throw err;
     // Non-blocking: infra failure in the check itself shouldn't fail the AI call
     console.error('[entitlements] Model/spend check failed (non-blocking):', err.message);
   }

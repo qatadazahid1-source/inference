@@ -115,6 +115,22 @@ serve(async (req) => {
         await handleSubscriptionPaymentFailed(data.id, attrs)
         break
 
+      case 'subscription_resumed':
+        await handleSubscriptionResumed(data.id, attrs)
+        break
+
+      case 'subscription_paused':
+        await handleSubscriptionPaused(data.id, attrs)
+        break
+
+      case 'subscription_unpaused':
+        await handleSubscriptionUnpaused(data.id, attrs)
+        break
+
+      case 'subscription_payment_recovered':
+        await handleSubscriptionPaymentRecovered(data.id, attrs)
+        break
+
       default:
         console.log(`Unhandled Lemon Squeezy event: ${eventName}`)
     }
@@ -180,13 +196,46 @@ async function handleSubscriptionCreated(lsSubscriptionId: string, attrs: any, c
 }
 
 async function handleSubscriptionUpdated(lsSubscriptionId: string, attrs: any) {
+  const variantId = attrs.variant_id || attrs.first_subscription_item?.variant_id
+  let planId: string | undefined
+  let billingCycle: string | undefined
+
+  if (variantId) {
+    const { data: matchedMonthly } = await supabase
+      .from('plans')
+      .select('id')
+      .eq('lemonsqueezy_variant_id_monthly', String(variantId))
+      .maybeSingle()
+
+    if (matchedMonthly) {
+      planId = matchedMonthly.id
+      billingCycle = 'monthly'
+    } else {
+      const { data: matchedAnnual } = await supabase
+        .from('plans')
+        .select('id')
+        .eq('lemonsqueezy_variant_id_annual', String(variantId))
+        .maybeSingle()
+
+      if (matchedAnnual) {
+        planId = matchedAnnual.id
+        billingCycle = 'annual'
+      }
+    }
+  }
+
+  const updatePayload: Record<string, any> = {
+    status: LS_STATUS_MAP[attrs.status] || 'cancelled',
+    current_period_end: attrs.renews_at ? new Date(attrs.renews_at).toISOString() : undefined,
+    cancelled_at: attrs.status === 'cancelled' && attrs.ends_at ? new Date(attrs.ends_at).toISOString() : null,
+  }
+
+  if (planId) updatePayload.plan_id = planId
+  if (billingCycle) updatePayload.billing_cycle = billingCycle
+
   const { error } = await supabase
     .from('subscriptions')
-    .update({
-      status: LS_STATUS_MAP[attrs.status] || 'cancelled',
-      current_period_end: attrs.renews_at ? new Date(attrs.renews_at).toISOString() : undefined,
-      cancelled_at: attrs.status === 'cancelled' && attrs.ends_at ? new Date(attrs.ends_at).toISOString() : null,
-    })
+    .update(updatePayload)
     .eq('lemonsqueezy_subscription_id', lsSubscriptionId)
 
   if (error) console.error('Error updating subscription:', error)
@@ -207,6 +256,55 @@ async function handleSubscriptionCancelled(lsSubscriptionId: string, attrs: any)
       cancelled_at: attrs.ends_at ? new Date(attrs.ends_at).toISOString() : new Date().toISOString(),
     })
     .eq('lemonsqueezy_subscription_id', lsSubscriptionId)
+}
+
+async function handleSubscriptionResumed(lsSubscriptionId: string, attrs: any) {
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: LS_STATUS_MAP[attrs.status] || 'active',
+      cancelled_at: null,
+      current_period_end: attrs.renews_at ? new Date(attrs.renews_at).toISOString() : undefined,
+    })
+    .eq('lemonsqueezy_subscription_id', lsSubscriptionId)
+
+  if (error) console.error('Error resuming subscription:', error)
+}
+
+async function handleSubscriptionPaused(lsSubscriptionId: string, attrs: any) {
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: 'paused',
+      current_period_end: attrs.renews_at ? new Date(attrs.renews_at).toISOString() : undefined,
+    })
+    .eq('lemonsqueezy_subscription_id', lsSubscriptionId)
+
+  if (error) console.error('Error pausing subscription:', error)
+}
+
+async function handleSubscriptionUnpaused(lsSubscriptionId: string, attrs: any) {
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: LS_STATUS_MAP[attrs.status] || 'active',
+      current_period_end: attrs.renews_at ? new Date(attrs.renews_at).toISOString() : undefined,
+    })
+    .eq('lemonsqueezy_subscription_id', lsSubscriptionId)
+
+  if (error) console.error('Error unpausing subscription:', error)
+}
+
+async function handleSubscriptionPaymentRecovered(lsSubscriptionId: string, attrs: any) {
+  const subId = attrs.subscription_id ? String(attrs.subscription_id) : lsSubscriptionId
+  const { error } = await supabase
+    .from('subscriptions')
+    .update({
+      status: 'active',
+    })
+    .eq('lemonsqueezy_subscription_id', subId)
+
+  if (error) console.error('Error recovering subscription payment:', error)
 }
 
 async function handleSubscriptionExpired(lsSubscriptionId: string) {

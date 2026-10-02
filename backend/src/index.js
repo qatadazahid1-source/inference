@@ -19,6 +19,7 @@ import reportsRouter from './routes/reports.js';
 import alertsRouter from './routes/alerts.js';
 import alertRulesRouter from './routes/alertRules.js';
 import platformKeysRouter from './routes/platformKeys.js';
+import benchmarksRouter from './routes/benchmarks.js';
 import v1Router from './routes/v1.js';
 import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
@@ -188,6 +189,7 @@ app.use('/api/reports', requireAuth, reportsRouter);
 app.use('/api/alerts', requireAuth, alertsRouter);
 app.use('/api/alert-rules', requireAuth, alertRulesRouter);
 app.use('/api/platform-keys', requireAuth, platformKeysRouter);
+app.use('/api/benchmarks', requireAuth, benchmarksRouter);
 
 // Public external gateway — NOT requireAuth. Callers authenticate with a
 // Platform Key (ii_sk_live_...) instead of a Supabase session.
@@ -215,6 +217,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Backend server running on port ${PORT}`);
+  });
+}

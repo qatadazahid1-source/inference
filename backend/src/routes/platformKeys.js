@@ -94,17 +94,38 @@ router.post('/', attachEntitlements, async (req, res) => {
 
     const organization_id = await getUserOrgId(req.user.id);
 
-    // Enforce max_platform_keys limit
+    // 1. Enforce api_gateway feature flag check
+    if (!req.entitlements.hasFeature('api_gateway')) {
+      return res.status(403).json({
+        error: 'API Gateway feature is not included in your current plan. Upgrade your plan to create platform keys and use the gateway.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: {
+          feature: 'api_gateway',
+          upgrade_required: true,
+        },
+      });
+    }
+
+    // 2. Enforce platform_keys numeric limit
     const { count, error: countErr } = await supabase
       .from('api_keys')
       .select('*', { count: 'exact', head: true })
       .eq('organization_id', organization_id)
       .eq('is_active', true);
-    
+
     if (countErr) throw countErr;
     if (!req.entitlements.checkLimit('platform_keys', count)) {
       const maxPlatformKeys = req.entitlements.getLimit('platform_keys');
-      return res.status(403).json({ error: `Plan limit reached. You can only create up to ${maxPlatformKeys} platform keys.` });
+      return res.status(403).json({
+        error: `Plan limit reached. You can only create up to ${maxPlatformKeys} platform keys on your current plan.`,
+        code: 'ENTITLEMENT_EXCEEDED',
+        details: {
+          limit: 'platform_keys',
+          current: count,
+          max: maxPlatformKeys,
+          upgrade_required: true,
+        },
+      });
     }
 
     // Confirm the integration belongs to this org and is active — never let

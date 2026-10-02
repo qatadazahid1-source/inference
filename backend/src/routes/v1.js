@@ -50,12 +50,13 @@ router.post('/chat/completions', async (req, res) => {
     // ── Plan Entitlement Enforcement ───────────────────────────────────────
     // Shared with the internal dashboard Playground (proxy.js) via
     // checkModelAndSpendEntitlement — see middleware/requireEntitlements.js.
-    // Throws isEntitlementModelNotAllowed / isBudgetBlocked, caught below.
+    // Checks api_gateway feature, model access-tier, and spend cap.
     await checkModelAndSpendEntitlement({
       supabase,
       organization_id,
       provider: integration.provider,
       model,
+      isGateway: true,
     });
     // ── End Plan Entitlement Enforcement ───────────────────────────────────
 
@@ -99,6 +100,10 @@ router.post('/chat/completions', async (req, res) => {
 
   } catch (err) {
     console.error('[v1] Error:', err.message, err.response?.data ?? '');
+
+    if (err.isApiGatewayBlocked) {
+      return res.status(403).json({ error: { message: err.message, type: 'FEATURE_NOT_AVAILABLE', code: 'FEATURE_NOT_AVAILABLE' } });
+    }
 
     if (err.isUnsupportedProvider) {
       return res.status(400).json({ error: { message: err.message, type: 'invalid_request_error' } });

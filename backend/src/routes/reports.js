@@ -121,8 +121,16 @@ router.get('/', attachEntitlements, async (req, res) => {
 });
 
 // GET /api/reports/:id/snapshot — fetch the saved data snapshot for download/PDF generation
-router.get('/:id/snapshot', async (req, res) => {
+router.get('/:id/snapshot', attachEntitlements, async (req, res) => {
   try {
+    if (!req.entitlements.hasFeature('reports')) {
+      return res.status(403).json({
+        error: 'Reports feature is not available on your plan.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: { feature: 'reports', upgrade_required: true },
+      });
+    }
+
     const organization_id = await getUserOrgId(req.user.id);
 
     const { data, error } = await supabase
@@ -136,6 +144,22 @@ router.get('/:id/snapshot', async (req, res) => {
     if (!data) return res.status(404).json({ error: 'Report not found' });
     if (data.status !== 'ready') {
       return res.status(409).json({ error: `Report is not ready (status: ${data.status})` });
+    }
+
+    const fmt = (data.format || '').toUpperCase();
+    if (fmt === 'CSV' && !req.entitlements.hasFeature('csv_export')) {
+      return res.status(403).json({
+        error: 'CSV export feature is not available on your plan.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: { feature: 'csv_export', upgrade_required: true },
+      });
+    }
+    if (fmt === 'PDF' && !req.entitlements.hasFeature('pdf_export')) {
+      return res.status(403).json({
+        error: 'PDF export feature is not available on your plan.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: { feature: 'pdf_export', upgrade_required: true },
+      });
     }
 
     res.json(data);
@@ -158,13 +182,33 @@ const reportsLimiter = rateLimit({
 
 router.post('/', attachEntitlements, reportsLimiter, async (req, res) => {
   if (!req.entitlements.hasFeature('reports')) {
-    return res.status(403).json({ error: 'Reports feature is not available on your plan.' });
+    return res.status(403).json({
+      error: 'Reports feature is not available on your plan.',
+      code: 'FEATURE_NOT_AVAILABLE',
+      details: { feature: 'reports', upgrade_required: true },
+    });
   }
 
   const { name, type, format, dateRangeStart, dateRangeEnd, providers, teams, recurring, frequency } = req.body;
 
   if (!name || !type || !format) {
     return res.status(400).json({ error: 'name, type, and format are required' });
+  }
+
+  const fmt = format.toUpperCase();
+  if (fmt === 'CSV' && !req.entitlements.hasFeature('csv_export')) {
+    return res.status(403).json({
+      error: 'CSV export feature is not available on your plan. Upgrade your plan to generate CSV reports.',
+      code: 'FEATURE_NOT_AVAILABLE',
+      details: { feature: 'csv_export', upgrade_required: true },
+    });
+  }
+  if (fmt === 'PDF' && !req.entitlements.hasFeature('pdf_export')) {
+    return res.status(403).json({
+      error: 'PDF export feature is not available on your plan. Upgrade your plan to generate PDF reports.',
+      code: 'FEATURE_NOT_AVAILABLE',
+      details: { feature: 'pdf_export', upgrade_required: true },
+    });
   }
 
   let reportId;

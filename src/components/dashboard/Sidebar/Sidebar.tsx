@@ -3,17 +3,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, DollarSign, TrendingUp, PiggyBank, Activity,
   FileText, Plug, Bell, BarChart2, MessageSquare, LogOut, ShieldAlert,
-  PanelLeftClose, PanelLeftOpen, Settings
+  PanelLeftClose, PanelLeftOpen, Settings, Lock
 } from 'lucide-react';
 import { Avatar } from '../../ui/Avatar/Avatar';
 import { useAuth } from '../../../hooks/useAuth';
 import { useAdminCheck } from '../../../hooks/useAdminCheck';
+import { useEntitlements, type SystemLimits } from '../../../context/EntitlementsContext';
 import styles from './Sidebar.module.css';
 
 interface NavItem {
   label: string;
   path: string;
   icon: React.ReactNode;
+  featureKey?: keyof SystemLimits['features'];
 }
 
 interface NavSection {
@@ -26,24 +28,24 @@ const navSections: NavSection[] = [
     title: 'Observability & Spend',
     items: [
       { label: 'Overview', path: '/dashboard', icon: <LayoutDashboard size={18} /> },
-      { label: 'Cost Analytics', path: '/dashboard/cost-analytics', icon: <DollarSign size={18} /> },
+      { label: 'Cost Analytics', path: '/dashboard/cost-analytics', icon: <DollarSign size={18} />, featureKey: 'analytics' },
       { label: 'API Usage', path: '/dashboard/api-usage', icon: <Activity size={18} /> },
     ],
   },
   {
     title: 'Control & Operations',
     items: [
-      { label: 'Budget Manager', path: '/dashboard/budget-manager', icon: <PiggyBank size={18} /> },
-      { label: 'Alerts', path: '/dashboard/alerts', icon: <Bell size={18} /> },
-      { label: 'Benchmarks', path: '/dashboard/benchmarks', icon: <BarChart2 size={18} /> },
-      { label: 'Reports', path: '/dashboard/reports', icon: <FileText size={18} /> },
-      { label: 'ROI Calculator', path: '/dashboard/roi-calculator', icon: <TrendingUp size={18} /> },
+      { label: 'Budget Manager', path: '/dashboard/budget-manager', icon: <PiggyBank size={18} />, featureKey: 'budget_manager' },
+      { label: 'Alerts', path: '/dashboard/alerts', icon: <Bell size={18} />, featureKey: 'alerts' },
+      { label: 'Benchmarks', path: '/dashboard/benchmarks', icon: <BarChart2 size={18} />, featureKey: 'benchmarks' },
+      { label: 'Reports', path: '/dashboard/reports', icon: <FileText size={18} />, featureKey: 'reports' },
+      { label: 'ROI Calculator', path: '/dashboard/roi-calculator', icon: <TrendingUp size={18} />, featureKey: 'roi_calculator' },
     ],
   },
   {
     title: 'Developer Tools',
     items: [
-      { label: 'Playground', path: '/dashboard/playground', icon: <MessageSquare size={18} /> },
+      { label: 'Playground', path: '/dashboard/playground', icon: <MessageSquare size={18} />, featureKey: 'ai_playground' },
       { label: 'Integrations', path: '/dashboard/integrations', icon: <Plug size={18} /> },
     ],
   },
@@ -65,6 +67,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { isPlatformAdmin } = useAdminCheck();
+  const entitlements = useEntitlements();
 
   const [isHovered, setIsHovered] = useState(false);
   const [isPinned, setIsPinned] = useState<boolean>(() => {
@@ -136,17 +139,24 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               )}
               {section.items.map((item) => {
                 const active = isActive(item.path);
+                const isLocked = !entitlements.isLoading && item.featureKey ? !entitlements.hasFeature(item.featureKey) : false;
                 return (
                   <button
                     key={item.path}
                     type="button"
                     className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
                     onClick={() => handleNav(item.path)}
-                    title={!expanded ? item.label : undefined}
+                    title={!expanded ? (isLocked ? `${item.label} (Upgrade Required)` : item.label) : undefined}
                     aria-current={active ? 'page' : undefined}
+                    style={isLocked ? { opacity: 0.75 } : undefined}
                   >
                     <span className={styles.navIcon}>{item.icon}</span>
-                    {expanded && <span className={styles.navLabel}>{item.label}</span>}
+                    {expanded && (
+                      <span className={styles.navLabel} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                        <span>{item.label}</span>
+                        {isLocked && <Lock size={12} style={{ color: 'var(--color-text-muted)', marginLeft: 6 }} />}
+                      </span>
+                    )}
                   </button>
                 );
               })}

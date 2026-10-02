@@ -5,6 +5,7 @@ import styles from './PricingSection.module.css';
 export const PricingSection: React.FC = () => {
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
 
   useEffect(() => {
     let cancelled = false;
@@ -30,6 +31,43 @@ export const PricingSection: React.FC = () => {
       <div className={styles.header}>
         <h2 className={styles.title}>Simple, transparent plans for any scale</h2>
         <p className={styles.sub}>No hidden seat fees. Start with a 14-day free trial.</p>
+        
+        <div style={{ display: 'inline-flex', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', marginTop: '1.5rem', border: '1px solid var(--color-border, rgba(255,255,255,0.1))' }}>
+          <button
+            type="button"
+            onClick={() => setBillingCycle('monthly')}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: billingCycle === 'monthly' ? 'var(--color-primary, #6366f1)' : 'transparent',
+              color: billingCycle === 'monthly' ? '#fff' : 'var(--color-text-secondary, #94a3b8)',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingCycle('annual')}
+            style={{
+              padding: '6px 16px',
+              borderRadius: '6px',
+              border: 'none',
+              background: billingCycle === 'annual' ? 'var(--color-primary, #6366f1)' : 'transparent',
+              color: billingCycle === 'annual' ? '#fff' : 'var(--color-text-secondary, #94a3b8)',
+              fontWeight: 500,
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Annual <span style={{ fontSize: '0.75rem', color: billingCycle === 'annual' ? '#e0e7ff' : '#10b981', marginLeft: '4px' }}>(Save up to 20%)</span>
+          </button>
+        </div>
       </div>
 
       <div className={styles.grid}>
@@ -39,16 +77,19 @@ export const PricingSection: React.FC = () => {
           </div>
         ) : plans.length > 0 ? (
           plans.map(plan => {
-            const isCustom = Number(plan.price_monthly) === 0 && Number(plan.price_annual) === 0;
+            const price = billingCycle === 'annual' ? plan.price_annual : plan.price_monthly;
+            const isCustom = Number(price) === 0;
             const isEnterprise = plan.slug === 'enterprise';
             return (
               <div key={plan.id} className={`${styles.card} ${plan.is_popular ? styles.cardFeatured : ''}`}>
                 {plan.is_popular && <span className={styles.featuredBadge}>Recommended</span>}
                 <div className={styles.planName}>{plan.name}</div>
                 <div className={styles.price}>
-                  {isCustom ? 'Custom' : <><sup>$</sup>{plan.price_monthly}</>}
+                  {isCustom ? 'Custom' : <><sup>$</sup>{price}</>}
                 </div>
-                <div className={styles.tagline}>{plan.tagline || 'Billed monthly'}</div>
+                <div className={styles.tagline}>
+                  {isCustom ? (plan.tagline || 'Contact us') : billingCycle === 'annual' ? 'Billed annually' : 'Billed monthly'}
+                </div>
                 <hr className={styles.divider} />
                 <ul className={styles.features}>
                   {plan.display_features?.map((feature: any, idx: number) => {

@@ -14,6 +14,7 @@ import {
   useDeleteReport,
 } from '../../../hooks/queries/useReports';
 import { useAuth } from '../../../hooks/useAuth';
+import { useEntitlements } from '../../../context/EntitlementsContext';
 import { exportToCSV, exportToPDF, exportToXLSX } from '../../../utils/exportUtils';
 
 import type { Report } from '../../../types/dashboard.types';
@@ -35,6 +36,11 @@ function formatLabel(val: string): string {
 
 export function Reports() {
   const { user } = useAuth();
+  const entitlements = useEntitlements();
+  const hasReportsFeature = entitlements.hasFeature('reports');
+  const hasCsvExport = entitlements.hasFeature('csv_export');
+  const hasPdfExport = entitlements.hasFeature('pdf_export');
+
   const [activeTab, setActiveTab] = useState<Tab>('all');
   const [showModal, setShowModal] = useState(false);
 
@@ -215,6 +221,24 @@ export function Reports() {
     }
   }
 
+  if (!entitlements.isLoading && !hasReportsFeature) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <h1>Reports</h1>
+        </div>
+        <div className={styles.tableCard} style={{ padding: '3rem 2rem', textAlign: 'center' }}>
+          <FileText size={48} style={{ color: 'var(--color-text-muted)', marginBottom: 16 }} />
+          <h2 style={{ fontSize: 20, marginBottom: 8 }}>Reports Feature Locked</h2>
+          <p style={{ color: 'var(--color-text-muted)', maxWidth: 460, margin: '0 auto 24px' }}>
+            Automated executive, engineering, and financial reporting is not included in your current plan. Upgrade your subscription to generate and schedule reports.
+          </p>
+          <Button onClick={() => window.location.href = '/pricing'}>Upgrade Plan</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -298,7 +322,7 @@ export function Reports() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleDownload(report)}
-                        disabled={downloadingId === report.id}
+                        disabled={downloadingId === report.id || (report.format === 'CSV' && !hasCsvExport) || (report.format === 'PDF' && !hasPdfExport)}
                       >
                         {downloadingId === report.id ? <Spinner size="sm" /> : <Download size={16} />}
                       </Button>
@@ -310,7 +334,7 @@ export function Reports() {
                         variant="secondary"
                         size="sm"
                         onClick={() => handleDownload(report)}
-                        disabled={report.status !== 'ready'}
+                        disabled={report.status !== 'ready' || (report.format === 'CSV' && !hasCsvExport) || (report.format === 'PDF' && !hasPdfExport)}
                       >
                         View
                       </Button>
@@ -370,18 +394,22 @@ export function Reports() {
         <div className={styles.formGroup}>
           <label className={styles.label}>Format</label>
           <div className={styles.radioGroup}>
-            {formats.map((f) => (
-              <label key={f}>
-                <input
-                  type="radio"
-                  name="format"
-                  value={f}
-                  checked={formFormat === f}
-                  onChange={() => setFormFormat(f)}
-                />
-                {' '}{f}
-              </label>
-            ))}
+            {formats.map((f) => {
+              const disabled = (f === 'CSV' && !hasCsvExport) || (f === 'PDF' && !hasPdfExport);
+              return (
+                <label key={f} style={{ opacity: disabled ? 0.5 : 1, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="format"
+                    value={f}
+                    checked={formFormat === f}
+                    disabled={disabled}
+                    onChange={() => setFormFormat(f)}
+                  />
+                  {' '}{f} {disabled && '(Upgrade Required)'}
+                </label>
+              );
+            })}
           </div>
         </div>
 
