@@ -35,6 +35,7 @@ interface SystemLimits {
     slack_alerts: boolean;
     cost_spike_detection: boolean;
     anomaly_detection: boolean;
+    hard_budget_enforcement: boolean;
   };
   rate_limits: {
     requests_per_minute: number | null;
@@ -80,7 +81,7 @@ const EMPTY_PLAN = {
     features: {
       api_gateway: true, analytics: true, advanced_analytics: false, alerts: true, budget_manager: true,
       ai_playground: true, benchmarks: false, roi_calculator: false, reports: true, csv_export: false,
-      pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false
+      pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false, hard_budget_enforcement: false
     },
     rate_limits: { requests_per_minute: 60, concurrent_requests: 2 },
     model_access: { tier: 'basic' }

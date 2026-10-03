@@ -18,7 +18,7 @@ const BASE_LIMITS = {
     api_gateway: true, analytics: true, ai_playground: true,
     advanced_analytics: false, alerts: false, budget_manager: false, benchmarks: false, roi_calculator: false,
     reports: false, csv_export: false, pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false,
-    cost_spike_detection: false, anomaly_detection: false
+    cost_spike_detection: false, anomaly_detection: false, hard_budget_enforcement: false
   },
   rate_limits: { requests_per_minute: 60, concurrent_requests: 2 },
   model_access: { tier: 'basic' }
@@ -119,7 +119,7 @@ const PLANS = [
     system_limits: {
       ...BASE_LIMITS,
       limits: { integrations: 50, platform_keys: 50, alert_rules: 100, budget_rules: 50, team_members: 50, monthly_spend_usd: 10000 },
-      features: { ...BASE_LIMITS.features, alerts: true, budget_manager: true, reports: true, advanced_analytics: true, benchmarks: true, roi_calculator: true, csv_export: true, pdf_export: true, premium_models: true, webhooks: true, slack_alerts: true, cost_spike_detection: true },
+      features: { ...BASE_LIMITS.features, alerts: true, budget_manager: true, reports: true, advanced_analytics: true, benchmarks: true, roi_calculator: true, csv_export: true, pdf_export: true, premium_models: true, webhooks: true, slack_alerts: true, cost_spike_detection: true, hard_budget_enforcement: true },
       rate_limits: { requests_per_minute: 1200, concurrent_requests: 50 },
       model_access: { tier: 'all' }
     },
@@ -146,7 +146,7 @@ const PLANS = [
     system_limits: {
       ...BASE_LIMITS,
       limits: { integrations: null, platform_keys: null, alert_rules: null, budget_rules: null, team_members: null, monthly_spend_usd: null },
-      features: { ...BASE_LIMITS.features, alerts: true, budget_manager: true, reports: true, advanced_analytics: true, benchmarks: true, roi_calculator: true, csv_export: true, pdf_export: true, premium_models: true, webhooks: true, slack_alerts: true, cost_spike_detection: true, anomaly_detection: true },
+      features: { ...BASE_LIMITS.features, alerts: true, budget_manager: true, reports: true, advanced_analytics: true, benchmarks: true, roi_calculator: true, csv_export: true, pdf_export: true, premium_models: true, webhooks: true, slack_alerts: true, cost_spike_detection: true, anomaly_detection: true, hard_budget_enforcement: true },
       rate_limits: { requests_per_minute: null, concurrent_requests: null },
       model_access: { tier: 'all' }
     },

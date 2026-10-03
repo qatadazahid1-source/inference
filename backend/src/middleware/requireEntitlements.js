@@ -28,7 +28,8 @@ const FALLBACK_LIMITS = {
     webhooks: false,
     slack_alerts: false,
     cost_spike_detection: false,
-    anomaly_detection: false
+    anomaly_detection: false,
+    hard_budget_enforcement: false
   },
   rate_limits: {
     requests_per_minute: 0,

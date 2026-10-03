@@ -50,7 +50,8 @@ export const PLAN_TOOL_SCHEMA = {
             webhooks: { type: "boolean" },
             slack_alerts: { type: "boolean" },
             cost_spike_detection: { type: "boolean" },
-            anomaly_detection: { type: "boolean" }
+            anomaly_detection: { type: "boolean" },
+            hard_budget_enforcement: { type: "boolean" }
           }
         },
         rate_limits: {

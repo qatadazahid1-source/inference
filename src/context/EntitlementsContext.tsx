@@ -32,6 +32,7 @@ export interface SystemLimits {
     slack_alerts: boolean;
     cost_spike_detection: boolean;
     anomaly_detection: boolean;
+    hard_budget_enforcement: boolean;
   };
   rate_limits: {
     requests_per_minute: number | null;
@@ -82,6 +83,7 @@ const FALLBACK_LIMITS: SystemLimits = {
     slack_alerts: false,
     cost_spike_detection: false,
     anomaly_detection: false,
+    hard_budget_enforcement: false,
   },
   rate_limits: { requests_per_minute: 0, concurrent_requests: 0 },
   model_access: { tier: 'basic' },

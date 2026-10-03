@@ -99,6 +99,14 @@ router.post('/', attachEntitlements, async (req, res) => {
       return res.status(403).json({ error: `Plan limit reached. You can only create up to ${maxRules} budget rules.` });
     }
 
+    if (hard_limit && !req.entitlements.hasFeature('hard_budget_enforcement')) {
+      return res.status(403).json({
+        error: 'Hard budget enforcement is not available on your plan. Upgrade your plan to enable hard limits that block API calls.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: { feature: 'hard_budget_enforcement', upgrade_required: true }
+      });
+    }
+
     const { data, error } = await supabase
       .from('budgets')
       .insert({
@@ -146,7 +154,7 @@ router.get('/alerts', async (req, res) => {
 // PUT /api/budgets/:id
 // Updates an existing budget. All fields are optional — only the ones
 // provided in the request body are changed; everything else stays as is.
-router.put('/:id', async (req, res) => {
+router.put('/:id', attachEntitlements, async (req, res) => {
   try {
     const organization_id = await getUserOrgId(req.user.id);
     const { name, total_budget, period, alert_at_50, alert_at_75, alert_at_90, alert_at_100, hard_limit } = req.body;
@@ -160,7 +168,17 @@ router.put('/:id', async (req, res) => {
     if (alert_at_75 !== undefined) updatePayload.alert_at_75 = !!alert_at_75;
     if (alert_at_90 !== undefined) updatePayload.alert_at_90 = !!alert_at_90;
     if (alert_at_100 !== undefined) updatePayload.alert_at_100 = !!alert_at_100;
-    if (hard_limit !== undefined) updatePayload.hard_limit = !!hard_limit;
+    
+    if (hard_limit !== undefined) {
+      if (hard_limit && !req.entitlements.hasFeature('hard_budget_enforcement')) {
+        return res.status(403).json({
+          error: 'Hard budget enforcement is not available on your plan. Upgrade your plan to enable hard limits that block API calls.',
+          code: 'FEATURE_NOT_AVAILABLE',
+          details: { feature: 'hard_budget_enforcement', upgrade_required: true }
+        });
+      }
+      updatePayload.hard_limit = !!hard_limit;
+    }
 
     // Scope the update to this organization, same as DELETE, so a user
     // can never edit another organization's budget by guessing an id.
