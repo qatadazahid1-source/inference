@@ -10,6 +10,9 @@
 # DO NOT add manual rewrites for pre-rendered pages like /terms /terms.html 200!
 # Render's automatic Clean URLs will handle them natively without falling into SPA loops.
 #
-# SPA private routes continue to use the /* /index.html 200 catch-all fallback.
+# Route API requests to the backend API domain.
+# This MUST come before the /* SPA fallback.
+/api/* https://api.ordisum.com/api/:splat 200
 
+# SPA private routes continue to use the /* /index.html 200 catch-all fallback.
 /* /index.html 200

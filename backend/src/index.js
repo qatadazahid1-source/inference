@@ -20,9 +20,16 @@ import alertsRouter from './routes/alerts.js';
 import alertRulesRouter from './routes/alertRules.js';
 import platformKeysRouter from './routes/platformKeys.js';
 import benchmarksRouter from './routes/benchmarks.js';
+import slackRouter from './routes/slack.js';
+import webhooksRouter from './routes/webhooks.js';
+import anomaliesRouter from './routes/anomalies.js';
 import v1Router from './routes/v1.js';
 import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
+import cron from 'node-cron';
+import { processDueReports } from './services/scheduledReports.js';
+import { runAnomalyDetectionForAll } from './services/anomalyDetector.js';
+import { retryPendingDeliveries } from './utils/webhookDispatcher.js';
 import { proxyLimiter, v1Limiter, securityLimiter } from './middleware/rateLimiters.js';
 
 import path from 'path';
@@ -190,6 +197,9 @@ app.use('/api/alerts', requireAuth, alertsRouter);
 app.use('/api/alert-rules', requireAuth, alertRulesRouter);
 app.use('/api/platform-keys', requireAuth, platformKeysRouter);
 app.use('/api/benchmarks', requireAuth, benchmarksRouter);
+app.use('/api/slack', requireAuth, slackRouter);
+app.use('/api/webhooks', requireAuth, webhooksRouter);
+app.use('/api/anomalies', requireAuth, anomaliesRouter);
 
 // Public external gateway — NOT requireAuth. Callers authenticate with a
 // Platform Key (ii_sk_live_...) instead of a Supabase session.
@@ -220,5 +230,24 @@ app.use((err, req, res, next) => {
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);
+
+    // --- Background Schedulers ---
+    // These run automatically in the background using node-cron.
+    console.log('[startup] Initializing scheduled jobs...');
+
+    // 1. Process recurring reports every 10 minutes
+    cron.schedule('*/10 * * * *', () => {
+      processDueReports().catch(e => console.error('[cron] processDueReports error:', e.message));
+    });
+
+    // 2. Run anomaly detection every hour (top of the hour)
+    cron.schedule('0 * * * *', () => {
+      runAnomalyDetectionForAll().catch(e => console.error('[cron] anomaly detection error:', e.message));
+    });
+
+    // 3. Retry pending webhooks every 5 minutes
+    cron.schedule('*/5 * * * *', () => {
+      retryPendingDeliveries().catch(e => console.error('[cron] webhook retry error:', e.message));
+    });
   });
 }

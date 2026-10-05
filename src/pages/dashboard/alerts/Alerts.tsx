@@ -58,15 +58,12 @@ const conditionLabels: Record<string, string> = {
 const channelLabels: Record<string, string> = {
   in_app: 'In-App',
   email: 'Email (soon)',
-  slack: 'Slack (soon)',
+  slack: 'Slack',
   sms: 'SMS (soon)',
 };
 
-// Only In-App delivery is actually wired up right now — no email/Slack/SMS
-// service is configured anywhere in the system. Rather than build a
-// fake-functional UI for channels that don't deliver anything, these stay
-// visibly disabled until a real provider is integrated.
-const availableChannels = new Set(['in_app']);
+// In-App and Slack delivery are wired up. Email and SMS are pending.
+const availableChannels = new Set(['in_app', 'slack']);
 
 const severityIcon: Record<Alert['severity'], typeof AlertTriangle> = {
   critical: AlertTriangle,
@@ -216,15 +213,14 @@ export function Alerts() {
       return;
     }
 
-    // Only 'in_app' is actually wired up end-to-end right now — see the
-    // disabled email/slack/sms checkboxes below. Filtering here means the
-    // rule we save always reflects what we can really deliver.
+    // In_app and slack are wired up end-to-end. Email/SMS checkboxes are disabled.
+    // Filtering here means the rule we save always reflects what we can really deliver.
     const payload = {
       name: newRule.name,
       condition: newRule.condition,
       threshold: Number(newRule.threshold),
       scope: newRule.scope,
-      channels: newRule.channels.filter((ch) => ch === 'in_app'),
+      channels: newRule.channels.filter((ch) => ch === 'in_app' || ch === 'slack'),
     };
 
     // Awaited so the modal only closes on success; the hooks invalidate the

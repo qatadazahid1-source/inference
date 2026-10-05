@@ -2,6 +2,9 @@ import express from 'express';
 import { supabase } from '../index.js';
 import { attachEntitlements } from '../middleware/requireEntitlements.js';
 import rateLimit from 'express-rate-limit';
+import { generatePDF }  from '../services/pdfGenerator.js';
+import { generateXLSX } from '../services/xlsxGenerator.js';
+import { getFirstRunAt } from '../services/scheduledReports.js';
 
 const router = express.Router();
 
@@ -92,7 +95,7 @@ router.get('/', attachEntitlements, async (req, res) => {
 
     const { data, error } = await supabase
       .from('reports')
-      .select('id, name, type, format, status, date_range_start, date_range_end, providers, teams, recurring, frequency, error_message, created_at, data_snapshot')
+      .select('id, name, type, format, status, date_range_start, date_range_end, providers, teams, recurring, frequency, error_message, created_at, data_snapshot, next_run_at, last_run_at, last_run_status, recipients, enabled')
       .eq('organization_id', organization_id)
       .order('created_at', { ascending: false });
 
@@ -110,6 +113,11 @@ router.get('/', attachEntitlements, async (req, res) => {
         : undefined,
       recurring: r.recurring,
       frequency: r.frequency,
+      nextRunAt: r.next_run_at,
+      lastRunAt: r.last_run_at,
+      lastRunStatus: r.last_run_status,
+      recipients: r.recipients ?? [],
+      enabled: r.enabled ?? true,
       errorMessage: r.error_message,
       isEmpty: r.data_snapshot?.isEmpty ?? false,
     })));
@@ -120,7 +128,7 @@ router.get('/', attachEntitlements, async (req, res) => {
   }
 });
 
-// GET /api/reports/:id/snapshot — fetch the saved data snapshot for download/PDF generation
+// GET /api/reports/:id/snapshot — JSON snapshot (for UI preview)
 router.get('/:id/snapshot', attachEntitlements, async (req, res) => {
   try {
     if (!req.entitlements.hasFeature('reports')) {
@@ -146,27 +154,97 @@ router.get('/:id/snapshot', attachEntitlements, async (req, res) => {
       return res.status(409).json({ error: `Report is not ready (status: ${data.status})` });
     }
 
-    const fmt = (data.format || '').toUpperCase();
-    if (fmt === 'CSV' && !req.entitlements.hasFeature('csv_export')) {
-      return res.status(403).json({
-        error: 'CSV export feature is not available on your plan.',
-        code: 'FEATURE_NOT_AVAILABLE',
-        details: { feature: 'csv_export', upgrade_required: true },
-      });
-    }
-    if (fmt === 'PDF' && !req.entitlements.hasFeature('pdf_export')) {
-      return res.status(403).json({
-        error: 'PDF export feature is not available on your plan.',
-        code: 'FEATURE_NOT_AVAILABLE',
-        details: { feature: 'pdf_export', upgrade_required: true },
-      });
-    }
-
     res.json(data);
 
   } catch (err) {
     console.error('[reports] GET /:id/snapshot error:', err.message);
     res.status(500).json({ error: 'Failed to fetch report snapshot' });
+  }
+});
+
+// GET /api/reports/:id/download/pdf — REAL PDF binary download
+router.get('/:id/download/pdf', attachEntitlements, async (req, res) => {
+  try {
+    if (!req.entitlements.hasFeature('reports')) {
+      return res.status(403).json({ error: 'Reports feature is not available on your plan.', code: 'FEATURE_NOT_AVAILABLE' });
+    }
+    if (!req.entitlements.hasFeature('pdf_export')) {
+      return res.status(403).json({
+        error: 'PDF export is not available on your plan.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: { feature: 'pdf_export', upgrade_required: true },
+      });
+    }
+
+    const organization_id = await getUserOrgId(req.user.id);
+
+    const { data: report, error } = await supabase
+      .from('reports')
+      .select('id, name, type, format, status, date_range_start, date_range_end, data_snapshot')
+      .eq('id', req.params.id)
+      .eq('organization_id', organization_id)
+      .single();
+
+    if (error || !report) return res.status(404).json({ error: 'Report not found' });
+    if (report.status !== 'ready') return res.status(409).json({ error: `Report is not ready (status: ${report.status})` });
+
+    const { data: org } = await supabase.from('organizations').select('name')
+      .eq('id', organization_id).maybeSingle();
+    const orgName = org?.name ?? 'Your Organization';
+
+    const pdfBuffer = await generatePDF(report, orgName);
+    const filename  = `${report.name.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+
+    res.set('Content-Type', 'application/pdf');
+    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    res.set('Content-Length', pdfBuffer.length);
+    res.send(pdfBuffer);
+  } catch (err) {
+    console.error('[reports] PDF download error:', err.message);
+    res.status(500).json({ error: 'Failed to generate PDF' });
+  }
+});
+
+// GET /api/reports/:id/download/xlsx — REAL XLSX binary download
+router.get('/:id/download/xlsx', attachEntitlements, async (req, res) => {
+  try {
+    if (!req.entitlements.hasFeature('reports')) {
+      return res.status(403).json({ error: 'Reports feature is not available on your plan.', code: 'FEATURE_NOT_AVAILABLE' });
+    }
+    if (!req.entitlements.hasFeature('xlsx_export')) {
+      return res.status(403).json({
+        error: 'XLSX export is not available on your plan.',
+        code: 'FEATURE_NOT_AVAILABLE',
+        details: { feature: 'xlsx_export', upgrade_required: true },
+      });
+    }
+
+    const organization_id = await getUserOrgId(req.user.id);
+
+    const { data: report, error } = await supabase
+      .from('reports')
+      .select('id, name, type, format, status, date_range_start, date_range_end, data_snapshot')
+      .eq('id', req.params.id)
+      .eq('organization_id', organization_id)
+      .single();
+
+    if (error || !report) return res.status(404).json({ error: 'Report not found' });
+    if (report.status !== 'ready') return res.status(409).json({ error: `Report is not ready (status: ${report.status})` });
+
+    const { data: org } = await supabase.from('organizations').select('name')
+      .eq('id', organization_id).maybeSingle();
+    const orgName = org?.name ?? 'Your Organization';
+
+    const xlsxBuffer = await generateXLSX(report, orgName);
+    const filename   = `${report.name.replace(/[^a-z0-9]/gi, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
+
+    res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.set('Content-Disposition', `attachment; filename="${filename}"`);
+    res.set('Content-Length', xlsxBuffer.length);
+    res.send(xlsxBuffer);
+  } catch (err) {
+    console.error('[reports] XLSX download error:', err.message);
+    res.status(500).json({ error: 'Failed to generate XLSX' });
   }
 });
 
@@ -189,7 +267,7 @@ router.post('/', attachEntitlements, reportsLimiter, async (req, res) => {
     });
   }
 
-  const { name, type, format, dateRangeStart, dateRangeEnd, providers, teams, recurring, frequency } = req.body;
+  const { name, type, format, dateRangeStart, dateRangeEnd, providers, teams, recurring, frequency, recipients } = req.body;
 
   if (!name || !type || !format) {
     return res.status(400).json({ error: 'name, type, and format are required' });
@@ -210,10 +288,26 @@ router.post('/', attachEntitlements, reportsLimiter, async (req, res) => {
       details: { feature: 'pdf_export', upgrade_required: true },
     });
   }
+  if (fmt === 'XLSX' && !req.entitlements.hasFeature('xlsx_export')) {
+    return res.status(403).json({
+      error: 'XLSX export feature is not available on your plan.',
+      code: 'FEATURE_NOT_AVAILABLE',
+      details: { feature: 'xlsx_export', upgrade_required: true },
+    });
+  }
+
+  // Validate recurring settings
+  const VALID_FREQS = ['daily', 'weekly', 'monthly'];
+  if (recurring && (!frequency || !VALID_FREQS.includes(frequency))) {
+    return res.status(400).json({ error: `frequency must be one of: ${VALID_FREQS.join(', ')} for recurring reports` });
+  }
 
   let reportId;
   try {
     const organization_id = await getUserOrgId(req.user.id);
+
+    // Calculate next_run_at for recurring reports
+    const next_run_at = recurring ? getFirstRunAt(frequency).toISOString() : null;
 
     // Insert as 'generating' first so the UI can show a spinner immediately
     const { data: inserted, error: insertError } = await supabase
@@ -231,8 +325,11 @@ router.post('/', attachEntitlements, reportsLimiter, async (req, res) => {
         teams: teams || [],
         recurring: !!recurring,
         frequency: frequency || null,
+        next_run_at,
+        recipients: Array.isArray(recipients) ? recipients : [],
+        enabled: true,
       })
-      .select('id, name, type, format, status, date_range_start, date_range_end, recurring, frequency, created_at')
+      .select('id, name, type, format, status, date_range_start, date_range_end, recurring, frequency, next_run_at, created_at')
       .single();
 
     if (insertError) throw insertError;
@@ -264,6 +361,7 @@ router.post('/', attachEntitlements, reportsLimiter, async (req, res) => {
       dateRange: dateRangeStart && dateRangeEnd ? { start: dateRangeStart, end: dateRangeEnd } : undefined,
       recurring: inserted.recurring,
       frequency: inserted.frequency,
+      nextRunAt: inserted.next_run_at,
     });
 
   } catch (err) {

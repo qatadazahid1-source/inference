@@ -169,6 +169,9 @@ const Team = lazy(() => import('./pages/settings/team/Team').then((m) => ({ defa
 const Billing = lazy(() =>
   import('./pages/settings/billing/Billing').then((m) => ({ default: m.Billing }))
 );
+const SlackSettings = lazy(() =>
+  import('./pages/settings/slack/Slack').then((m) => ({ default: m.SlackSettings }))
+);
 
 function RouteFallback() {
   return (
@@ -288,6 +291,7 @@ export default function App() {
           <Route path="organization" element={<Organization />} />
           <Route path="team" element={<Team />} />
           <Route path="billing" element={<Billing />} />
+          <Route path="slack" element={<SlackSettings />} />
           <Route index element={<Navigate to="/settings/profile" replace />} />
         </Route>
 

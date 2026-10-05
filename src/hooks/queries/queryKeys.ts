@@ -90,6 +90,12 @@ export const queryKeys = {
       ['team', 'invitations', orgId ?? null] as const,
   },
 
+  slack: {
+    all: ['slack'] as const,
+    integration: () => ['slack', 'integration'] as const,
+    channels: () => ['slack', 'channels'] as const,
+  },
+
   // ---- Admin domains -----------------------------------------------------
   admin: {
     all: ['admin'] as const,

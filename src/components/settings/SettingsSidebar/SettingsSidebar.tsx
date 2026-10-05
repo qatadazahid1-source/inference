@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { User, Shield, Bell, Building2, Users, CreditCard } from 'lucide-react';
+import { User, Shield, Bell, Building2, Users, CreditCard, MessageSquare } from 'lucide-react';
 import { Avatar } from '../../ui/Avatar/Avatar';
 import { useAuth } from '../../../hooks/useAuth';
 import styles from './SettingsSidebar.module.css';
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Profile', path: '/settings/profile', icon: <User size={18} /> },
   { label: 'Security', path: '/settings/security', icon: <Shield size={18} /> },
   { label: 'Notifications', path: '/settings/notifications', icon: <Bell size={18} /> },
+  { label: 'Slack Alerts', path: '/settings/slack', icon: <MessageSquare size={18} /> },
   { label: 'Organization', path: '/settings/organization', icon: <Building2 size={18} /> },
   { label: 'Team', path: '/settings/team', icon: <Users size={18} /> },
   { label: 'Billing', path: '/settings/billing', icon: <CreditCard size={18} /> },

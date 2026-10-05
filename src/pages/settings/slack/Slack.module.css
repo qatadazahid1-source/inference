@@ -1,0 +1,254 @@
+﻿/* ============================================================
+   Slack Settings Page — Slack.module.css
+   Follows existing settings page design tokens exactly.
+   ============================================================ */
+
+.page {
+  animation: fadeSlideUp 400ms ease-out;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: var(--fw-extrabold);
+  margin-bottom: 8px;
+}
+
+.subtext {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 32px;
+}
+
+/* ── Card ────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  margin-bottom: 4px;
+}
+
+.cardDesc {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* ── Status badge ─────────────────────────────────────────── */
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusDotConnected {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.statusDotDisconnected {
+  background: var(--color-text-tertiary);
+}
+
+.statusDotPending {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+.statusLabel {
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+}
+
+/* ── Meta row (workspace / channel info) ─────────────────── */
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.metaItem {}
+
+.metaKey {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+  font-weight: var(--fw-medium);
+  margin-bottom: 4px;
+}
+
+.metaValue {
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-primary);
+}
+
+/* ── Action row ──────────────────────────────────────────── */
+
+.actionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ── Channel picker ──────────────────────────────────────── */
+
+.channelPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.channelPickerLabel {
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  color: var(--color-text-secondary);
+}
+
+.select {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 14px;
+  background: var(--color-input-bg, var(--color-bg));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+  transition: border-color 150ms;
+}
+
+.select:hover {
+  border-color: var(--color-signal);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--color-signal);
+  box-shadow: 0 0 0 2px rgba(var(--color-signal-rgb, 99, 102, 241), 0.15);
+}
+
+/* ── Upgrade notice ──────────────────────────────────────── */
+
+.upgradeCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 24px;
+}
+
+.upgradeIcon {
+  font-size: 28px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.upgradeTitle {
+  font-size: 16px;
+  font-weight: var(--fw-semibold);
+  margin-bottom: 6px;
+}
+
+.upgradeText {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+/* ── Error notice ────────────────────────────────────────── */
+
+.errorBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-sm);
+  color: #ef4444;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+/* ── Scopes help text ────────────────────────────────────── */
+
+.scopeList {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.scope {
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+/* ── Skeleton ────────────────────────────────────────────── */
+
+.skeletonCard {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+/* ── Animations ──────────────────────────────────────────── */
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page { animation: none; }
+}
+
+@media (max-width: 600px) {
+  .actionRow { flex-direction: column; align-items: stretch; }
+  .metaGrid  { grid-template-columns: 1fr 1fr; }
+}
