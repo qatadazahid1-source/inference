@@ -8,7 +8,7 @@
  */
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || process.env.ALERT_FROM_EMAIL || 'Ordisum <notifications@ordisum.com>';
+const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || 'Ordisum <notifications@ordisum.com>';
 const SITE_URL = process.env.SITE_URL || 'https://ordisum.com';
 
 /**
@@ -69,6 +69,9 @@ export async function sendAlertEmail({ to, subject, title, message, severity = '
 </body>
 </html>`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -76,11 +79,13 @@ export async function sendAlertEmail({ to, subject, title, message, severity = '
         Authorization: `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
+      signal: controller.signal,
       body: JSON.stringify({
-        from: `Ordisum Alerts <${FROM_ADDRESS}>`,
+        from: FROM_ADDRESS,
         to: [to],
         subject,
         html,
+        text: `${title}\n\n${message}\n\nView Alerts: ${SITE_URL}/dashboard/alerts\n\nThis alert was triggered by your Ordisum budget rules.`
       }),
     });
 
@@ -91,5 +96,7 @@ export async function sendAlertEmail({ to, subject, title, message, severity = '
   } catch (err) {
     // Non-fatal — email dispatch failure should never crash the alert pipeline
     console.error('[resend] Error dispatching alert email:', err.message);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }

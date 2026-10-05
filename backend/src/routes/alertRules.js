@@ -246,6 +246,16 @@ router.post('/check', proxyLimiter, async (req, res) => {
           } else {
             const { data: members } = await supabase.from('organization_members').select('user_id').eq('organization_id', organization_id).in('role', ['owner', 'admin']);
             for (const m of members || []) {
+              // Check notification preferences
+              const { data: prefs } = await supabase
+                .from('notification_preferences')
+                .select('budget_alerts_email')
+                .eq('user_id', m.user_id)
+                .maybeSingle();
+              
+              // Skip if explicitly opted out
+              if (prefs && prefs.budget_alerts_email === false) continue;
+
               const { data: { user } } = await supabase.auth.admin.getUserById(m.user_id);
               if (user?.email) emailRecipients.push(user.email);
             }

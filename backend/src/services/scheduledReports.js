@@ -128,26 +128,38 @@ async function emailReport(report, snapshot, fileBuffer, orgName) {
   }
 
   const html = buildEmailHTML(report, snapshot, orgName);
+  const text = `Your Scheduled Report is Ready\n\nReport: ${report.name} | Org: ${orgName}\n\nTotal Requests: ${(snapshot.totals?.totalRequests??0).toLocaleString()}\nTotal Tokens: ${(snapshot.totals?.totalTokens??0).toLocaleString()}\nTotal Cost: $${Number(snapshot.totals?.totalCost??0).toFixed(4)}\n\nView in Dashboard: ${SITE_URL()}/dashboard/reports\n\nThis is an automated scheduled report from Ordisum.`;
 
   const body = {
     from:    FROM_ADDRESS(),
     to:      recipients,
     subject: `[Ordisum] Report Ready: ${report.name}`,
     html,
+    text,
     ...(attachment ? { attachments: [attachment] } : {}),
   };
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method:  'POST',
-    headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-    body:    JSON.stringify(body),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Resend returned ${res.status}: ${text}`);
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body:    JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Resend returned ${res.status}: ${text}`);
+    }
+    console.log(`[scheduler] Report "${report.name}" emailed to ${recipients.join(', ')}`);
+  } catch (err) {
+    throw new Error(`Resend fetch error: ${err.message}`);
+  } finally {
+    clearTimeout(timeoutId);
   }
-  console.log(`[scheduler] Report "${report.name}" emailed to ${recipients.join(', ')}`);
 }
 
 function buildEmailHTML(report, snapshot, orgName) {
@@ -225,9 +237,27 @@ export async function processDueReports() {
     return;
   }
 
-  console.log(`[scheduler] ${dueReports.length} recurring report(s) due.`);
+  console.log(`[scheduler] ${dueReports.length} recurring report(s) potentially due.`);
 
   for (const report of dueReports) {
+    // ATOMIC LOCK: Try to claim this report for processing to prevent duplicate concurrent runs
+    const { data: claimed, error: claimErr } = await supabase
+      .from('reports')
+      .update({ last_run_status: 'processing', updated_at: now })
+      .eq('id', report.id)
+      .neq('last_run_status', 'processing')
+      .select('id')
+      .maybeSingle();
+
+    if (claimErr) {
+      console.error(`[scheduler] Claim error for report ${report.id}:`, claimErr.message);
+      continue;
+    }
+    if (!claimed) {
+      // Either already processing by another worker, or doesn't exist
+      continue;
+    }
+
     await processOneReport(report);
   }
 }

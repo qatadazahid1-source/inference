@@ -158,32 +158,47 @@ serve(async (req) => {
 
       const inviterName = user.email || 'A team member'
       const orgName = org?.name || 'the organization'
+      
+      const siteUrl = Deno.env.get('SITE_URL') || 'https://ordisum.com'
+      const inviteUrl = `${siteUrl}/auth/signup?token=${invitationToken}`
+      const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'Ordisum <notifications@ordisum.com>'
 
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Ordisum <team@ordisum.com>',
-          to: [email],
-          subject: `You've been invited to join ${orgName}`,
-          html: `
-            <h2>You've been invited!</h2>
-            <p>${inviterName} has invited you to join <strong>${orgName}</strong> on Ordisum.</p>
-            <p>Click the link below to accept the invitation:</p>
-            <a href="${Deno.env.get('SITE_URL') || 'http://localhost:5173'}/auth/signup?token=${invitationToken}"
-               style="display: inline-block; padding: 12px 24px; background: #16a34a; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">
-              Accept Invitation
-            </a>
-            <p>This invitation expires in 7 days.</p>
-          `,
-        }),
-      })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      if (!res.ok) {
-        console.error(`[Resend] Failed to send email. HTTP Status: ${res.status}`)
+      try {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            from: fromEmail,
+            to: [email],
+            subject: `You've been invited to join ${orgName}`,
+            html: `
+              <h2>You've been invited!</h2>
+              <p>${inviterName} has invited you to join <strong>${orgName}</strong> on Ordisum.</p>
+              <p>Click the link below to accept the invitation:</p>
+              <a href="${inviteUrl}"
+                 style="display: inline-block; padding: 12px 24px; background: #16a34a; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0;">
+                Accept Invitation
+              </a>
+              <p>This invitation expires in 7 days.</p>
+            `,
+            text: `You've been invited!\n\n${inviterName} has invited you to join ${orgName} on Ordisum.\n\nCopy and paste the following link into your browser to accept the invitation:\n${inviteUrl}\n\nThis invitation expires in 7 days.`,
+          }),
+        })
+
+        if (!res.ok) {
+          console.error(`[Resend] Failed to send email. HTTP Status: ${res.status}`)
+        }
+      } catch (err) {
+        console.error('[Resend] Fetch error or timeout:', err.message)
+      } finally {
+        clearTimeout(timeoutId)
       }
     }
 
