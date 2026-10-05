@@ -21,8 +21,8 @@
  */
 
 import { supabase } from '../index.js';
-import { sendSlackAlert } from './sendSlackAlert.js';
-import { dispatchWebhookEvent } from './webhookDispatcher.js';
+import { sendSlackAlert } from '../utils/sendSlackAlert.js';
+import { dispatchWebhookEvent } from '../utils/webhookDispatcher.js';
 
 const BASELINE_DAYS      = 7;       // days of history to build baseline
 const DETECTION_HOURS    = 1;       // current window to compare against baseline
