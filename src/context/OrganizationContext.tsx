@@ -35,14 +35,14 @@ import type { Organization, OrganizationContextType } from '../types/auth.types'
 
 export const OrganizationContext = createContext<OrganizationContextType | null>(null);
 
-const FALLBACK_ORG: Organization = { id: '', name: 'My Organization', plan: 'starter' };
+const FALLBACK_ORG: Organization = { id: '', name: 'My Organization', plan: 'basic' };
 
 /**
  * Project the (unwrapped) backend org detail payload into the public
  * `Organization` shape consumed across the app. The backend org row does not
  * carry a `plan` column directly; the API exposes `plan_name` from the
  * subscriptions join when present, so we fall back through
- * `plan_name → plan → 'starter'`.
+ * `plan_name → plan → 'basic'`.
  */
 function toOrganization(detail: Record<string, unknown> | undefined): Organization | null {
   if (!detail || !detail.id) return null;
@@ -52,7 +52,7 @@ function toOrganization(detail: Record<string, unknown> | undefined): Organizati
     name: (detail.name as string) ?? 'My Organization',
     industry: (detail.industry as string | undefined) ?? undefined,
     logo: (detail.logo_url as string | undefined) ?? undefined,
-    plan: planName ?? 'starter',
+    plan: planName ?? 'basic',
   };
 }
 

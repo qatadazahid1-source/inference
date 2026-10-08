@@ -32,7 +32,7 @@ export interface Organization {
   aiUseCases?: string[];
   monthlyAiSpend?: string;
   logo?: string;
-  plan?: 'starter' | 'professional' | 'enterprise';
+  plan?: 'basic' | 'professional' | 'business' | 'enterprise';
 }
 
 export interface OrganizationContextType {
