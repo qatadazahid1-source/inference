@@ -63,43 +63,14 @@ export async function cancelInvitation(
 
 export async function acceptInvitation(
   token: string,
-  userId: string,
+  userId: string, // Kept for signature compatibility, though RPC uses auth.uid()
 ): Promise<{ error: string | null }> {
-  // Get the invitation
-  const { data: invitation, error: invError } = await supabase
-    .from('invitations')
-    .select('*')
-    .eq('token', token)
-    .is('accepted_at', null)
-    .is('cancelled_at', null)
-    .single()
+  // Use the secure RPC function to accept the invitation
+  const { error } = await supabase.rpc('accept_invitation', {
+    invitation_token: token,
+  })
 
-  if (invError || !invitation) return { error: 'Invalid or expired invitation token' }
-
-  if (new Date(invitation.expires_at) < new Date()) {
-    return { error: 'Invitation has expired' }
-  }
-
-  // Create org membership
-  const { error: memberError } = await supabase
-    .from('organization_members')
-    .insert({
-      organization_id: invitation.organization_id,
-      user_id: userId,
-      role: invitation.role,
-      status: 'active',
-      joined_at: new Date().toISOString(),
-    })
-
-  if (memberError) return { error: memberError.message }
-
-  // Mark invitation as accepted
-  await supabase
-    .from('invitations')
-    .update({ accepted_at: new Date().toISOString() })
-    .eq('id', invitation.id)
-
-  return { error: null }
+  return { error: error ? error.message : null }
 }
 
 // ─── Security Sessions ─────────────────────────────────

@@ -11,22 +11,48 @@ const resendApiKey = Deno.env.get('RESEND_API_KEY') || ''
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || ''
+  const allowedOrigins = [
+    'https://ordisum.com',
+    'https://www.ordisum.com',
+    'http://localhost:5173',
+  ]
+
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+  }
+
+  return headers
+}
+
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   if (req.method !== 'POST') {
-    return new Response('Method not allowed', { status: 405 })
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders })
   }
 
   try {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      return new Response('Missing Authorization header', { status: 401 })
+      return new Response('Missing Authorization header', { status: 401, headers: corsHeaders })
     }
 
     const token = authHeader.replace('Bearer ', '')
     const { data: { user }, error: authError } = await supabase.auth.getUser(token)
 
     if (authError || !user) {
-      return new Response('Unauthorized', { status: 401 })
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders })
     }
 
     const { email, role, organizationId } = await req.json()
@@ -34,7 +60,7 @@ serve(async (req) => {
     if (!email || !role || !organizationId) {
       return new Response(JSON.stringify({ error: 'Missing email, role, or organizationId' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
@@ -51,7 +77,7 @@ serve(async (req) => {
     if (inviterError || !inviterMember || !['owner', 'admin'].includes(inviterMember.role)) {
       return new Response(JSON.stringify({ error: 'Forbidden: Only organization owners and admins can invite users' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
@@ -89,7 +115,7 @@ serve(async (req) => {
           }),
           {
             status: 403,
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...corsHeaders },
           }
         )
       }
@@ -114,12 +140,10 @@ serve(async (req) => {
       if (existingMember?.status === 'active') {
         return new Response(JSON.stringify({ error: 'User is already a member' }), {
           status: 409,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
         })
       }
     }
-
-    // Removed the secondary `if (existingMember?.status === 'active')` as it's now handled above
 
     // Generate invitation token
     const tokenBytes = new Uint8Array(32)
@@ -144,7 +168,7 @@ serve(async (req) => {
     if (invError) {
       return new Response(JSON.stringify({ error: invError.message }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
@@ -203,13 +227,13 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ success: true, invitation }), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
   } catch (err) {
     console.error('Error inviting user:', err)
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
   }
 })

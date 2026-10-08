@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
+import { acceptInvitation } from '../../services/team'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
@@ -55,6 +56,17 @@ export default function AuthCallback() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       }).catch((err) => console.error('[AuthCallback] track-login failed:', err));
     });
+
+    // Process any pending invitations BEFORE checking onboarding status
+    // so the new RPC can mark onboarding complete and skip the creation flow.
+    const pendingInvitation = localStorage.getItem('pending_invitation');
+    if (pendingInvitation) {
+      localStorage.removeItem('pending_invitation');
+      const { error: inviteError } = await acceptInvitation(pendingInvitation, userId);
+      if (inviteError) {
+        console.error('[AuthCallback] Failed to accept invitation:', inviteError);
+      }
+    }
 
     // Note: the `handle_new_auth_user` DB trigger creates a `public.users` row
     // for EVERY signup immediately, so checking `users` for existence can

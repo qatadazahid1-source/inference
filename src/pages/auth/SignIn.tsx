@@ -4,14 +4,23 @@ import { signInWithGoogle } from '../../lib/auth';
 import { PrivateNoIndex } from '../../components/seo/PrivateNoIndex';
 import styles from '../../components/auth/AuthLayout.module.css';
 
+import { useSearchParams } from 'react-router-dom';
+
 export function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
 
   const handleSignIn = async () => {
     setIsLoading(true);
     setError(null);
     try {
+      const token = searchParams.get('token');
+      if (token) {
+        localStorage.setItem('pending_invitation', token);
+      } else {
+        localStorage.removeItem('pending_invitation');
+      }
       await signInWithGoogle();
     } catch {
       setError('Failed to sign in. Please try again.');

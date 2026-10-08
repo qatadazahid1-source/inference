@@ -23,15 +23,19 @@ export function SignUp() {
     try {
       // Google OAuth leaves this page and comes back via /auth/callback —
       // localStorage is the only thing that survives that round trip.
-      // Callback.tsx checks for this and, once the user's org is ready,
-      // redirects into Billing with this plan pre-selected instead of the
-      // plain dashboard, so picking a plan on the pricing page actually
-      // leads somewhere instead of silently landing on the free tier.
       if (selectedPlan) {
         localStorage.setItem('pending_plan', selectedPlan);
       } else {
         localStorage.removeItem('pending_plan');
       }
+      
+      const token = searchParams.get('token');
+      if (token) {
+        localStorage.setItem('pending_invitation', token);
+      } else {
+        localStorage.removeItem('pending_invitation');
+      }
+
       await signInWithGoogle();
     } catch {
       setError('Failed to sign up. Please try again.');

@@ -148,7 +148,8 @@ export function AdminLandingPricingPage() {
         features: {
           api_gateway: false, analytics: false, advanced_analytics: false, alerts: false, budget_manager: false,
           ai_playground: false, benchmarks: false, roi_calculator: false, reports: false, csv_export: false,
-          pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false
+          pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false,
+          hard_budget_enforcement: false
         },
         rate_limits: { requests_per_minute: 0, concurrent_requests: 0 },
         model_access: { tier: 'basic' }
