@@ -18,6 +18,21 @@ const maturityOptions: Array<{
   { value: 'advanced', label: 'Advanced', desc: 'AI-first workflows company-wide' },
 ]
 
+// BUG 5 FIX: Sanitizers for inputs to prevent scientific notation and invalid floats
+function sanitizeInt(raw: string, max: number): number {
+  const digitsOnly = raw.replace(/[^0-9]/g, '')
+  if (!digitsOnly) return 0
+  return Math.min(parseInt(digitsOnly, 10), max)
+}
+
+function sanitizeFloat(raw: string, max: number): number {
+  if (/[eE]/.test(raw)) return 0
+  const cleaned = raw.replace(/^0+(?=\d)/, '')
+  const val = cleaned === '' ? 0 : Number(cleaned)
+  if (!isFinite(val) || isNaN(val)) return 0
+  return Math.min(Math.max(0, val), max)
+}
+
 export default function InputPanel({ inputs, onChange }: Props) {
   const spendPct = `${((inputs.monthlyAISpend - 500) / (50000 - 500)) * 100}%`
   const revenuePct = `${((inputs.monthlyRevenue - 10000) / (50000000 - 10000)) * 100}%`
@@ -58,12 +73,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>Team Size</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={1}
-                max={10000}
-                value={inputs.teamSize}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.teamSize)}
                 className={styles.input}
-                onChange={e => onChange('teamSize', +e.target.value)}
+                onChange={e => onChange('teamSize', sanitizeInt(e.target.value, 100000))}
               />
               <span className={styles.suffix}>people</span>
             </div>
@@ -74,12 +89,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <div className={styles.inputWrap}>
               <span className={styles.prefix}>$</span>
               <input
-                type="number"
-                min={10}
-                max={500}
-                value={inputs.hourlyRate}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.hourlyRate)}
                 className={`${styles.input} ${styles.inputPrefixed}`}
-                onChange={e => onChange('hourlyRate', +e.target.value)}
+                onChange={e => onChange('hourlyRate', sanitizeFloat(e.target.value, 10000))}
               />
               <span className={styles.suffix}>/hr</span>
             </div>
@@ -131,12 +146,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>Departments Using AI</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={1}
-                max={20}
-                value={inputs.numberOfDepartments}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.numberOfDepartments)}
                 className={styles.input}
-                onChange={e => onChange('numberOfDepartments', +e.target.value)}
+                onChange={e => onChange('numberOfDepartments', sanitizeInt(e.target.value, 100))}
               />
               <span className={styles.suffix}>depts</span>
             </div>
@@ -146,12 +161,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>AI-Powered Workflows</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={1}
-                max={50}
-                value={inputs.workflowCount}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.workflowCount)}
                 className={styles.input}
-                onChange={e => onChange('workflowCount', +e.target.value)}
+                onChange={e => onChange('workflowCount', sanitizeInt(e.target.value, 1000))}
               />
               <span className={styles.suffix}>flows</span>
             </div>
@@ -192,12 +207,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>New Hires / Year</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={0}
-                max={500}
-                value={inputs.newHiresPerYear}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.newHiresPerYear)}
                 className={styles.input}
-                onChange={e => onChange('newHiresPerYear', +e.target.value)}
+                onChange={e => onChange('newHiresPerYear', sanitizeInt(e.target.value, 10000))}
               />
               <span className={styles.suffix}>people</span>
             </div>
@@ -207,12 +222,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>Onboarding Hours</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={10}
-                max={200}
-                value={inputs.onboardingHours}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.onboardingHours)}
                 className={styles.input}
-                onChange={e => onChange('onboardingHours', +e.target.value)}
+                onChange={e => onChange('onboardingHours', sanitizeFloat(e.target.value, 10000))}
               />
               <span className={styles.suffix}>hrs/hire</span>
             </div>
@@ -256,12 +271,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>Compliance Hrs/Month</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={0}
-                max={500}
-                value={inputs.complianceHoursPerMonth}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.complianceHoursPerMonth)}
                 className={styles.input}
-                onChange={e => onChange('complianceHoursPerMonth', +e.target.value)}
+                onChange={e => onChange('complianceHoursPerMonth', sanitizeFloat(e.target.value, 10000))}
               />
               <span className={styles.suffix}>hrs</span>
             </div>
@@ -271,12 +286,12 @@ export default function InputPanel({ inputs, onChange }: Props) {
             <label className={styles.label}>Tools Being Replaced</label>
             <div className={styles.inputWrap}>
               <input
-                type="number"
-                min={0}
-                max={30}
-                value={inputs.currentToolsCount}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={String(inputs.currentToolsCount)}
                 className={styles.input}
-                onChange={e => onChange('currentToolsCount', +e.target.value)}
+                onChange={e => onChange('currentToolsCount', sanitizeInt(e.target.value, 1000))}
               />
               <span className={styles.suffix}>tools</span>
             </div>

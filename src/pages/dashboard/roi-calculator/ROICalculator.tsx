@@ -10,48 +10,80 @@ import { Button } from '../../../components/ui/Button/Button';
 import { chartTheme } from '../../../utils/chartColors';
 import styles from './ROICalculator.module.css';
 
-// Puts the sign before the dollar symbol for negative values
-// (-$1,234 instead of $-1,234), which is the standard financial format.
+// ─── INPUT CAPS ─────────────────────────────────────────────────────────────
+// Prevents scientific-notation / overflow values from breaking the UI.
+const MAX_HOURLY_RATE    = 10_000;      // $10,000/hr
+const MAX_EMPLOYEES      = 100_000;     // 100k employees
+const MAX_AI_COST        = 10_000_000;  // $10M/month
+const MAX_ERROR_REDUCTION = 10_000_000;
+
+// BUG 2 FIX: Standard weeks-per-month constant (industry convention).
+// Using a precise constant avoids floating-point drift in the multiplication.
+const WEEKS_PER_MONTH = 4.33;
+
+// ─── FORMATTERS ─────────────────────────────────────────────────────────────
+
+// BUG 3 FIX: Caps display at readable ranges rather than falling through to
+// scientific notation (e.g. $1.23T instead of 1.23e+12).
+// BUG 2 FIX: Always rounds to whole dollars — no cents in output.
 function formatCurrency(n: number): string {
-  const abs = Math.abs(n).toLocaleString();
-  return n < 0 ? `-$${abs}` : `$${abs}`;
+  const abs = Math.abs(n);
+  let formatted: string;
+  if (abs >= 1e12)     formatted = `${(abs / 1e12).toFixed(2)}T`;
+  else if (abs >= 1e9) formatted = `${(abs / 1e9).toFixed(2)}B`;
+  else if (abs >= 1e6) formatted = `${(abs / 1e6).toFixed(2)}M`;
+  else                 formatted = Math.round(abs).toLocaleString();
+  return n < 0 ? `-$${formatted}` : `$${formatted}`;
 }
 
-// Strips leading zeros from a raw numeric input string before parsing,
-// so the DOM never gets a chance to render "07" or "0480" even momentarily
-// — e.g. "040" -> 40, "0" stays "0", "07.5" -> 7.5.
-function sanitizeNumericInput(raw: string): number {
-  const cleaned = raw.replace(/^0+(?=\d)/, '');
-  return cleaned === '' ? 0 : Number(cleaned);
+// BUG 5 FIX: Sanitizes employee / whole-number fields.
+// Strips EVERYTHING except digits — rejects floats, exponents, negatives.
+function sanitizeIntInput(raw: string): number {
+  const digitsOnly = raw.replace(/[^0-9]/g, '');
+  if (digitsOnly === '' || digitsOnly === '0') return 0;
+  return Math.min(parseInt(digitsOnly, 10), MAX_EMPLOYEES);
 }
+
+// BUG 3 FIX: Sanitizes decimal currency fields — rejects exponent notation
+// and clamps to the given cap.
+function sanitizeNumericInput(raw: string, cap: number = MAX_AI_COST): number {
+  if (/[eE]/.test(raw)) return 0;  // reject scientific notation
+  const cleaned = raw.replace(/^0+(?=\d)/, '');
+  const val = cleaned === '' ? 0 : Number(cleaned);
+  if (!isFinite(val) || isNaN(val)) return 0;
+  return Math.min(Math.max(0, val), cap);
+}
+
+// BUG 1 FIX: Returns a display-friendly ROI string.
+// Zero cost + positive gain  -> "∞" (infinite ROI, zero spend)
+// Zero cost + no/negative gain -> "N/A"
+// Normal case                -> "{n}%"
+function formatROI(roiPercent: number, aiCost: number, netGain: number): string {
+  if (aiCost === 0) return netGain > 0 ? '\u221e' : 'N/A';
+  return `${roiPercent}%`;
+}
+
+// ─── COMPONENT ──────────────────────────────────────────────────────────────
 
 export function ROICalculator() {
   const entitlements = useEntitlements();
   const hasFeature = entitlements.hasFeature('roi_calculator');
 
-  // Actual measured AI spend for the org over the last 30 days. This is the
-  // authoritative usage/cost source (same `/api/analytics` `totalCost` the rest
-  // of the dashboard uses) — NOT a duplicated cost calculation.
+  // Actual measured AI spend for the org over the last 30 days.
   const { data: analytics } = useAnalytics(30);
   const measuredSpend = analytics?.overview.totalSpend ?? null;
 
-  const [hourlyRate, setHourlyRate] = useState(50);
+  const [hourlyRate, setHourlyRate]     = useState(50);
   const [hoursPerWeek, setHoursPerWeek] = useState(20);
   const [numEmployees, setNumEmployees] = useState(10);
-  // "AI Cost per month" is a user-editable input, but its default is seeded
-  // from real measured usage rather than a hardcoded number. `null` means the
-  // field has not yet been seeded/touched, so the effect below can fill it in
-  // once real analytics arrive. Once the user edits it, `aiCostEdited` latches
-  // and we stop overwriting their value.
-  const [aiCost, setAiCost] = useState<number | null>(null);
-  const aiCostEdited = useRef(false);
+  const [aiCost, setAiCost]             = useState<number | null>(null);
+  const aiCostEdited                    = useRef(false);
   const [errorReduction, setErrorReduction] = useState(500);
-  const [isExporting, setIsExporting] = useState(false);
-  const resultCardRef = useRef<HTMLDivElement>(null);
+  const [isExporting, setIsExporting]   = useState(false);
+  const resultCardRef                   = useRef<HTMLDivElement>(null);
 
   // Seed the AI-cost field from real measured spend the first time analytics
-  // resolve, unless the user has already typed their own value. Rounded to
-  // whole dollars to match the numeric input.
+  // resolve, unless the user has already typed their own value.
   useEffect(() => {
     if (aiCostEdited.current) return;
     if (measuredSpend !== null && measuredSpend > 0) {
@@ -59,28 +91,33 @@ export function ROICalculator() {
     }
   }, [measuredSpend]);
 
-  // Effective cost used across the calculation/UI: the (possibly user-edited)
-  // value, or the measured spend while state is still seeding, or 0.
   const effectiveAiCost = aiCost ?? (measuredSpend !== null ? Math.round(measuredSpend) : 0);
 
   const handleAiCostChange = (raw: string) => {
     aiCostEdited.current = true;
-    setAiCost(Math.max(0, sanitizeNumericInput(raw)));
+    setAiCost(sanitizeNumericInput(raw, MAX_AI_COST));
   };
 
   const results = useMemo(() => {
-    const timeValue = hoursPerWeek * hourlyRate * 4.33 * numEmployees;
-    const totalValue = timeValue + errorReduction;
-    const netGain = totalValue - effectiveAiCost;
-    const roiPercent = effectiveAiCost > 0 ? Math.round((netGain / effectiveAiCost) * 100) : 0;
-    const annualProjected = netGain * 12;
+    // BUG 2 FIX: Multiply by WEEKS_PER_MONTH constant and round to whole dollars.
+    const timeValue      = Math.round(hoursPerWeek * hourlyRate * WEEKS_PER_MONTH * numEmployees);
+    const totalValue     = timeValue + errorReduction;
+    const netGain        = totalValue - effectiveAiCost;
+    // BUG 1 FIX: roiPercent stays 0 when cost=0; the display layer handles ∞/N/A.
+    const roiPercent     = effectiveAiCost > 0
+      ? Math.round((netGain / effectiveAiCost) * 100)
+      : 0;
+    const annualProjected = Math.round(netGain * 12);
     return { timeValue, totalValue, netGain, roiPercent, annualProjected };
   }, [hourlyRate, hoursPerWeek, numEmployees, effectiveAiCost, errorReduction]);
+
+  // BUG 4 FIX: Detect all-zero state to force a flat chart baseline.
+  const allZero = results.netGain === 0;
 
   const monthlyProjection = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => ({
       month: `M${i + 1}`,
-      cumulative: results.netGain * (i + 1),
+      cumulative: Math.round(results.netGain * (i + 1)),
     }));
   }, [results.netGain]);
 
@@ -88,28 +125,22 @@ export function ROICalculator() {
     if (!resultCardRef.current || isExporting) return;
     setIsExporting(true);
     try {
-      // Render the result card (ROI %, breakdown grid, chart) into a canvas
-      // at 2x scale for crisp text/lines on screens with higher DPI.
       const canvas = await html2canvas(resultCardRef.current, {
         backgroundColor: 'var(--color-bg)',
         scale: 2,
         useCORS: true,
       });
-      const imgData = canvas.toDataURL('image/png');
-
-      // Fit the captured image onto a standard A4 page, preserving aspect ratio.
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const margin = 10;
-      const imgWidth = pageWidth - margin * 2;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
+      const imgData    = canvas.toDataURL('image/png');
+      const pdf        = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth  = pdf.internal.pageSize.getWidth();
+      const margin     = 10;
+      const imgWidth   = pageWidth - margin * 2;
+      const imgHeight  = (canvas.height * imgWidth) / canvas.width;
       pdf.setFontSize(16);
       pdf.text('ROI Summary Report', margin, margin + 5);
       pdf.setFontSize(9);
       pdf.setTextColor(120);
       pdf.text(`Generated on ${new Date().toLocaleDateString()}`, margin, margin + 11);
-
       pdf.addImage(imgData, 'PNG', margin, margin + 16, imgWidth, imgHeight);
       pdf.save(`roi-report-${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (err) {
@@ -150,8 +181,11 @@ export function ROICalculator() {
                 className={styles.input}
                 type="number"
                 min={0}
+                max={MAX_HOURLY_RATE}
                 value={String(hourlyRate)}
-                onChange={(e) => setHourlyRate(Math.max(0, sanitizeNumericInput(e.target.value)))}
+                onChange={(e) =>
+                  setHourlyRate(Math.min(MAX_HOURLY_RATE, Math.max(0, sanitizeNumericInput(e.target.value, MAX_HOURLY_RATE))))
+                }
               />
             </div>
 
@@ -170,14 +204,23 @@ export function ROICalculator() {
               </div>
             </div>
 
+            {/*
+              BUG 5 FIX: type="text" + inputMode="numeric" + pattern="[0-9]*"
+              prevents the browser accepting scientific notation (2.34e+21),
+              decimal points, or negative values. The native type="number" input
+              silently accepts exponent strings which then parse to astronomical
+              values; switching to text with a numeric keyboard pattern blocks this.
+            */}
             <div className={styles.formGroup}>
               <label className={styles.label}>Number of employees using AI</label>
               <input
                 className={styles.input}
-                type="number"
-                min={0}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
                 value={String(numEmployees)}
-                onChange={(e) => setNumEmployees(Math.max(0, sanitizeNumericInput(e.target.value)))}
+                onChange={(e) => setNumEmployees(sanitizeIntInput(e.target.value))}
               />
             </div>
 
@@ -187,6 +230,7 @@ export function ROICalculator() {
                 className={styles.input}
                 type="number"
                 min={0}
+                max={MAX_AI_COST}
                 value={String(effectiveAiCost)}
                 onChange={(e) => handleAiCostChange(e.target.value)}
               />
@@ -201,8 +245,11 @@ export function ROICalculator() {
                 className={styles.input}
                 type="number"
                 min={0}
+                max={MAX_ERROR_REDUCTION}
                 value={String(errorReduction)}
-                onChange={(e) => setErrorReduction(Math.max(0, sanitizeNumericInput(e.target.value)))}
+                onChange={(e) =>
+                  setErrorReduction(Math.min(MAX_ERROR_REDUCTION, Math.max(0, sanitizeNumericInput(e.target.value, MAX_ERROR_REDUCTION))))
+                }
               />
             </div>
 
@@ -216,17 +263,21 @@ export function ROICalculator() {
           <h2 className={styles.sectionTitle} style={{ marginBottom: 20 }}>Your ROI Summary</h2>
 
           <div className={styles.resultCard} ref={resultCardRef}>
-            <div className={styles.roiValue}>{results.roiPercent}%</div>
+            {/* BUG 1 FIX: ∞ when cost=0 and gain>0; N/A when cost=0 and no gain */}
+            <div className={styles.roiValue}>
+              {formatROI(results.roiPercent, effectiveAiCost, results.netGain)}
+            </div>
             <div className={styles.roiLabel}>Return on Investment</div>
 
             <div className={styles.breakdownGrid}>
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Monthly Value Generated</div>
-                <div className={styles.breakdownValue}>${results.totalValue.toLocaleString()}</div>
+                {/* BUG 2 FIX: formatCurrency rounds to whole dollars — no decimal drift */}
+                <div className={styles.breakdownValue}>{formatCurrency(results.totalValue)}</div>
               </div>
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Monthly AI Cost</div>
-                <div className={styles.breakdownValue}>${effectiveAiCost.toLocaleString()}</div>
+                <div className={styles.breakdownValue}>{formatCurrency(effectiveAiCost)}</div>
               </div>
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Net Monthly Gain</div>
@@ -234,6 +285,7 @@ export function ROICalculator() {
               </div>
               <div className={styles.breakdownItem}>
                 <div className={styles.breakdownLabel}>Annual Projected ROI</div>
+                {/* BUG 3 FIX: T/B/M suffix format prevents text overflow on large values */}
                 <div className={styles.breakdownValue}>{formatCurrency(results.annualProjected)}</div>
               </div>
             </div>
@@ -243,7 +295,16 @@ export function ROICalculator() {
                 <AreaChart data={monthlyProjection}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
                   <XAxis dataKey="month" tick={{ fontSize: 11, fill: chartTheme.text }} />
-                  <YAxis tick={{ fontSize: 11, fill: chartTheme.text }} />
+                  {/*
+                    BUG 4 FIX: When allZero=true, force domain [0, 1] so Recharts
+                    shows a clean flat line at 0 instead of auto-generating phantom
+                    1/2/3/4 tick marks from its default auto-scale logic.
+                  */}
+                  <YAxis
+                    tick={{ fontSize: 11, fill: chartTheme.text }}
+                    domain={allZero ? [0, 1] : ['auto', 'auto']}
+                    tickFormatter={(v: number) => (allZero ? '$0' : formatCurrency(v))}
+                  />
                   <Tooltip
                     contentStyle={{
                       background: chartTheme.surface,
@@ -252,6 +313,7 @@ export function ROICalculator() {
                       fontSize: 13,
                     }}
                     labelStyle={{ color: '#f8fafc' }}
+                    formatter={(v: number) => [formatCurrency(v), 'Cumulative Gain']}
                   />
                   <Area
                     type="monotone"
@@ -268,7 +330,7 @@ export function ROICalculator() {
 
           <div className={styles.buttonRow}>
             <button className={styles.secondaryBtn} onClick={handleExportPDF} disabled={isExporting}>
-              {isExporting ? 'Generating PDF…' : 'Export as PDF'}
+              {isExporting ? 'Generating PDF\u2026' : 'Export as PDF'}
             </button>
             <button className={styles.secondaryBtn} onClick={() => alert('Share Report coming soon')}>
               Share Report
@@ -276,7 +338,7 @@ export function ROICalculator() {
           </div>
 
           <div className={styles.formula}>
-            ROI = ((Monthly Value Generated − Monthly AI Cost) / Monthly AI Cost) × 100
+            ROI = ((Monthly Value Generated \u2212 Monthly AI Cost) / Monthly AI Cost) \u00d7 100
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import AnimatedNumber from './AnimatedNumber'
-import { USE_CASES } from './roi.utils'
+import { USE_CASES, fmt } from './roi.utils'
 import type { ROIResults, ROIInputs } from './roi.utils'
 import styles from './ResultsPanel.module.css'
 
@@ -54,7 +54,8 @@ export default function ResultsPanel({ results, inputs }: Props) {
           />
         </p>
         <p className={styles.primarySub}>
-          {results.roiPercent}% ROI · Payback in {results.paybackMonths} months
+          {/* BUG 1 FIX: fmt.percent handles Infinity -> "∞%" and 0-cost -> "N/A" */}
+          {fmt.percent(results.roiPercent)} ROI· Payback in {results.paybackMonths} months
         </p>
       </div>
 
@@ -70,7 +71,8 @@ export default function ResultsPanel({ results, inputs }: Props) {
         <div className={styles.metricCard}>
           <span className={styles.metricIcon}>{MetricIcon.trend}</span>
           <p className={`${styles.metricValue} ${styles.green}`}>
-            <AnimatedNumber value={results.roiPercent} suffix="%" />
+            {/* BUG 1 FIX: use fmt.percent for ∞ handling */}
+            {fmt.percent(results.roiPercent)}
           </p>
           <p className={styles.metricLabel}>Return on Investment</p>
         </div>

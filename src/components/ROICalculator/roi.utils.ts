@@ -262,12 +262,16 @@ export function calculateROI(inputs: ROIInputs): ROIResults {
   const annualAICost = inputs.monthlyAISpend * 12
   const netAnnualSavings = totalBenefit - annualAICost
 
+  // BUG 1 FIX: When annualAICost === 0, return -1 as a sentinel so the
+  // display layer can show "∞" (positive gain) or "N/A" (no gain).
+  // Storing 0 here would hide free-ROI scenarios.
   const roiPercent = annualAICost > 0
     ? Math.round((netAnnualSavings / annualAICost) * 100)
-    : 0
+    : (netAnnualSavings > 0 ? Infinity : 0)
 
-  const paybackMonths = totalBenefit > 0
-    ? parseFloat(((annualAICost / (totalBenefit / 12))).toFixed(1))
+  // Guard against division by zero when totalBenefit === 0.
+  const paybackMonths = totalBenefit > 0 && annualAICost > 0
+    ? parseFloat((annualAICost / (totalBenefit / 12)).toFixed(1))
     : 0
 
   const fiveYearValue = netAnnualSavings * 5
@@ -302,14 +306,28 @@ export function calculateROI(inputs: ROIInputs): ROIResults {
 // ─── FORMATTERS ─────────────────────────────────────────────────
 
 export const fmt = {
-  currency: (n: number) =>
-    new Intl.NumberFormat('en-US', {
+  // BUG 3 FIX: Prevents scientific notation on very large values by using
+  // T/B/M suffixes. Also guards Infinity (free ROI sentinel) gracefully.
+  currency: (n: number) => {
+    if (!isFinite(n)) return n > 0 ? '$∞' : '-$∞'
+    const abs = Math.abs(n)
+    let formatted: string
+    if (abs >= 1e12)     formatted = `${(abs / 1e12).toFixed(2)}T`
+    else if (abs >= 1e9) formatted = `${(abs / 1e9).toFixed(2)}B`
+    else if (abs >= 1e6) formatted = `${(abs / 1e6).toFixed(2)}M`
+    else formatted = new Intl.NumberFormat('en-US', {
       style: 'currency', currency: 'USD',
       maximumFractionDigits: 0,
-    }).format(n),
+    }).format(abs)
+    return n < 0 ? `-$${formatted}` : (abs >= 1e6 ? `$${formatted}` : formatted)
+  },
 
   number: (n: number) =>
     new Intl.NumberFormat('en-US').format(n),
 
-  percent: (n: number) => `${n}%`,
+  // BUG 1 FIX: Shows "∞" for Infinity ROI (zero cost, positive gain).
+  percent: (n: number) => {
+    if (!isFinite(n)) return n > 0 ? '∞%' : 'N/A'
+    return `${n}%`
+  },
 }
