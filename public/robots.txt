@@ -10,7 +10,7 @@
 # the codebase — which is very likely the *application* host, NOT the public
 # marketing/canonical domain. This value was intentionally NOT invented.
 # ⚠️ ACTION REQUIRED before go-live: update the Sitemap host below (and
-# VITE_SITE_URL) to the real public domain, e.g. https://www.inferenceintelligence.com
+# VITE_SITE_URL) to the real public domain, e.g. https://ordisum.com
 
 User-agent: *
 Allow: /

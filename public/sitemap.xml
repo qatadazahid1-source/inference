@@ -14,7 +14,7 @@
   intentionally NOT invented.
   ⚠️ ACTION REQUIRED before go-live: replace the host in every <loc> (and set
   VITE_SITE_URL) to the real public domain, e.g.
-  https://www.inferenceintelligence.com
+  https://www.ordisum.com
 
   ── CMS-MANAGED PAGES (generated) ───────────────────────────────────────────
   Dynamic public pages are served from the Admin Panel CMS:
