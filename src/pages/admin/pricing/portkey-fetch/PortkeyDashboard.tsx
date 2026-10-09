@@ -20,6 +20,7 @@ export function PortkeyDashboard() {
   const [isGroqSyncing, setIsGroqSyncing] = useState(false);
   const [models, setModels] = useState<FetchedModel[]>([]);
   const [lastSyncedSource, setLastSyncedSource] = useState<'portkey' | 'openrouter' | null>(null);
+  const [lastImportId, setLastImportId] = useState<string | null>(null);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll terminal
@@ -38,6 +39,7 @@ export function PortkeyDashboard() {
     setIsSyncing(true);
     setModels([]);
     setLastSyncedSource(null);
+    setLastImportId(null);
     
     addLog(`> ${source === 'portkey' ? 'sync' : 'openrouter sync'}`);
     addLog(`Initiating sync with ${source === 'portkey' ? 'Portkey GitHub repository' : 'OpenRouter API'}...`);
@@ -56,14 +58,14 @@ export function PortkeyDashboard() {
         addLog(`Job started (id: ${jobId.slice(0, 8)}…). Polling for result...`);
 
         const pollInterval = 2000; // 2 seconds
-        const maxWait = 3 * 60 * 1000; // 3 minute timeout
+        const maxWait = 10 * 60 * 1000; // 10 minute timeout
         const started = Date.now();
         let lastLogCount = 0;
 
         await new Promise<void>((resolve, reject) => {
           const poll = async () => {
             if (Date.now() - started > maxWait) {
-              reject(new Error('Sync timed out after 3 minutes.'));
+              reject(new Error('Sync timed out after 10 minutes.'));
               return;
             }
             try {
@@ -81,6 +83,7 @@ export function PortkeyDashboard() {
                 if (data.models) {
                   setModels(data.models);
                   setLastSyncedSource(source);
+                  if (data.importId) setLastImportId(data.importId);
                   addLog(`\n✅ Sync complete. ${data.models.length} models loaded.`);
                 }
                 resolve();
@@ -104,6 +107,7 @@ export function PortkeyDashboard() {
         if (response.data.models) {
           setModels(response.data.models);
           setLastSyncedSource(source);
+          if (response.data.importId) setLastImportId(response.data.importId);
           addLog(`\n✅ Sync complete. Successfully loaded ${response.data.models.length} models.`);
         }
       }
@@ -136,7 +140,7 @@ export function PortkeyDashboard() {
         ? '/api/admin/pricing/apply-portkey-sync'
         : '/api/admin/pricing/apply-openrouter-sync';
         
-      const response = await axiosClient.post(endpoint);
+      const response = await axiosClient.post(endpoint, { importId: lastImportId });
       
       if (response.data.success) {
         addLog(`✅ Auto-Apply Complete!`);

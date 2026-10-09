@@ -214,30 +214,26 @@ export async function buildDiff(importId, supabase) {
   // Get all unique providers from staging to fetch relevant DB rows
   const providers = [...new Set(stagingRows.map(r => r.provider))];
 
-  // Load active DB records for these providers
+  // Load all active DB records across providers (paginated)
   const dbMap = new Map(); // key: provider:model → db row
-  
-  for (const provider of providers) {
-    let from = 0;
-    let hasMore = true;
-    while (hasMore) {
-      const { data, error } = await supabase
-        .from('model_pricing')
-        .select('id, provider, model, input_cost_per_1k, output_cost_per_1k, source_type, source_name, is_active')
-        .eq('provider', provider)
-        .eq('is_active', true)
-        .range(from, from + 999);
+  let dbFrom = 0;
+  let dbHasMore = true;
+  while (dbHasMore) {
+    const { data, error } = await supabase
+      .from('model_pricing')
+      .select('id, provider, model, input_cost_per_1k, output_cost_per_1k, source_type, source_name, is_active')
+      .eq('is_active', true)
+      .range(dbFrom, dbFrom + 999);
 
-      if (error) throw new Error(`DB fetch error: ${error.message}`);
-      if (!data || data.length === 0) { hasMore = false; break; }
-      
-      for (const row of data) {
-        dbMap.set(`${row.provider}:${row.model}`, row);
-      }
-      
-      if (data.length < 1000) hasMore = false;
-      from += 1000;
+    if (error) throw new Error(`DB fetch error: ${error.message}`);
+    if (!data || data.length === 0) { dbHasMore = false; break; }
+    
+    for (const row of data) {
+      dbMap.set(`${row.provider}:${row.model}`, row);
     }
+    
+    if (data.length < 1000) dbHasMore = false;
+    dbFrom += 1000;
   }
 
   // Classify each staging row
@@ -321,17 +317,20 @@ export async function buildDiff(importId, supabase) {
     updates.push(updatePayload);
   }
 
-  // Batch update staging statuses
+  // Bulk upsert staging statuses in fast 500-row chunks instead of 4,000 individual queries
   for (let i = 0; i < updates.length; i += CHUNK_SIZE) {
     const chunk = updates.slice(i, i + CHUNK_SIZE);
-    for (const update of chunk) {
-      const { id, ...fields } = update;
-      const { error } = await supabase
-        .from('pricing_import_staging')
-        .update(fields)
-        .eq('id', id);
-      if (error) {
-        console.error(`[ImportEngine] Failed to update staging row ${id}:`, error.message);
+    const { error } = await supabase
+      .from('pricing_import_staging')
+      .upsert(chunk, { onConflict: 'id' });
+    if (error) {
+      console.warn(`[ImportEngine] Bulk staging update had issue (${error.message}), falling back to individual updates...`);
+      for (const update of chunk) {
+        const { id, ...fields } = update;
+        await supabase
+          .from('pricing_import_staging')
+          .update(fields)
+          .eq('id', id);
       }
     }
   }

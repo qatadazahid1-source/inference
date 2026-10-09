@@ -86,13 +86,15 @@ async function runPortkeySyncJob(jobId) {
       context_window: null,
     }));
 
-    log(`Fetched ${normalizedRecords.length} models. Staging...`);
+    log(`Fetched ${normalizedRecords.length} models. Staging into database...`);
 
     // 4. Stage + Diff
     const stageResult = await stageRecords(normalizedRecords, 'portkey', 'Portkey GitHub', supabase);
+    log(`Staged ${normalizedRecords.length} models. Analyzing diff against existing pricing...`);
+    
     const diffResult = await buildDiff(stageResult.importId, supabase);
-
-    log(`Staging complete. importId=${stageResult.importId}`);
+    log(`Diff complete! New: ${diffResult.counts?.new || 0}, Same: ${diffResult.counts?.same || 0}, Changed: ${diffResult.counts?.changed || 0}`);
+    log(`importId=${stageResult.importId}`);
 
     const models = (rawData.models || []).map(m => ({
       provider: m.provider,
