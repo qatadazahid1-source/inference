@@ -57,13 +57,13 @@ const conditionLabels: Record<string, string> = {
 
 const channelLabels: Record<string, string> = {
   in_app: 'In-App',
-  email: 'Email (soon)',
+  email: 'Email',
   slack: 'Slack',
   sms: 'SMS (soon)',
 };
 
-// In-App and Slack delivery are wired up. Email and SMS are pending.
-const availableChannels = new Set(['in_app', 'slack']);
+// In-App, Slack, and Email delivery are wired up. SMS is pending.
+const availableChannels = new Set(['in_app', 'slack', 'email']);
 
 const severityIcon: Record<Alert['severity'], typeof AlertTriangle> = {
   critical: AlertTriangle,
