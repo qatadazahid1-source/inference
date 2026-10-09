@@ -255,6 +255,11 @@ export async function buildDiff(importId, supabase) {
     let newStatus;
     let updatePayload = {
       id: row.id,
+      import_id: row.import_id,
+      provider: row.provider,
+      model: row.model,
+      source_type: row.source_type,
+      source_name: row.source_name,
     };
 
     if (!dbRecord) {

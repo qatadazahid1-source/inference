@@ -77,25 +77,6 @@ async function runPortkeySyncJob(jobId) {
     const jsonText = await readFile(OUTPUT_PATH, 'utf8');
     const rawData = JSON.parse(jsonText);
 
-    // 3. Normalize
-    const normalizedRecords = (rawData.models || []).map(m => ({
-      provider: m.provider,
-      model_id: m.model,
-      input_cost_per_1k: per1mToPer1k(m.input_usd_per_1m) ?? 0,
-      output_cost_per_1k: per1mToPer1k(m.output_usd_per_1m) ?? 0,
-      context_window: null,
-    }));
-
-    log(`Fetched ${normalizedRecords.length} models. Staging into database...`);
-
-    // 4. Stage + Diff
-    const stageResult = await stageRecords(normalizedRecords, 'portkey', 'Portkey GitHub', supabase);
-    log(`Staged ${normalizedRecords.length} models. Analyzing diff against existing pricing...`);
-    
-    const diffResult = await buildDiff(stageResult.importId, supabase);
-    log(`Diff complete! New: ${diffResult.counts?.new || 0}, Same: ${diffResult.counts?.same || 0}, Changed: ${diffResult.counts?.changed || 0}`);
-    log(`importId=${stageResult.importId}`);
-
     const models = (rawData.models || []).map(m => ({
       provider: m.provider,
       model: m.model,
@@ -114,11 +95,10 @@ async function runPortkeySyncJob(jobId) {
       summary: rawData.summary,
       generated_at: rawData.generated_at,
       models,
-      importId: stageResult.importId,
-      diffCounts: diffResult.counts,
     };
     job.finishedAt = Date.now();
-    log('Job complete.');
+    log(`\n✅ SYNC COMPLETE: ${models.length} models fetched successfully!`);
+    log(`Next step: Click 'Apply to DB' or type 'apply' to write all models to the database.`);
   } catch (err) {
     console.error(`[Portkey/${jobId}] FAILED:`, err.message);
     job.status = 'error';
