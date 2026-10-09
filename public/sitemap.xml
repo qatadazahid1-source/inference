@@ -33,106 +33,106 @@
 
   <!-- ── Marketing / top-level public pages ─────────────────────────────── -->
   <url>
-    <loc>https://ordisum.com/</loc>
+    <loc>https://www.ordisum.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/features</loc>
+    <loc>https://www.ordisum.com/features</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/pricing</loc>
+    <loc>https://www.ordisum.com/pricing</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/security</loc>
+    <loc>https://www.ordisum.com/security</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/contact-sales</loc>
+    <loc>https://www.ordisum.com/contact-sales</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- ── Legal pages ────────────────────────────────────────────────── -->
   <url>
-    <loc>https://ordisum.com/terms</loc>
+    <loc>https://www.ordisum.com/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/privacy-policy</loc>
+    <loc>https://www.ordisum.com/privacy-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/refund-policy</loc>
+    <loc>https://www.ordisum.com/refund-policy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <!-- ── Documentation (/docs/:slug) ────────────────────────────────────── -->
   <url>
-    <loc>https://ordisum.com/docs/overview</loc>
+    <loc>https://www.ordisum.com/docs/overview</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/quickstart</loc>
+    <loc>https://www.ordisum.com/docs/quickstart</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/providers</loc>
+    <loc>https://www.ordisum.com/docs/providers</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/changelog</loc>
+    <loc>https://www.ordisum.com/docs/changelog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/dashboard</loc>
+    <loc>https://www.ordisum.com/docs/dashboard</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/budget-alerts</loc>
+    <loc>https://www.ordisum.com/docs/budget-alerts</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/roi-calculator</loc>
+    <loc>https://www.ordisum.com/docs/roi-calculator</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/teams</loc>
+    <loc>https://www.ordisum.com/docs/teams</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/api-auth</loc>
+    <loc>https://www.ordisum.com/docs/api-auth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/api-endpoints</loc>
+    <loc>https://www.ordisum.com/docs/api-endpoints</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/faq</loc>
+    <loc>https://www.ordisum.com/docs/faq</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://ordisum.com/docs/troubleshooting</loc>
+    <loc>https://www.ordisum.com/docs/troubleshooting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

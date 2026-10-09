@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('Origin') || ''
   const allowedOrigins = [
-    'https://ordisum.com',
+    'https://www.ordisum.com',
     'https://www.ordisum.com',
     'http://localhost:5173',
   ]
@@ -183,7 +183,7 @@ serve(async (req) => {
       const inviterName = user.email || 'A team member'
       const orgName = org?.name || 'the organization'
       
-      const siteUrl = Deno.env.get('SITE_URL') || 'https://ordisum.com'
+      const siteUrl = Deno.env.get('SITE_URL') || 'https://www.ordisum.com'
       const inviteUrl = `${siteUrl}/auth/signup?token=${invitationToken}`
       const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') || 'Ordisum <notifications@ordisum.com>'
 

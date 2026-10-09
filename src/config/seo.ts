@@ -22,7 +22,7 @@
 
 const RAW_SITE_URL =
   (import.meta.env.VITE_SITE_URL as string | undefined) ||
-  'https://ordisum.com';
+  'https://www.ordisum.com';
 
 /** Production origin with any trailing slash stripped (e.g. https://example.com). */
 export const SITE_URL = RAW_SITE_URL.replace(/\/+$/, '');

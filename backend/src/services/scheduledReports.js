@@ -21,7 +21,7 @@ import { generateXLSX } from './xlsxGenerator.js';
 
 const RESEND_API_KEY = () => process.env.RESEND_API_KEY ?? '';
 const FROM_ADDRESS   = () => process.env.RESEND_FROM_EMAIL ?? 'Ordisum <notifications@ordisum.com>';
-const SITE_URL       = () => process.env.SITE_URL ?? 'https://ordisum.com';
+const SITE_URL       = () => process.env.SITE_URL ?? 'https://www.ordisum.com';
 
 /**
  * Calculate the next run timestamp after a successful execution.

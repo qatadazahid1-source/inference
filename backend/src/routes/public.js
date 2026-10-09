@@ -147,7 +147,7 @@ router.get('/blog/:slug', async (req, res) => {
 const SITEMAP_SITE_URL = (
   process.env.VITE_SITE_URL ||
   process.env.SITE_URL ||
-  'https://ordisum.com'
+  'https://www.ordisum.com'
 ).replace(/\/+$/, '');
 
 // Fixed, hand-maintained public routes that always belong in the sitemap.
