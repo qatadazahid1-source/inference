@@ -421,130 +421,182 @@ export async function applyDiff(importId, supabase, options = {}) {
     errors: [],
   };
 
+  // ── Classify rows by action ─────────────────────────────────────────────────
+  const toInsert   = [];   // status = 'new'
+  const toUpdate   = [];   // status = 'changed'
+  const toKeep     = [];   // status = 'same'     → staging only
+  const toSkip     = [];   // status = 'conflict' → staging only
+
   for (const row of stagingRows) {
-    try {
-      if (row.status === 'same') {
-        // No change needed
-        report.kept++;
-        await supabase.from('pricing_import_staging').update({ status: 'applied', applied_at: now, applied_by: changedBy }).eq('id', row.id);
-        continue;
-      }
+    if (row.status === 'new'      && applyNew)      toInsert.push(row);
+    else if (row.status === 'changed' && applyChanges) toUpdate.push(row);
+    else if (row.status === 'same')                 toKeep.push(row);
+    else if (row.status === 'conflict')             toSkip.push(row);
+    else                                            toSkip.push(row);
+  }
 
-      if (row.status === 'conflict' && !applyConflicts) {
-        // Skip conflict — needs manual review
-        report.skipped++;
-        await supabase.from('pricing_import_staging').update({ status: 'skipped' }).eq('id', row.id);
-        continue;
-      }
+  // ── 1. BULK INSERT new models ────────────────────────────────────────────────
+  // Chunk into 500 rows per upsert to stay within Supabase payload limits.
+  const BULK = 500;
+  const insertedIds = [];   // { stagingId, modelPricingId, row }
 
-      if (row.status === 'new' && applyNew) {
-        // INSERT new model
-        const { data: newRow, error: insErr } = await supabase
-          .from('model_pricing')
-          .insert({
-            provider: row.provider,
-            model: row.model,
-            input_cost_per_1k: row.input_cost_per_1k ?? 0,
-            output_cost_per_1k: row.output_cost_per_1k ?? 0,
-            context_window: row.context_window ?? null,
-            is_active: true,
-            source_type: row.source_type,
-            source_name: row.source_name,
-            source_url: row.source_url,
-            source_fetched_at: row.fetched_at,
-            updated_at: now,
-          })
-          .select()
-          .single();
+  for (let i = 0; i < toInsert.length; i += BULK) {
+    const chunk = toInsert.slice(i, i + BULK);
+    const payload = chunk.map(row => ({
+      provider:          row.provider,
+      model:             row.model,
+      input_cost_per_1k: row.input_cost_per_1k ?? 0,
+      output_cost_per_1k: row.output_cost_per_1k ?? 0,
+      context_window:    row.context_window ?? null,
+      is_active:         true,
+      source_type:       row.source_type,
+      source_name:       row.source_name,
+      source_url:        row.source_url,
+      source_fetched_at: row.fetched_at,
+      updated_at:        now,
+    }));
 
-        if (insErr) {
-          // Check if it's a duplicate constraint violation
-          if (insErr.code === '23505') {
-            // Unique constraint violation — already exists (race condition / data inconsistency)
-            report.skipped++;
-            await supabase.from('pricing_import_staging')
-              .update({ status: 'skipped', conflict_note: 'Already exists in DB (constraint violation)' })
-              .eq('id', row.id);
-            continue;
-          }
-          throw insErr;
-        }
+    const { data: inserted, error: insErr } = await supabase
+      .from('model_pricing')
+      .upsert(payload, { onConflict: 'provider,model', ignoreDuplicates: false })
+      .select('id, provider, model');
 
-        // Audit log
-        await logAuditEntry(supabase, {
-          changedBy,
-          modelPricingId: newRow.id,
-          provider: row.provider,
-          modelName: row.model,
-          oldInputCost: null,
-          oldOutputCost: null,
-          newInputCost: row.input_cost_per_1k,
-          newOutputCost: row.output_cost_per_1k,
-          action: 'created',
-          sourceType: row.source_type,
-          sourceName: row.source_name,
-        });
+    if (insErr) {
+      // Non-fatal: log individual errors but don't stop the whole apply
+      console.error(`[ImportEngine] Bulk insert chunk error:`, insErr.message);
+      chunk.forEach(row => report.errors.push({ rowId: row.id, provider: row.provider, model: row.model, error: insErr.message }));
+      continue;
+    }
 
-        await supabase.from('pricing_import_staging').update({ status: 'applied', applied_at: now, applied_by: changedBy }).eq('id', row.id);
+    // Map inserted IDs back to staging rows for audit log
+    const insertedMap = new Map((inserted || []).map(r => [`${r.provider}:${r.model}`, r.id]));
+    for (const row of chunk) {
+      const mpId = insertedMap.get(`${row.provider}:${row.model}`);
+      if (mpId) {
+        insertedIds.push({ stagingId: row.id, modelPricingId: mpId, row });
         report.inserted++;
         report.applied++;
-
-      } else if (row.status === 'changed' && applyChanges) {
-        // UPDATE existing model
-        const { error: updErr } = await supabase
-          .from('model_pricing')
-          .update({
-            input_cost_per_1k: row.input_cost_per_1k ?? 0,
-            output_cost_per_1k: row.output_cost_per_1k ?? 0,
-            source_type: row.source_type,
-            source_name: row.source_name,
-            source_url: row.source_url,
-            source_fetched_at: row.fetched_at,
-            updated_at: now,
-          })
-          .eq('id', row.db_record_id);
-
-        if (updErr) throw updErr;
-
-        // Audit log — preserve old values
-        await logAuditEntry(supabase, {
-          changedBy,
-          modelPricingId: row.db_record_id,
-          provider: row.provider,
-          modelName: row.model,
-          oldInputCost: row.db_input_cost,
-          oldOutputCost: row.db_output_cost,
-          newInputCost: row.input_cost_per_1k,
-          newOutputCost: row.output_cost_per_1k,
-          action: 'updated',
-          sourceType: row.source_type,
-          sourceName: row.source_name,
-          oldSourceType: row.db_source_type,
-          oldSourceName: row.db_source_type,
-        });
-
-        await supabase.from('pricing_import_staging').update({ status: 'applied', applied_at: now, applied_by: changedBy }).eq('id', row.id);
-        report.updated++;
-        report.applied++;
       } else {
-        // Disallowed action (e.g. conflict with applyConflicts=false, or status we don't handle)
         report.skipped++;
-        await supabase.from('pricing_import_staging').update({ status: 'skipped' }).eq('id', row.id);
       }
-    } catch (err) {
-      console.error(`[ImportEngine] Error applying row ${row.id}:`, err.message);
-      report.errors.push({
-        rowId: row.id,
-        provider: row.provider,
-        model: row.model,
-        error: err.message,
-      });
     }
+  }
+
+  // ── 2. Bulk audit log for inserts ────────────────────────────────────────────
+  if (insertedIds.length > 0) {
+    const auditChunks = [];
+    for (let i = 0; i < insertedIds.length; i += BULK) {
+      auditChunks.push(insertedIds.slice(i, i + BULK));
+    }
+    for (const chunk of auditChunks) {
+      const auditPayload = chunk.map(({ modelPricingId, row }) => ({
+        changed_by:        changedBy,
+        model_pricing_id:  modelPricingId,
+        provider:          row.provider,
+        model_name:        row.model,
+        old_input_cost:    null,
+        old_output_cost:   null,
+        new_input_cost:    row.input_cost_per_1k,
+        new_output_cost:   row.output_cost_per_1k,
+        action:            'created',
+        source_type:       row.source_type,
+        source_name:       row.source_name,
+      }));
+      await supabase.from('pricing_audit_log').insert(auditPayload).catch(e =>
+        console.error('[ImportEngine] Audit log batch write failed (non-fatal):', e.message)
+      );
+    }
+  }
+
+  // ── 3. Bulk mark inserted staging rows as 'applied' ──────────────────────────
+  if (insertedIds.length > 0) {
+    const ids = insertedIds.map(x => x.stagingId);
+    for (let i = 0; i < ids.length; i += BULK) {
+      await supabase.from('pricing_import_staging')
+        .update({ status: 'applied', applied_at: now, applied_by: changedBy })
+        .in('id', ids.slice(i, i + BULK));
+    }
+  }
+
+  // ── 4. UPDATE changed models (individual — each has unique values) ────────────
+  for (const row of toUpdate) {
+    try {
+      const { error: updErr } = await supabase
+        .from('model_pricing')
+        .update({
+          input_cost_per_1k:  row.input_cost_per_1k ?? 0,
+          output_cost_per_1k: row.output_cost_per_1k ?? 0,
+          source_type:        row.source_type,
+          source_name:        row.source_name,
+          source_url:         row.source_url,
+          source_fetched_at:  row.fetched_at,
+          updated_at:         now,
+        })
+        .eq('id', row.db_record_id);
+
+      if (updErr) throw updErr;
+      report.updated++;
+      report.applied++;
+    } catch (err) {
+      console.error(`[ImportEngine] Error updating row ${row.id}:`, err.message);
+      report.errors.push({ rowId: row.id, provider: row.provider, model: row.model, error: err.message });
+    }
+  }
+
+  // ── 5. Bulk audit log for updates ────────────────────────────────────────────
+  if (toUpdate.length > 0) {
+    const updAudit = toUpdate.map(row => ({
+      changed_by:        changedBy,
+      model_pricing_id:  row.db_record_id,
+      provider:          row.provider,
+      model_name:        row.model,
+      old_input_cost:    row.db_input_cost,
+      old_output_cost:   row.db_output_cost,
+      new_input_cost:    row.input_cost_per_1k,
+      new_output_cost:   row.output_cost_per_1k,
+      action:            'updated',
+      source_type:       row.source_type,
+      source_name:       row.source_name,
+      old_source_type:   row.db_source_type,
+      old_source_name:   row.db_source_type,
+    }));
+    for (let i = 0; i < updAudit.length; i += BULK) {
+      await supabase.from('pricing_audit_log').insert(updAudit.slice(i, i + BULK)).catch(e =>
+        console.error('[ImportEngine] Audit log update batch write failed (non-fatal):', e.message)
+      );
+    }
+
+    // Bulk mark staging rows as applied
+    const updIds = toUpdate.map(r => r.id);
+    for (let i = 0; i < updIds.length; i += BULK) {
+      await supabase.from('pricing_import_staging')
+        .update({ status: 'applied', applied_at: now, applied_by: changedBy })
+        .in('id', updIds.slice(i, i + BULK));
+    }
+  }
+
+  // ── 6. Bulk mark 'same' rows as 'applied' ────────────────────────────────────
+  report.kept = toKeep.length;
+  const keepIds = toKeep.map(r => r.id);
+  for (let i = 0; i < keepIds.length; i += BULK) {
+    await supabase.from('pricing_import_staging')
+      .update({ status: 'applied', applied_at: now, applied_by: changedBy })
+      .in('id', keepIds.slice(i, i + BULK));
+  }
+
+  // ── 7. Bulk mark conflicts/skipped as 'skipped' ──────────────────────────────
+  report.skipped += toSkip.length;
+  const skipIds = toSkip.map(r => r.id);
+  for (let i = 0; i < skipIds.length; i += BULK) {
+    await supabase.from('pricing_import_staging')
+      .update({ status: 'skipped' })
+      .in('id', skipIds.slice(i, i + BULK));
   }
 
   console.log(`[ImportEngine] Apply complete:`, report);
   return report;
 }
+
 
 // ─── CANCEL IMPORT ────────────────────────────────────────────────────────────
 
