@@ -188,28 +188,40 @@ async function main() {
 
   console.log("2/4 Downloading provider pricing...");
 
-  for (let i = 0; i < pricingFiles.length; i++) {
-    const filePath = pricingFiles[i];
-    const provider = path.basename(filePath, ".json");
-    const url = RAW_BASE + filePath;
-
-    process.stdout.write(
-      `   [${String(i + 1).padStart(3, " ")}/${pricingFiles.length}] ${provider} ... `
-    );
-
-    try {
-      const payload = await getJson(url);
-      providers[provider] = payload;
-
-      for (const [modelId, modelConfig] of Object.entries(payload ?? {})) {
-        models.push(normalizeModel(provider, modelId, modelConfig));
+  const CONCURRENCY = 10;
+  for (let i = 0; i < pricingFiles.length; i += CONCURRENCY) {
+    const chunk = pricingFiles.slice(i, i + CONCURRENCY);
+    const promises = chunk.map(async (filePath) => {
+      const provider = path.basename(filePath, ".json");
+      const url = RAW_BASE + filePath;
+      try {
+        const payload = await getJson(url);
+        return { provider, payload, error: null };
+      } catch (err) {
+        return { provider, payload: null, error: err };
       }
+    });
 
-      console.log("OK");
-    } catch (error) {
-      failed++;
-      console.log("FAILED");
-      console.error(`       ${error.message}`);
+    const results = await Promise.all(promises);
+
+    for (let j = 0; j < results.length; j++) {
+      const { provider, payload, error } = results[j];
+      const index = i + j + 1;
+      process.stdout.write(
+        `   [${String(index).padStart(3, " ")}/${pricingFiles.length}] ${provider} ... `
+      );
+
+      if (error) {
+        failed++;
+        console.log("FAILED");
+        console.error(`       ${error.message}`);
+      } else {
+        providers[provider] = payload;
+        for (const [modelId, modelConfig] of Object.entries(payload ?? {})) {
+          models.push(normalizeModel(provider, modelId, modelConfig));
+        }
+        console.log("OK");
+      }
     }
   }
 
