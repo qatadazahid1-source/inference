@@ -456,16 +456,47 @@ export async function applyDiff(importId, supabase, options = {}) {
       updated_at:        now,
     }));
 
-    const { data: inserted, error: insErr } = await supabase
+    let inserted = null;
+    let insErr = null;
+
+    // Use insert instead of upsert: Postgres has no unconditional UNIQUE(provider, model)
+    // constraint, so upsert with onConflict fails with 42P10.
+    const insertRes = await supabase
       .from('model_pricing')
-      .upsert(payload, { onConflict: 'provider,model', ignoreDuplicates: false })
+      .insert(payload)
       .select('id, provider, model');
 
-    if (insErr) {
-      // Non-fatal: log individual errors but don't stop the whole apply
-      console.error(`[ImportEngine] Bulk insert chunk error:`, insErr.message);
-      chunk.forEach(row => report.errors.push({ rowId: row.id, provider: row.provider, model: row.model, error: insErr.message }));
-      continue;
+    if (insertRes.error) {
+      console.warn(`[ImportEngine] Bulk insert chunk had an issue (${insertRes.error.message}), falling back to individual inserts...`);
+      inserted = [];
+      for (const item of payload) {
+        const { data: singleData, error: singleErr } = await supabase
+          .from('model_pricing')
+          .insert(item)
+          .select('id, provider, model');
+
+        if (singleErr) {
+          // If already exists (duplicate key constraint violation)
+          if (singleErr.code === '23505') {
+            const { data: existingRow } = await supabase
+              .from('model_pricing')
+              .select('id, provider, model')
+              .eq('provider', item.provider)
+              .eq('model', item.model)
+              .maybeSingle();
+            if (existingRow) {
+              inserted.push(existingRow);
+              continue;
+            }
+          }
+          console.error(`[ImportEngine] Failed to insert ${item.provider}:${item.model}:`, singleErr.message);
+          report.errors.push({ provider: item.provider, model: item.model, error: singleErr.message });
+        } else if (singleData && singleData[0]) {
+          inserted.push(singleData[0]);
+        }
+      }
+    } else {
+      inserted = insertRes.data || [];
     }
 
     // Map inserted IDs back to staging rows for audit log
@@ -502,9 +533,12 @@ export async function applyDiff(importId, supabase, options = {}) {
         source_type:       row.source_type,
         source_name:       row.source_name,
       }));
-      await supabase.from('pricing_audit_log').insert(auditPayload).catch(e =>
-        console.error('[ImportEngine] Audit log batch write failed (non-fatal):', e.message)
-      );
+      try {
+        const { error: aErr } = await supabase.from('pricing_audit_log').insert(auditPayload);
+        if (aErr) console.error('[ImportEngine] Audit log batch write error (non-fatal):', aErr.message);
+      } catch (e) {
+        console.error('[ImportEngine] Audit log batch write failed (non-fatal):', e.message);
+      }
     }
   }
 
@@ -561,9 +595,12 @@ export async function applyDiff(importId, supabase, options = {}) {
       old_source_name:   row.db_source_type,
     }));
     for (let i = 0; i < updAudit.length; i += BULK) {
-      await supabase.from('pricing_audit_log').insert(updAudit.slice(i, i + BULK)).catch(e =>
-        console.error('[ImportEngine] Audit log update batch write failed (non-fatal):', e.message)
-      );
+      try {
+        const { error: aErr } = await supabase.from('pricing_audit_log').insert(updAudit.slice(i, i + BULK));
+        if (aErr) console.error('[ImportEngine] Audit log update batch write error (non-fatal):', aErr.message);
+      } catch (e) {
+        console.error('[ImportEngine] Audit log update batch write failed (non-fatal):', e.message);
+      }
     }
 
     // Bulk mark staging rows as applied
