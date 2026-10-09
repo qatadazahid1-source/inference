@@ -24,6 +24,7 @@ const FALLBACK_LIMITS = {
     reports: false,
     csv_export: false,
     pdf_export: false,
+    xlsx_export: false,
     premium_models: false,
     webhooks: false,
     slack_alerts: false,

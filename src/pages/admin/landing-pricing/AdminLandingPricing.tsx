@@ -30,6 +30,7 @@ interface SystemLimits {
     reports: boolean;
     csv_export: boolean;
     pdf_export: boolean;
+    xlsx_export: boolean;
     premium_models: boolean;
     webhooks: boolean;
     slack_alerts: boolean;
@@ -81,7 +82,7 @@ const EMPTY_PLAN = {
     features: {
       api_gateway: true, analytics: true, advanced_analytics: false, alerts: true, budget_manager: true,
       ai_playground: true, benchmarks: false, roi_calculator: false, reports: true, csv_export: false,
-      pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false, hard_budget_enforcement: false
+      pdf_export: false, xlsx_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false, hard_budget_enforcement: false
     },
     rate_limits: { requests_per_minute: 60, concurrent_requests: 2 },
     model_access: { tier: 'basic' }
@@ -148,7 +149,7 @@ export function AdminLandingPricingPage() {
         features: {
           api_gateway: false, analytics: false, advanced_analytics: false, alerts: false, budget_manager: false,
           ai_playground: false, benchmarks: false, roi_calculator: false, reports: false, csv_export: false,
-          pdf_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false,
+          pdf_export: false, xlsx_export: false, premium_models: false, webhooks: false, slack_alerts: false, cost_spike_detection: false, anomaly_detection: false,
           hard_budget_enforcement: false
         },
         rate_limits: { requests_per_minute: 0, concurrent_requests: 0 },

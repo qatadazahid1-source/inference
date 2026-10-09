@@ -14,11 +14,44 @@ interface ModalProps {
 export function Modal({ isOpen, onClose, title, children, size = 'medium', slidePanel = false }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const wasOpenRef = useRef(false);
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
+  useEffect(() => {
+    if (isOpen && !wasOpenRef.current) {
+      wasOpenRef.current = true;
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      document.body.style.overflow = 'hidden';
+
+      // Auto focus first interactive element or modal itself ONCE when opened
+      requestAnimationFrame(() => {
+        if (modalRef.current) {
+          const firstFocusable = modalRef.current.querySelector<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          if (firstFocusable) {
+            firstFocusable.focus();
+          } else {
+            modalRef.current.focus();
+          }
+        }
+      });
+    } else if (!isOpen && wasOpenRef.current) {
+      wasOpenRef.current = false;
+      document.body.style.overflow = '';
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
 
@@ -43,39 +76,13 @@ export function Modal({ isOpen, onClose, title, children, size = 'medium', slide
           }
         }
       }
-    },
-    [onClose],
-  );
+    };
 
-  useEffect(() => {
-    if (isOpen) {
-      previousFocusRef.current = document.activeElement as HTMLElement;
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-
-      // Auto focus first interactive element or modal itself
-      requestAnimationFrame(() => {
-        if (modalRef.current) {
-          const firstFocusable = modalRef.current.querySelector<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          if (firstFocusable) {
-            firstFocusable.focus();
-          } else {
-            modalRef.current.focus();
-          }
-        }
-      });
-    }
-
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
-      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
-        previousFocusRef.current.focus();
-      }
     };
-  }, [isOpen, handleKeyDown]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

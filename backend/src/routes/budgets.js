@@ -56,23 +56,40 @@ router.get('/', async (req, res) => {
     // then bucket per budget period below — one query for the whole org.
     const { data: usageData, error: usageErr } = await supabase
       .from('api_usage_logs')
-      .select('cost_usd, logged_at')
+      .select('cost_usd, logged_at, provider, model')
       .eq('organization_id', organization_id)
+      .neq('status', 'blocked')
       .gte('logged_at', periodStart.annual.toISOString());
     if (usageErr) throw usageErr;
 
     const usage = usageData || [];
-    const spendSince = (start) =>
+
+    const matchesScope = (b, row) => {
+      if (!b.scope || b.scope === 'organization') return true;
+      if (!b.scope_value) return true;
+      const target = b.scope_value.trim().toLowerCase();
+      if (b.scope === 'provider') return (row.provider || '').toLowerCase() === target;
+      if (b.scope === 'model') return (row.model || '').toLowerCase() === target;
+      return true;
+    };
+
+    const spendSince = (start, b) =>
       usage.reduce(
         (acc, row) =>
-          new Date(row.logged_at) >= start ? acc + Number(row.cost_usd || 0) : acc,
+          new Date(row.logged_at) >= start && matchesScope(b, row)
+            ? acc + Number(row.cost_usd || 0)
+            : acc,
         0,
       );
 
     const enriched = (budgets || []).map((b) => {
       const start = periodStart[b.period] || periodStart.monthly;
-      const spend = spendSince(start);
-      return { ...b, current_spend: parseFloat(spend.toFixed(4)) };
+      const spend = spendSince(start, b);
+      return {
+        ...b,
+        total_budget: Number(b.total_budget),
+        current_spend: parseFloat(spend.toFixed(4)),
+      };
     });
 
     res.json(enriched);
@@ -86,7 +103,27 @@ router.get('/', async (req, res) => {
 router.post('/', attachEntitlements, async (req, res) => {
   try {
     const organization_id = await getUserOrgId(req.user.id);
-    const { name, total_budget, period = 'monthly', alert_at_50, alert_at_75, alert_at_90, alert_at_100, hard_limit } = req.body;
+    const {
+      name,
+      scope = 'organization',
+      scope_value,
+      total_budget,
+      period = 'monthly',
+      alert_at_50,
+      alert_at_75,
+      alert_at_90,
+      alert_at_100,
+      hard_limit,
+    } = req.body;
+
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ error: 'Budget name is required.' });
+    }
+
+    const numBudget = Number(total_budget);
+    if (isNaN(numBudget) || numBudget < 0.001) {
+      return res.status(400).json({ error: 'Budget amount must be a positive number of at least $0.001.' });
+    }
 
     // Enforce budget_rules limit
     const { count, error: countErr } = await supabase
@@ -111,8 +148,10 @@ router.post('/', attachEntitlements, async (req, res) => {
       .from('budgets')
       .insert({
         organization_id,
-        name,
-        total_budget,
+        name: name.trim(),
+        scope: scope || 'organization',
+        scope_value: scope_value?.trim() || null,
+        total_budget: numBudget,
         period,
         alert_at_50: !!alert_at_50,
         alert_at_75: !!alert_at_75,
@@ -157,12 +196,36 @@ router.get('/alerts', async (req, res) => {
 router.put('/:id', attachEntitlements, async (req, res) => {
   try {
     const organization_id = await getUserOrgId(req.user.id);
-    const { name, total_budget, period, alert_at_50, alert_at_75, alert_at_90, alert_at_100, hard_limit } = req.body;
+    const {
+      name,
+      scope,
+      scope_value,
+      total_budget,
+      period,
+      alert_at_50,
+      alert_at_75,
+      alert_at_90,
+      alert_at_100,
+      hard_limit,
+    } = req.body;
 
     const updatePayload = { updated_at: new Date().toISOString() };
 
-    if (name !== undefined) updatePayload.name = name;
-    if (total_budget !== undefined) updatePayload.total_budget = total_budget;
+    if (name !== undefined) {
+      if (typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({ error: 'Budget name cannot be empty.' });
+      }
+      updatePayload.name = name.trim();
+    }
+    if (scope !== undefined) updatePayload.scope = scope || 'organization';
+    if (scope_value !== undefined) updatePayload.scope_value = scope_value?.trim() || null;
+    if (total_budget !== undefined) {
+      const numBudget = Number(total_budget);
+      if (isNaN(numBudget) || numBudget < 0.001) {
+        return res.status(400).json({ error: 'Budget amount must be a positive number of at least $0.001.' });
+      }
+      updatePayload.total_budget = numBudget;
+    }
     if (period !== undefined) updatePayload.period = period;
     if (alert_at_50 !== undefined) updatePayload.alert_at_50 = !!alert_at_50;
     if (alert_at_75 !== undefined) updatePayload.alert_at_75 = !!alert_at_75;

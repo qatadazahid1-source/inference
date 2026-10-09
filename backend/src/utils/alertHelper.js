@@ -1,5 +1,6 @@
 import { supabase } from '../index.js';
 import { sendAlertEmail } from './sendAlertEmail.js';
+import { sendSlackAlert } from './sendSlackAlert.js';
 
 /**
  * After each proxy call, check all active organization budgets.
@@ -37,6 +38,7 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
       .from('api_usage_logs')
       .select('cost_usd')
       .eq('organization_id', organization_id)
+      .neq('status', 'blocked')
       .gte('logged_at', periodStart);
 
     const totalSpend = (spendData ?? []).reduce((sum, r) => sum + Number(r.cost_usd), 0);
@@ -68,6 +70,10 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
 
       if (existing) continue; // already fired this period
 
+      const fmtSpend = totalSpend < 0.01 ? totalSpend.toFixed(4) : totalSpend.toFixed(2);
+      const fmtBudget = totalBudget < 0.01 ? totalBudget.toFixed(4) : totalBudget.toFixed(2);
+      const alertMsg = `Your organization has used ${pct >= 100 ? Math.round(pct) : pct.toFixed(1)}% ($${fmtSpend} of $${fmtBudget}) of the "${budget.name}" ${budget.period} budget.`;
+
       // 6. Insert the alert
       const { error: alertErr } = await supabase
         .from('alerts')
@@ -76,7 +82,7 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
           type: 'budget_threshold',
           severity: t.severity,
           title: `Budget "${budget.name}" reached ${t.label}`,
-          message: `Your organization has used ${pct.toFixed(1)}% ($${totalSpend.toFixed(2)} of $${totalBudget.toFixed(2)}) of the "${budget.name}" ${budget.period} budget.`,
+          message: alertMsg,
           metadata: { budget_id: budget.id, threshold_pct: t.pct, dedup_key: dedupKey, spend_usd: totalSpend },
           is_read: false
         });
@@ -84,6 +90,21 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
       if (alertErr) {
         console.error('[alertHelper] Insert alert error:', alertErr.message, alertErr);
       } else {
+        // Dispatch Slack notification if connected
+        sendSlackAlert({
+          organization_id,
+          title: `Budget "${budget.name}" reached ${t.label}`,
+          message: alertMsg,
+          severity: t.severity,
+          fields: {
+            'Budget': budget.name,
+            'Period': budget.period,
+            'Usage': `${pct.toFixed(1)}%`,
+            'Spend': `$${fmtSpend}`,
+            'Limit': `$${fmtBudget}`,
+          }
+        }).catch(slackErr => console.error('[alertHelper] Failed to dispatch Slack alert:', slackErr));
+
         // Dispatch email notification
         try {
           let recipients = [];
@@ -121,7 +142,7 @@ export async function checkBudgetThresholds(organization_id, newCostUsd) {
               to: email,
               subject: `[Ordisum] Budget Alert: ${budget.name} at ${t.label}`,
               title: `Budget "${budget.name}" reached ${t.label}`,
-              message: `Your organization has used ${pct.toFixed(1)}% ($${totalSpend.toFixed(2)} of $${totalBudget.toFixed(2)}) of the "${budget.name}" ${budget.period} budget.`,
+              message: alertMsg,
               severity: t.severity,
             });
           }

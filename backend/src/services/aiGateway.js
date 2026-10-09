@@ -134,10 +134,14 @@ export async function callProviderAndLog({
       console.error('[aiGateway] Blocked-request log insert error:', blockLogError.message, blockLogError);
     }
 
+    const fmtSpend = blockResult.spend < 0.01 ? blockResult.spend.toFixed(4) : blockResult.spend.toFixed(2);
+    const fmtLimit = blockResult.limit < 0.01 ? blockResult.limit.toFixed(4) : blockResult.limit.toFixed(2);
     const err = new Error(
-      `Request blocked: the "${blockResult.budgetName}" budget limit has been reached ($${blockResult.spend.toFixed(2)} of $${blockResult.limit.toFixed(2)}).`
+      `Request blocked: the "${blockResult.budgetName}" budget limit has been reached ($${fmtSpend} of $${fmtLimit}).`
     );
     err.isBudgetBlocked = true;
+    err.status = 429;
+    err.code = 'BUDGET_EXCEEDED';
     throw err;
   }
 

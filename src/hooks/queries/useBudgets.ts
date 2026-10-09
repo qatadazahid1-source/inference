@@ -43,6 +43,8 @@ import { queryKeys } from './queryKeys';
  */
 export interface BudgetInput {
     name: string;
+    scope?: string;
+    scope_value?: string | null;
     total_budget: number;
     period: string;
     alert_at_50: boolean;

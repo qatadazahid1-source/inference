@@ -313,7 +313,7 @@ export function ROICalculator() {
                       fontSize: 13,
                     }}
                     labelStyle={{ color: '#f8fafc' }}
-                    formatter={(v: number) => [formatCurrency(v), 'Cumulative Gain']}
+                    formatter={(v: any) => [formatCurrency(Number(v) || 0), 'Cumulative Gain']}
                   />
                   <Area
                     type="monotone"

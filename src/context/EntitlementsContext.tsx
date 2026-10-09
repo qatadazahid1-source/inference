@@ -27,6 +27,7 @@ export interface SystemLimits {
     reports: boolean;
     csv_export: boolean;
     pdf_export: boolean;
+    xlsx_export: boolean;
     premium_models: boolean;
     webhooks: boolean;
     slack_alerts: boolean;
@@ -78,6 +79,7 @@ const FALLBACK_LIMITS: SystemLimits = {
     reports: false,
     csv_export: false,
     pdf_export: false,
+    xlsx_export: false,
     premium_models: false,
     webhooks: false,
     slack_alerts: false,

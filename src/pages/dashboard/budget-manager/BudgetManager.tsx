@@ -34,6 +34,15 @@ const defaultForm = {
   hardLimit: false,
 };
 
+function formatCurrency(val: number): string {
+  const num = Number(val) || 0;
+  if (num === 0) return '$0.00';
+  if (Math.abs(num) < 0.01) {
+    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 4 })}`;
+  }
+  return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
 export function BudgetManager() {
   const { user } = useAuth();
   const authReady = !!user?.id;
@@ -66,8 +75,8 @@ export function BudgetManager() {
     setEditingBudgetId(budget.id);
     setForm({
       name: budget.name || '',
-      scope: 'organization',
-      scopeValue: '',
+      scope: (budget.scope || 'organization') as Budget['scope'],
+      scopeValue: budget.scope_value || '',
       amount: String(budget.total_budget ?? ''),
       period: budget.period || 'monthly',
       alertThresholds: [50, 75, 90, 100].filter((t) => budget[`alert_at_${t}`]),
@@ -97,9 +106,17 @@ export function BudgetManager() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const numAmount = Number(form.amount);
+      if (isNaN(numAmount) || numAmount < 0.001) {
+        alert('Budget amount must be a positive number of at least $0.001.');
+        return;
+      }
+
       const payload = {
-        name: form.name,
-        total_budget: Number(form.amount),
+        name: form.name.trim(),
+        scope: form.scope,
+        scope_value: form.scopeValue.trim() || null,
+        total_budget: numAmount,
         period: form.period,
         alert_at_50: form.alertThresholds.includes(50),
         alert_at_75: form.alertThresholds.includes(75),
@@ -116,9 +133,10 @@ export function BudgetManager() {
 
       setShowCreate(false);
       setEditingBudgetId(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save budget:', err);
-      alert(`Failed to ${editingBudgetId ? 'update' : 'create'} budget. See console for details.`);
+      const errMsg = err?.response?.data?.error || err?.message || `Failed to ${editingBudgetId ? 'update' : 'create'} budget. See console for details.`;
+      alert(errMsg);
     }
   };
 
@@ -147,7 +165,7 @@ export function BudgetManager() {
             <KPICard
               data={{
                 label: 'Total Allocated Budget',
-                value: `$${totalAllocated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                value: formatCurrency(totalAllocated),
                 icon: 'DollarSign',
                 isPrimary: true,
                 trendText: `${budgets.length} active budget${budgets.length === 1 ? '' : 's'}`,
@@ -158,7 +176,7 @@ export function BudgetManager() {
             <KPICard
               data={{
                 label: 'Active Spend',
-                value: `$${activeSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                value: formatCurrency(activeSpend),
                 icon: 'Activity',
                 isPrimary: false,
                 trendText: 'Current billing period',
@@ -169,10 +187,10 @@ export function BudgetManager() {
             <KPICard
               data={{
                 label: 'Overall Utilization',
-                value: `${utilizationPct.toFixed(1)}%`,
+                value: `${utilizationPct >= 100 ? Math.round(utilizationPct) : utilizationPct.toFixed(1)}%`,
                 icon: 'Target',
                 isPrimary: false,
-                trendText: 'Capacity consumed',
+                trendText: utilizationPct > 100 ? 'Over budget' : 'Capacity consumed',
               }}
             />
           </GridItem>
@@ -196,19 +214,24 @@ export function BudgetManager() {
           {budgets.map((b: any) => {
             // Guard against division by zero: a $0 budget would otherwise
             // produce NaN% (0/0), which broke the progress bar and label.
-            const pct = b.total_budget > 0
-              ? Math.min((b.current_spend / b.total_budget) * 100, 100)
-              : 0;
+            const budgetNum = Number(b.total_budget) || 0;
+            const spendNum = Number(b.current_spend) || 0;
+            const pct = budgetNum > 0 ? (spendNum / budgetNum) * 100 : 0;
+            const visualWidth = Math.min(Math.max(pct, 0), 100);
+
             let fillClass = styles.progressGreen;
             if (pct >= 90) fillClass = styles.progressRed;
             else if (pct >= 75) fillClass = styles.progressAmber;
+
+            const scopeKey = b.scope || 'organization';
+            const scopeDisplay = b.scope_value ? `${scopeKey}: ${b.scope_value}` : (scopeKey.charAt(0).toUpperCase() + scopeKey.slice(1));
 
             return (
               <div key={b.id} className={styles.card}>
                 <div className={styles.cardTop}>
                   <div>
                     <div className={styles.cardName}>{b.name || 'Budget'}</div>
-                    <Badge variant={scopeVariants['organization']}>Organization</Badge>
+                    <Badge variant={scopeVariants[scopeKey] || 'neutral'}>{scopeDisplay}</Badge>
                   </div>
                   <div style={{ position: 'relative' }}>
                     <Bell size={16} style={{ color: 'var(--color-text-muted)', cursor: 'pointer' }} />
@@ -232,12 +255,14 @@ export function BudgetManager() {
                   </div>
                 </div>
                 <div className={styles.cardAmount}>
-                  ${b.total_budget.toLocaleString()} / month
+                  {formatCurrency(budgetNum)} / {b.period || 'month'}
                 </div>
                 <div className={styles.progressWrap}>
-                  <div className={`${styles.progressFill} ${fillClass}`} style={{ width: `${pct}%` }} />
+                  <div className={`${styles.progressFill} ${fillClass}`} style={{ width: `${visualWidth}%` }} />
                 </div>
-                <div className={styles.usedText}>{pct.toFixed(0)}% used</div>
+                <div className={styles.usedText}>
+                  {pct >= 100 ? Math.round(pct) : pct.toFixed(1)}% used ({formatCurrency(spendNum)} of {formatCurrency(budgetNum)})
+                </div>
                 <div className={styles.cardActions} />
               </div>
             );
@@ -296,9 +321,11 @@ export function BudgetManager() {
             <input
               className={styles.input}
               type="number"
+              step="any"
+              min="0.001"
               value={form.amount}
               onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
-              placeholder="5000"
+              placeholder="10.00"
               required
             />
           </div>

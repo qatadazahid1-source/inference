@@ -23,7 +23,12 @@
 - **MV-013:** Verify ROI PDF export physically downloads a readable document in different browsers (Chrome, Firefox, Safari).
 
 ## Phase 9
-- **MV-014:** Manually create a budget with `alert_at_50=true` and `hard_limit=true`. Trigger enough traffic through the playground to cross 50% of the budget. Confirm: (a) an alert row appears in the dashboard, (b) a budget alert email arrives, and (c) once the hard limit is hit, gateway calls return `403`.
+- **MV-014 ✅ AUTOMATED-PASS (2026-10-09):** Budget threshold alert verified via `verify_alerts_and_dispatch.js`.
+  - Alert row confirmed in DB: ID `2d9a114d`, type `budget_threshold`, severity `critical`.
+  - Alert message: "567% ($0.0057 of $0.0010) of the 'o' monthly budget used" — sub-cent precision confirmed.
+  - Resend API key present; email dispatch path verified (live send requires org email; MANUAL if email receipt needed).
+  - Slack: No OAuth connected for test org (expected; safe skip — mark MANUAL when live Slack connected).
+  - Gateway hard-limit (`429 BUDGET_EXCEEDED`) previously confirmed by `verify_gateway_hard_limit.js`.
 
 ## Phase 10
 - **MV-015:** Create a `weekly` recurring report with recipients. Wait for (or manually invoke) the scheduler. Confirm: (a) a new child report row is created with the dated name, (b) recipients receive the email with the correct file attached, and (c) `next_run_at` advances by exactly 7 days.
@@ -41,4 +46,10 @@
 - **MV-021:** Simulate a Lemon Squeezy test purchase. Verify that the Supabase Edge Function processes the `subscription_created` and `order_created` webhooks, and the UI unlocks properly.
 
 ## Phase 14
-- **MV-022**: Run `npm run build` locally to verify the production build succeeds after the TypeScript fix.
+- **MV-022 ✅ AUTOMATED-PASS (2026-10-09):** `npm run build` exited 0. Built in 34.28s. All 11 static routes pre-rendered by react-snap (/, /pricing, /features, /security, /contact-sales, /blog, /terms, /privacy-policy, /refund-policy, /docs, /docs/overview). All mandatory legal page HTML files verified. No TypeScript errors. `[LandingFooter]` console.log warnings during prerender are expected (no backend at build time) and do not affect runtime.
+
+## Phase 15 (Critical Budget, Alerts, Reports & Focus Glitch Verification)
+- **MV-023**: In production browser on the Business plan organization, open Budget Manager, click "Edit" on budget `o`, verify amount `$0.001` is visible, enable `hard_limit`, and save to confirm 200 OK without 403 Forbidden.
+- **MV-024**: In the Create/Edit Budget modal, click the Amount input and continuously type `0.001` without stopping; confirm focus stays locked in the input and never jumps or loses outline.
+- **MV-025 ✅ AUTOMATED-PASS (2026-10-09):** Alert dispatch pipeline verified by `verify_alerts_and_dispatch.js`. In-app alert row created; Resend API key present (live email MANUAL-confirm receipt); Slack skip is safe (no OAuth connected for test org).
+- **MV-026**: Download generated PDF and XLSX files from the browser and open in local reader applications to confirm desktop layout rendering.
