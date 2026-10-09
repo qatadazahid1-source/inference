@@ -78,17 +78,19 @@ export const PricingSection: React.FC = () => {
         ) : plans.length > 0 ? (
           plans.map(plan => {
             const price = billingCycle === 'annual' ? plan.price_annual : plan.price_monthly;
-            const isCustom = Number(price) === 0;
             const isEnterprise = plan.slug === 'enterprise';
+            const isBasic = plan.slug === 'basic';
             return (
               <div key={plan.id} className={`${styles.card} ${plan.is_popular ? styles.cardFeatured : ''}`}>
                 {plan.is_popular && <span className={styles.featuredBadge}>Recommended</span>}
                 <div className={styles.planName}>{plan.name}</div>
                 <div className={styles.price}>
-                  {isCustom ? 'Custom' : <><sup>$</sup>{price}</>}
+                  {isEnterprise
+                    ? <span style={{ fontSize: '22px', lineHeight: 1.3 }}>Contact Sales<br/><span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-tertiary)' }}>/ Custom</span></span>
+                    : <><sup>$</sup>{isBasic ? '0' : price}</>}
                 </div>
                 <div className={styles.tagline}>
-                  {isCustom ? (plan.tagline || 'Contact us') : billingCycle === 'annual' ? 'Billed annually' : 'Billed monthly'}
+                  {isEnterprise ? 'Custom pricing for your organization' : isBasic ? 'Free forever' : billingCycle === 'annual' ? 'Billed annually' : 'Billed monthly'}
                 </div>
                 <hr className={styles.divider} />
                 <ul className={styles.features}>

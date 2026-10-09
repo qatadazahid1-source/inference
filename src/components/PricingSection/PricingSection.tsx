@@ -77,8 +77,8 @@ const FALLBACK_PLANS: Plan[] = [
   {
     name: 'Basic',
     slug: 'basic',
-    monthlyPrice: 'Free',
-    annualPrice: 'Free',
+    monthlyPrice: '$0',
+    annualPrice: '$0',
     tagline: 'Core AI cost tracking',
     isPopular: false,
     ctaText: 'Start Free',
@@ -131,8 +131,8 @@ const FALLBACK_PLANS: Plan[] = [
   {
     name: 'Enterprise',
     slug: 'enterprise',
-    monthlyPrice: 'Custom',
-    annualPrice: 'Custom',
+    monthlyPrice: 'Contact Sales',
+    annualPrice: 'Contact Sales',
     tagline: 'For large organizations',
     isPopular: false,
     ctaText: 'Contact Sales',
@@ -223,10 +223,19 @@ const PricingSection: React.FC = () => {
               <p className={styles.planTagline}>{plan.tagline}</p>
 
               <div className={styles.price}>
-                <span className={styles.priceAmount}>
-                  {isAnnual ? plan.annualPrice : plan.monthlyPrice}
-                </span>
-                {plan.monthlyPrice !== 'Custom' && <span className={styles.pricePeriod}>/mo</span>}
+                {plan.slug === 'enterprise' ? (
+                  <span className={styles.priceAmount} style={{ fontSize: '1.4rem', lineHeight: 1.3 }}>
+                    Contact Sales<br />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 400, opacity: 0.6 }}>/ Custom</span>
+                  </span>
+                ) : (
+                  <>
+                    <span className={styles.priceAmount}>
+                      {isAnnual ? plan.annualPrice : plan.monthlyPrice}
+                    </span>
+                    <span className={styles.pricePeriod}>/mo</span>
+                  </>
+                )}
               </div>
 
               <button
