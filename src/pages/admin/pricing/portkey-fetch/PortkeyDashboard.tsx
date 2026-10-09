@@ -49,22 +49,72 @@ export function PortkeyDashboard() {
         : '/api/admin/pricing/run-openrouter-sync';
         
       const response = await axiosClient.post(endpoint);
-      
-      if (response.data.logs) {
-        response.data.logs.forEach((logLine: string) => addLog(logLine));
+
+      // ── Portkey: background job polling ──────────────────────────────────
+      if (source === 'portkey' && response.data.jobId) {
+        const jobId: string = response.data.jobId;
+        addLog(`Job started (id: ${jobId.slice(0, 8)}…). Polling for result...`);
+
+        const pollInterval = 2000; // 2 seconds
+        const maxWait = 3 * 60 * 1000; // 3 minute timeout
+        const started = Date.now();
+        let lastLogCount = 0;
+
+        await new Promise<void>((resolve, reject) => {
+          const poll = async () => {
+            if (Date.now() - started > maxWait) {
+              reject(new Error('Sync timed out after 3 minutes.'));
+              return;
+            }
+            try {
+              const statusRes = await axiosClient.get(
+                `/api/admin/pricing/portkey-sync-status/${jobId}`
+              );
+              const data = statusRes.data;
+
+              // Stream new log lines into terminal
+              const newLogs: string[] = (data.logs || []).slice(lastLogCount);
+              newLogs.forEach((l: string) => addLog(l));
+              lastLogCount = (data.logs || []).length;
+
+              if (data.status === 'done') {
+                if (data.models) {
+                  setModels(data.models);
+                  setLastSyncedSource(source);
+                  addLog(`\n✅ Sync complete. ${data.models.length} models loaded.`);
+                }
+                resolve();
+              } else if (data.status === 'error') {
+                reject(new Error(data.error || 'Job failed'));
+              } else {
+                setTimeout(poll, pollInterval);
+              }
+            } catch (e: any) {
+              reject(e);
+            }
+          };
+          poll();
+        });
+
+      // ── OpenRouter: direct response (no polling needed) ───────────────────
+      } else {
+        if (response.data.logs) {
+          response.data.logs.forEach((logLine: string) => addLog(logLine));
+        }
+        if (response.data.models) {
+          setModels(response.data.models);
+          setLastSyncedSource(source);
+          addLog(`\n✅ Sync complete. Successfully loaded ${response.data.models.length} models.`);
+        }
       }
-      
-      if (response.data.models) {
-        setModels(response.data.models);
-        setLastSyncedSource(source);
-        addLog(`\n✅ Sync complete. Successfully loaded ${response.data.models.length} models.`);
-      }
+
     } catch (err: any) {
       addLog(`\n❌ Error: ${err.message || 'Failed to execute sync script.'}`);
     } finally {
       setIsSyncing(false);
     }
   };
+
 
   const runApply = async (sourceOverride?: 'portkey' | 'openrouter') => {
     if (isApplying) return;

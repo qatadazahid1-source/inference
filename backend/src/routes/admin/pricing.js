@@ -1,7 +1,7 @@
 import express from 'express';
 import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
-import { runPortkeySync, applyPortkeySyncToDB } from '../../controllers/portkeyScraperController.js';
+import { runPortkeySync, applyPortkeySyncToDB, getPortkeySyncStatus } from '../../controllers/portkeyScraperController.js';
 import { runOpenRouterSync, applyOpenRouterSyncToDB } from '../../controllers/openrouterScraperController.js';
 
 const router = express.Router();
@@ -163,10 +163,13 @@ router.post('/', async (req, res) => {
 
 // ─── POST /api/admin/pricing/portkey-fetch (legacy alias) ──────────────────
 // ─── POST /api/admin/pricing/run-portkey-sync ──────────────────────────────
-// Runs sync-portkey-pricing.mjs → fetches ALL providers from Portkey GitHub
-// Returns models priced in USD per 1K tokens. No API key needed.
+// Starts a background job (returns jobId immediately — no 502 timeout)
 router.post('/portkey-fetch', runPortkeySync);
 router.post('/run-portkey-sync', runPortkeySync);
+
+// ─── GET /api/admin/pricing/portkey-sync-status/:jobId ─────────────────────
+// Poll this endpoint to check job progress / collect result
+router.get('/portkey-sync-status/:jobId', getPortkeySyncStatus);
 
 // ─── POST /api/admin/pricing/apply-portkey-sync ────────────────────────────
 // Applies previously fetched Portkey models to the DB
