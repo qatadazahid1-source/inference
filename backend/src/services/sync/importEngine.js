@@ -180,14 +180,33 @@ export async function stageRecords(records, sourceType, sourceName, supabase) {
 export async function buildDiff(importId, supabase) {
   console.log(`[ImportEngine] Building diff for import ${importId}...`);
 
-  // Load all staging rows for this import (only pending ones)
-  const { data: stagingRows, error: stagingErr } = await supabase
-    .from('pricing_import_staging')
-    .select('*')
-    .eq('import_id', importId)
-    .eq('status', 'pending');
+  // --- FIX: Paginate loading of pending staging rows ---
+  // Supabase returns max 1000 rows per query by default.
+  const stagingRows = [];
+  let sfrom = 0;
+  const S_PAGE = 1000;
+  let sHasMore = true;
 
-  if (stagingErr) throw new Error(`Failed to load staging: ${stagingErr.message}`);
+  while (sHasMore) {
+    const { data: page, error: stagingErr } = await supabase
+      .from('pricing_import_staging')
+      .select('*')
+      .eq('import_id', importId)
+      .eq('status', 'pending')
+      .range(sfrom, sfrom + S_PAGE - 1);
+
+    if (stagingErr) throw new Error(`Failed to load staging: ${stagingErr.message}`);
+
+    if (!page || page.length === 0) {
+      sHasMore = false;
+    } else {
+      stagingRows.push(...page);
+      if (page.length < S_PAGE) sHasMore = false;
+      sfrom += S_PAGE;
+    }
+  }
+
+
   if (!stagingRows || stagingRows.length === 0) {
     return { message: 'No pending rows to diff', counts: {} };
   }
@@ -363,14 +382,34 @@ export async function applyDiff(importId, supabase, options = {}) {
   console.log(`[ImportEngine] Applying import ${importId}...`);
   const now = new Date().toISOString();
 
-  // Load classified staging rows
-  const { data: stagingRows, error: loadErr } = await supabase
-    .from('pricing_import_staging')
-    .select('*')
-    .eq('import_id', importId)
-    .in('status', ['new', 'same', 'changed', 'conflict']);
+  // --- FIX: Paginate loading of staging rows ---
+  // Supabase returns max 1000 rows per query by default.
+  // Without pagination, only 1000 of 3986+ models would be applied.
+  const stagingRows = [];
+  let from = 0;
+  const PAGE_SIZE = 1000;
+  let hasMore = true;
 
-  if (loadErr) throw new Error(`Failed to load staging: ${loadErr.message}`);
+  while (hasMore) {
+    const { data: page, error: loadErr } = await supabase
+      .from('pricing_import_staging')
+      .select('*')
+      .eq('import_id', importId)
+      .in('status', ['new', 'same', 'changed', 'conflict'])
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (loadErr) throw new Error(`Failed to load staging: ${loadErr.message}`);
+
+    if (!page || page.length === 0) {
+      hasMore = false;
+    } else {
+      stagingRows.push(...page);
+      if (page.length < PAGE_SIZE) hasMore = false;
+      from += PAGE_SIZE;
+    }
+  }
+
+  console.log(`[ImportEngine] Loaded ${stagingRows.length} staging rows for import ${importId}`);
 
   const report = {
     importId,
