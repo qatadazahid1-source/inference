@@ -1,8 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'node:fs'
 
 // Vite handles SPA fallback automatically — no historyApiFallback needed
 export default defineConfig({
+  root: fs.realpathSync(process.cwd()),
   plugins: [react()],
   server: {
     proxy: {

@@ -23,16 +23,31 @@ export function SlackSettings() {
   // Detect OAuth redirect result from query params
   const slackConnected = searchParams.get('slack_connected') === 'true';
   const slackError = searchParams.get('slack_error');
+  const workspaceName = searchParams.get('workspace_name');
 
   // Clear query params after reading them (one-time)
   useEffect(() => {
     if (slackConnected || slackError) {
       setSearchParams({}, { replace: true });
       if (slackConnected) {
-        addToast('Slack workspace connected! Select a channel below.', 'success');
+        const msg = workspaceName
+          ? `Slack workspace "${workspaceName}" connected! Select a channel below.`
+          : 'Slack workspace connected! Select a channel below.';
+        addToast(msg, 'success');
       }
       if (slackError) {
-        addToast(`Slack connection failed: ${slackError.replace(/_/g, ' ')}`, 'error');
+        const errorMessages: Record<string, string> = {
+          access_denied: 'Slack access was denied or cancelled.',
+          missing_parameters: 'Slack connection failed: Missing authorization parameters.',
+          missing_or_invalid_state: 'Slack connection failed: Invalid or expired session state. Please try again.',
+          invalid_or_expired_state: 'Slack connection failed: Session expired or already used. Please try again.',
+          state_already_used: 'This Slack connection link has already been used. Please try again.',
+          state_expired: 'Slack authorization session expired. Please try again.',
+          token_exchange_failed: 'Failed to exchange authorization token with Slack. Please try again.',
+          callback_failed: 'An error occurred while connecting Slack. Please try again.',
+        };
+        const message = errorMessages[slackError] || `Slack connection failed: ${slackError.replace(/_/g, ' ')}`;
+        addToast(message, 'error');
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -52,6 +52,11 @@ if (!supabaseUrl) {
   process.exit(1);
 }
 
+// Fallback FRONTEND_URL to VITE_SITE_URL if not explicitly defined
+if (!process.env.FRONTEND_URL && process.env.VITE_SITE_URL) {
+  process.env.FRONTEND_URL = process.env.VITE_SITE_URL.trim();
+}
+
 const REQUIRED_ENV_VARS = [
   'SUPABASE_SERVICE_ROLE_KEY',
   'FRONTEND_URL',
@@ -197,7 +202,13 @@ app.use('/api/alerts', requireAuth, alertsRouter);
 app.use('/api/alert-rules', requireAuth, alertRulesRouter);
 app.use('/api/platform-keys', requireAuth, platformKeysRouter);
 app.use('/api/benchmarks', requireAuth, benchmarksRouter);
-app.use('/api/slack', requireAuth, slackRouter);
+// Slack router: all endpoints require Supabase authentication except the OAuth callback redirect
+app.use('/api/slack', (req, res, next) => {
+  if (req.method === 'GET' && (req.path === '/oauth/callback' || req.path === '/oauth/callback/')) {
+    return next();
+  }
+  return requireAuth(req, res, next);
+}, slackRouter);
 app.use('/api/webhooks', requireAuth, webhooksRouter);
 app.use('/api/anomalies', requireAuth, anomaliesRouter);
 
