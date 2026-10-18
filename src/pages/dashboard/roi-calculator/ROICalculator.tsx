@@ -58,9 +58,15 @@ function sanitizeNumericInput(raw: string, cap: number = MAX_AI_COST): number {
 // Zero cost + positive gain  -> "∞" (infinite ROI, zero spend)
 // Zero cost + no/negative gain -> "N/A"
 // Normal case                -> "{n}%"
+// Large values (> 9,999%)   -> abbreviated (e.g. 1.58M%) to prevent layout overflow
 function formatROI(roiPercent: number, aiCost: number, netGain: number): string {
   if (aiCost === 0) return netGain > 0 ? '\u221e' : 'N/A';
-  return `${roiPercent}%`;
+  const abs = Math.abs(roiPercent);
+  const sign = roiPercent < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(2)}B%`;
+  if (abs >= 1_000_000)     return `${sign}${(abs / 1_000_000).toFixed(2)}M%`;
+  if (abs >= 10_000)        return `${sign}${(abs / 1_000).toFixed(1)}K%`;
+  return `${roiPercent.toLocaleString()}%`;
 }
 
 // ─── COMPONENT ──────────────────────────────────────────────────────────────
@@ -125,11 +131,45 @@ export function ROICalculator() {
     if (!resultCardRef.current || isExporting) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(resultCardRef.current, {
-        backgroundColor: 'var(--color-bg)',
+      // Defect 1 Fix: html2canvas cannot parse CSS variable strings like
+      // 'var(--color-bg)'. Resolve all CSS custom properties to their computed
+      // hex/rgb values by reading them from the live DOM before rendering.
+      const computedStyle = window.getComputedStyle(document.documentElement);
+      const resolvedBg = computedStyle.getPropertyValue('--color-bg').trim() || '#0f172a';
+
+      // Temporarily inline resolved color values on the element and its children
+      // so html2canvas receives only concrete color strings.
+      const el = resultCardRef.current;
+      const originalBg = el.style.background;
+      el.style.background = computedStyle.getPropertyValue('--color-card').trim() || '#1e293b';
+
+      const canvas = await html2canvas(el, {
+        backgroundColor: resolvedBg,
         scale: 2,
         useCORS: true,
+        // Tell html2canvas to use computed (resolved) styles on every element,
+        // which avoids the 'unsupported color function' crash from var() strings.
+        onclone: (clonedDoc) => {
+          const clonedEl = clonedDoc.getElementById('roi-summary-card') ||
+            clonedDoc.querySelector('[data-pdf-target]');
+          if (!clonedEl) return;
+          // Walk all elements in the clone and resolve CSS variables inline
+          const allEls = clonedEl.querySelectorAll('*');
+          const allIncludingSelf = [clonedEl, ...Array.from(allEls)] as HTMLElement[];
+          allIncludingSelf.forEach((node) => {
+            const cs = window.getComputedStyle(node as Element);
+            const bg = cs.backgroundColor;
+            const color = cs.color;
+            const border = cs.borderColor;
+            if (bg && bg !== 'rgba(0, 0, 0, 0)') (node as HTMLElement).style.backgroundColor = bg;
+            if (color) (node as HTMLElement).style.color = color;
+            if (border) (node as HTMLElement).style.borderColor = border;
+          });
+        },
       });
+
+      // Restore original style
+      el.style.background = originalBg;
       const imgData    = canvas.toDataURL('image/png');
       const pdf        = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pageWidth  = pdf.internal.pageSize.getWidth();
@@ -262,7 +302,7 @@ export function ROICalculator() {
         <div className={styles.rightPanel}>
           <h2 className={styles.sectionTitle} style={{ marginBottom: 20 }}>Your ROI Summary</h2>
 
-          <div className={styles.resultCard} ref={resultCardRef}>
+          <div className={styles.resultCard} ref={resultCardRef} id="roi-summary-card" data-pdf-target>
             {/* BUG 1 FIX: ∞ when cost=0 and gain>0; N/A when cost=0 and no gain */}
             <div className={styles.roiValue}>
               {formatROI(results.roiPercent, effectiveAiCost, results.netGain)}

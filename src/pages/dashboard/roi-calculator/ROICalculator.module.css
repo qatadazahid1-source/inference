@@ -128,6 +128,9 @@
   padding: 24px;
 }
 
+/* Defect 3 Fix: large ROI % strings are now abbreviated (e.g. 1.58M%) so they
+   fit in the fixed 40px slot. overflow:hidden + text-overflow are a safety net
+   in case a future edge case produces a very long string anyway. */
 .roiValue {
   font-size: 40px;
   font-weight: var(--fw-bold);
@@ -135,6 +138,10 @@
   line-height: 1;
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .roiLabel {
@@ -195,8 +202,17 @@
   background: var(--color-tertiary);
 }
 
+/* Defect 2 Fix: Recharts reads container dimensions via offsetWidth/offsetHeight.
+   When the browser renders the wrapper at an intermediate layout pass it can
+   briefly measure 0 (or negative, via getBoundingClientRect in certain split-
+   screen viewports). Enforcing explicit min-* values prevents the
+   'width(-1)/height(-1) should be greater than 0' warning and blank chart.
+   The explicit height (200px) still works as a max-height target. */
 .chartContainer {
   height: 200px;
+  min-width: 300px;
+  min-height: 180px;
+  width: 100%;
 }
 
 .formula {
