@@ -153,7 +153,12 @@ export function ROICalculator() {
           const clonedEl = clonedDoc.getElementById('roi-summary-card') ||
             clonedDoc.querySelector('[data-pdf-target]');
           if (!clonedEl) return;
-          // Walk all elements in the clone and resolve CSS variables inline
+
+          // Pass 1: Resolve CSS custom-property colors to concrete rgb() strings
+          // so html2canvas never receives a var(--…) token it cannot parse.
+          // We intentionally copy ONLY color-related properties here to avoid
+          // inadvertently propagating layout constraints (overflow, white-space…)
+          // from the live element's computed style into the canvas context.
           const allEls = clonedEl.querySelectorAll('*');
           const allIncludingSelf = [clonedEl, ...Array.from(allEls)] as HTMLElement[];
           allIncludingSelf.forEach((node) => {
@@ -165,6 +170,34 @@ export function ROICalculator() {
             if (color) (node as HTMLElement).style.color = color;
             if (border) (node as HTMLElement).style.borderColor = border;
           });
+
+          // Pass 2: Undo layout constraints that the color loop inherited from
+          // the live computed style of the ROI headline.
+          // The `.roiValue` CSS rule sets overflow:hidden + white-space:nowrap +
+          // text-overflow:ellipsis as a safety net for the live UI. Those same
+          // properties get copied into the cloned element by Pass 1, which makes
+          // html2canvas clip the large neon-green percentage text during canvas
+          // rasterisation. We reset them explicitly so the full glyph is painted.
+          const roiValueEl = clonedEl.querySelector(
+            '[data-roi-value]'
+          ) as HTMLElement | null;
+          if (roiValueEl) {
+            roiValueEl.style.overflow    = 'visible';
+            roiValueEl.style.whiteSpace  = 'normal';
+            roiValueEl.style.textOverflow = 'clip';
+            roiValueEl.style.lineHeight  = 'normal';
+            roiValueEl.style.paddingTop  = '4px';
+            roiValueEl.style.paddingBottom = '8px';
+            roiValueEl.style.display     = 'block';
+            // Keep font-size from the live computed style so the heading renders
+            // at full size rather than whatever the clone's cascade resolves to.
+            const liveRoiEl = document.querySelector(
+              '[data-roi-value]'
+            ) as HTMLElement | null;
+            if (liveRoiEl) {
+              roiValueEl.style.fontSize = window.getComputedStyle(liveRoiEl).fontSize;
+            }
+          }
         },
       });
 
@@ -304,7 +337,7 @@ export function ROICalculator() {
 
           <div className={styles.resultCard} ref={resultCardRef} id="roi-summary-card" data-pdf-target>
             {/* BUG 1 FIX: ∞ when cost=0 and gain>0; N/A when cost=0 and no gain */}
-            <div className={styles.roiValue}>
+            <div className={styles.roiValue} data-roi-value>
               {formatROI(results.roiPercent, effectiveAiCost, results.netGain)}
             </div>
             <div className={styles.roiLabel}>Return on Investment</div>
