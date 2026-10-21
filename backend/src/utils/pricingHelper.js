@@ -14,12 +14,43 @@ import { supabase } from '../index.js';
  * plan does not include the required tier. Unknown models (no row) will
  * receive null and must be rejected with ENTITLEMENT_MODEL_NOT_ALLOWED.
  */
-export async function getPricingForModel(provider, modelName) {
+export async function getPricingForModel(provider, modelName, organizationId = null) {
+  const normProvider = provider ? provider.trim().toLowerCase() : '';
+  const normModel = modelName ? modelName.trim() : '';
+
+  // 1. If an organizationId is supplied, check for an approved custom rate in user_model_submissions
+  if (organizationId) {
+    try {
+      const { data: customSub } = await supabase
+        .from('user_model_submissions')
+        .select('input_cost_per_1k, output_cost_per_1k')
+        .eq('organization_id', organizationId)
+        .eq('provider', normProvider)
+        .eq('model_id', normModel)
+        .eq('status', 'approved')
+        .order('reviewed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (customSub && (Number(customSub.input_cost_per_1k) > 0 || Number(customSub.output_cost_per_1k) > 0)) {
+        return {
+          input_cost_per_1k: Number(customSub.input_cost_per_1k),
+          output_cost_per_1k: Number(customSub.output_cost_per_1k),
+          access_tier: 'basic',
+          is_custom_rate: true,
+        };
+      }
+    } catch (err) {
+      console.warn(`[pricingHelper] Error checking custom org pricing for ${provider}/${modelName}:`, err.message);
+    }
+  }
+
+  // 2. Fallback to global model_pricing catalog
   const { data, error } = await supabase
     .from('model_pricing')
     .select('input_cost_per_1k, output_cost_per_1k, access_tier')
-    .eq('provider', provider)
-    .eq('model', modelName)
+    .eq('provider', normProvider)
+    .eq('model', normModel)
     .eq('is_active', true)
     .order('effective_from', { ascending: false })
     .limit(1)
@@ -39,5 +70,6 @@ export async function getPricingForModel(provider, modelName) {
     input_cost_per_1k: Number(data.input_cost_per_1k),
     output_cost_per_1k: Number(data.output_cost_per_1k),
     access_tier: data.access_tier || 'basic',
+    is_custom_rate: false,
   };
 }

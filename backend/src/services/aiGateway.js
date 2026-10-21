@@ -151,7 +151,7 @@ export async function callProviderAndLog({
   // own cost_usd would either silently guess wrong or come out as $0 —
   // both mean the customer's dashboard shows incorrect billing. Better to
   // fail loud here than mis-bill silently.
-  const pricing = await getPricingForModel(provider, model);
+  const pricing = await getPricingForModel(provider, model, organization_id);
   if (!pricing) {
     const metadata = platform_key_id ? { source, platform_key_id } : { source };
 
