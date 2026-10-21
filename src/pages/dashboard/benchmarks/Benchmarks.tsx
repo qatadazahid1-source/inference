@@ -106,7 +106,8 @@ export function Benchmarks() {
       }
     } catch (err: any) {
       console.error('Benchmarks: failed to load benchmark data', err);
-      setError(err?.response?.data?.error || 'Could not load model pricing benchmark data.');
+      const errMsg = err?.data?.error || err?.response?.data?.error || err?.message || 'Could not load model pricing benchmark data.';
+      setError(errMsg);
     } finally {
       setIsLoading(false);
     }

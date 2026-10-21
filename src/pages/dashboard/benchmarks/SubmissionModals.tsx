@@ -37,6 +37,17 @@ const PROTOCOLS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function getErrorMessage(err: any, fallback: string): string {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  if (typeof err?.data?.error === 'string') return err.data.error;
+  if (typeof err?.response?.data?.error === 'string') return err.response.data.error;
+  if (typeof err?.data?.message === 'string') return err.data.message;
+  if (typeof err?.response?.data?.message === 'string') return err.response.data.message;
+  if (typeof err?.message === 'string' && err.message) return err.message;
+  return fallback;
+}
+
 function normalizedPreview(price: string, unit: 'per_1k' | 'per_1m'): string {
   const p = parseFloat(price);
   if (!isFinite(p) || price === '') return '—';
@@ -110,7 +121,7 @@ export function AddProviderModal({ isOpen, onClose, onSuccess }: AddProviderModa
       setSuccess(true);
       setTimeout(() => { setSuccess(false); onSuccess(); onClose(); }, 1800);
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Submission failed. Please try again.');
+      setError(getErrorMessage(err, 'Submission failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -232,6 +243,10 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
   ]);
   const [error, setError]     = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [successInfo, setSuccessInfo] = useState<{ title: string; body: string }>({
+    title: 'Submitted for Review',
+    body: 'An admin will review your model submission shortly.',
+  });
   const [loading, setLoading] = useState(false);
 
   const handleField = (f: string, v: string) => setForm(prev => ({ ...prev, [f]: v }));
@@ -257,15 +272,28 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
 
     setLoading(true);
     try {
-      await axiosClient.post('/api/submissions/models', {
+      const res = await axiosClient.post<{ auto_approved?: boolean; message?: string }>('/api/submissions/models', {
         ...form,
         context_window: form.context_window ? parseInt(form.context_window, 10) : null,
         pricing_components: validComponents,
       });
+
+      if (res.data?.auto_approved) {
+        setSuccessInfo({
+          title: 'Added to Benchmarks',
+          body: 'This model is verified in the catalog and has been immediately added to your organization\'s benchmarks.',
+        });
+      } else {
+        setSuccessInfo({
+          title: 'Submitted for Review',
+          body: 'An admin will review your model submission shortly.',
+        });
+      }
+
       setSuccess(true);
-      setTimeout(() => { setSuccess(false); onSuccess(); onClose(); }, 1800);
+      setTimeout(() => { setSuccess(false); onSuccess(); onClose(); }, 2000);
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Submission failed. Please try again.');
+      setError(getErrorMessage(err, 'Submission failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -285,8 +313,8 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
       {success ? (
         <div className={styles.successState}>
           <CheckCircle size={40} className={styles.successIcon} />
-          <h3>Submitted for Review</h3>
-          <p>An admin will review your model submission shortly.</p>
+          <h3>{successInfo.title}</h3>
+          <p>{successInfo.body}</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={styles.form}>

@@ -63,17 +63,20 @@ router.post('/providers', async (req, res) => {
   try {
     const orgId = await getOrganizationIdForUser(req.user.id);
 
-    // Check for duplicate pending submission from this org
+    // Check for duplicate pending or approved submission from this org
     const { data: existing } = await supabase
       .from('user_provider_submissions')
       .select('id, status')
       .eq('organization_id', orgId)
       .eq('provider_id', provider_id.trim().toLowerCase())
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
       .maybeSingle();
 
     if (existing) {
-      return res.status(409).json({ error: 'A pending submission for this provider already exists from your organization.' });
+      if (existing.status === 'pending') {
+        return res.status(409).json({ error: 'A pending submission for this provider already exists from your organization.' });
+      }
+      return res.status(409).json({ error: 'This provider is already available for your organization.' });
     }
 
     // Check against live catalog
@@ -84,7 +87,7 @@ router.post('/providers', async (req, res) => {
       .maybeSingle();
 
     if (liveProvider) {
-      return res.status(409).json({ error: 'A provider with this provider_id already exists in the catalog.' });
+      return res.status(409).json({ error: `Provider "${provider_id.trim().toLowerCase()}" already exists in the catalog. You can submit models directly for this provider.` });
     }
 
     const { data, error } = await supabase
@@ -186,21 +189,24 @@ router.post('/models', async (req, res) => {
   try {
     const orgId = await getOrganizationIdForUser(req.user.id);
 
-    // Duplicate pending check
+    // Duplicate check: has this organization already submitted this model?
     const { data: existing } = await supabase
       .from('user_model_submissions')
-      .select('id')
+      .select('id, status')
       .eq('organization_id', orgId)
       .eq('provider', provider.trim().toLowerCase())
       .eq('model_id', model_id.trim())
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
       .maybeSingle();
 
     if (existing) {
-      return res.status(409).json({ error: 'A pending submission for this model already exists from your organization.' });
+      if (existing.status === 'pending') {
+        return res.status(409).json({ error: 'A submission for this model is already pending review for your organization.' });
+      }
+      return res.status(409).json({ error: 'This model is already active in your organization\'s benchmarks.' });
     }
 
-    // Check against live model_pricing catalog
+    // Check if this model already exists in the live model_pricing catalog
     const { data: livePricing } = await supabase
       .from('model_pricing')
       .select('id')
@@ -209,31 +215,43 @@ router.post('/models', async (req, res) => {
       .eq('is_active', true)
       .maybeSingle();
 
-    if (livePricing) {
-      return res.status(409).json({ error: 'This model already exists in the active pricing catalog.' });
-    }
+    // If it's already an active, verified model in the catalog:
+    // Automatically approve and link it so it's ready in Section B right away!
+    const isCatalogModel = Boolean(livePricing);
+    const status = isCatalogModel ? 'approved' : 'pending';
+    const approvedPricingId = isCatalogModel ? livePricing.id : null;
+    const reviewedAt = isCatalogModel ? new Date().toISOString() : null;
 
     const { data, error } = await supabase
       .from('user_model_submissions')
       .insert({
-        submitted_by:       req.user.id,
-        organization_id:    orgId,
-        provider:           provider.trim().toLowerCase(),
-        model_id:           model_id.trim(),
-        display_name:       display_name.trim(),
-        docs_url:           docs_url?.trim()     || null,
-        context_window:     context_window ? parseInt(context_window, 10) : null,
-        pricing_components: normalizedComponents,
-        input_cost_per_1k:  inputComp?.normalized_per_1k  ?? null,
-        output_cost_per_1k: outputComp?.normalized_per_1k ?? null,
-        notes:              notes?.trim() || null,
-        status:             'pending',
+        submitted_by:              req.user.id,
+        organization_id:           orgId,
+        provider:                  provider.trim().toLowerCase(),
+        model_id:                  model_id.trim(),
+        display_name:              display_name.trim(),
+        docs_url:                  docs_url?.trim()     || null,
+        context_window:            context_window ? parseInt(context_window, 10) : null,
+        pricing_components:        normalizedComponents,
+        input_cost_per_1k:         inputComp?.normalized_per_1k  ?? null,
+        output_cost_per_1k:        outputComp?.normalized_per_1k ?? null,
+        notes:                     notes?.trim() || null,
+        status,
+        approved_model_pricing_id: approvedPricingId,
+        reviewed_at:               reviewedAt,
       })
       .select()
       .single();
 
     if (error) throw error;
-    res.status(201).json({ success: true, data });
+    res.status(201).json({
+      success: true,
+      data,
+      auto_approved: isCatalogModel,
+      message: isCatalogModel
+        ? 'Model verified from catalog and immediately added to your organization\'s benchmarks!'
+        : 'Model submitted for admin review.',
+    });
   } catch (err) {
     console.error('[submissions/models] POST error:', err.message);
     res.status(500).json({ error: 'Failed to submit model.' });
