@@ -144,12 +144,15 @@ router.post('/models', async (req, res) => {
     docs_url,
     context_window,
     pricing_components, // Array of { component_type, unit, price_per_unit }
+    pricing_type = 'custom_rate', // 'custom_rate' | 'global_update'
     notes,
   } = req.body;
 
   if (!provider?.trim() || !model_id?.trim() || !display_name?.trim()) {
     return res.status(400).json({ error: 'provider, model_id, and display_name are required.' });
   }
+
+  const validPricingType = pricing_type === 'global_update' ? 'global_update' : 'custom_rate';
 
   if (!Array.isArray(pricing_components) || pricing_components.length === 0) {
     return res.status(400).json({ error: 'At least one pricing_component is required.' });
@@ -209,18 +212,57 @@ router.post('/models', async (req, res) => {
     // Check if this model already exists in the live model_pricing catalog
     const { data: livePricing } = await supabase
       .from('model_pricing')
-      .select('id')
+      .select('id, input_cost_per_1k, output_cost_per_1k')
       .eq('provider', provider.trim().toLowerCase())
       .eq('model', model_id.trim())
       .eq('is_active', true)
       .maybeSingle();
 
-    // If it's already an active, verified model in the catalog:
-    // Automatically approve and link it so it's ready in Section B right away!
     const isCatalogModel = Boolean(livePricing);
-    const status = isCatalogModel ? 'approved' : 'pending';
-    const approvedPricingId = isCatalogModel ? livePricing.id : null;
-    const reviewedAt = isCatalogModel ? new Date().toISOString() : null;
+    let priceDiffDetected = false;
+    let catalogPricing = null;
+
+    if (isCatalogModel) {
+      const submittedInput = inputComp?.normalized_per_1k ?? 0;
+      const submittedOutput = outputComp?.normalized_per_1k ?? 0;
+      const catalogInput = Number(livePricing.input_cost_per_1k) || 0;
+      const catalogOutput = Number(livePricing.output_cost_per_1k) || 0;
+
+      catalogPricing = {
+        input_cost_per_1k: catalogInput,
+        output_cost_per_1k: catalogOutput,
+      };
+
+      // Check discrepancy (tolerance: $0.000001 per 1k tokens)
+      const inputDiff = Math.abs(submittedInput - catalogInput) > 0.000001;
+      const outputDiff = Math.abs(submittedOutput - catalogOutput) > 0.000001;
+      priceDiffDetected = inputDiff || outputDiff;
+    }
+
+    // Auto-approval policy:
+    // Only auto-approve if:
+    // 1) Model is already an active catalog model, AND
+    // 2) User submitted standard global pricing (validPricingType === 'global_update'), AND
+    // 3) No price discrepancy was detected (!priceDiffDetected).
+    // If the user specified 'custom_rate' OR entered different pricing, route to admin review.
+    const autoApprove = isCatalogModel && !priceDiffDetected && validPricingType === 'global_update';
+    const status = autoApprove ? 'approved' : 'pending';
+    const approvedPricingId = autoApprove ? livePricing.id : null;
+    const reviewedAt = autoApprove ? new Date().toISOString() : null;
+
+    // Attach pricing metadata to components
+    const componentsWithMeta = normalizedComponents.map(comp => ({
+      ...comp,
+      pricing_type: validPricingType,
+      price_diff_detected: priceDiffDetected,
+      catalog_per_1k: comp.component_type === 'input_tokens'
+        ? (catalogPricing?.input_cost_per_1k ?? null)
+        : (comp.component_type === 'output_tokens' ? (catalogPricing?.output_cost_per_1k ?? null) : null),
+    }));
+
+    const typeTag = validPricingType === 'custom_rate' ? '[Custom Rate]' : '[Global Provider Update]';
+    const diffTag = priceDiffDetected ? '[Price Difference Detected]' : '';
+    const annotatedNotes = [typeTag, diffTag, notes?.trim()].filter(Boolean).join(' ');
 
     const { data, error } = await supabase
       .from('user_model_submissions')
@@ -232,10 +274,10 @@ router.post('/models', async (req, res) => {
         display_name:              display_name.trim(),
         docs_url:                  docs_url?.trim()     || null,
         context_window:            context_window ? parseInt(context_window, 10) : null,
-        pricing_components:        normalizedComponents,
+        pricing_components:        componentsWithMeta,
         input_cost_per_1k:         inputComp?.normalized_per_1k  ?? null,
         output_cost_per_1k:        outputComp?.normalized_per_1k ?? null,
-        notes:                     notes?.trim() || null,
+        notes:                     annotatedNotes || null,
         status,
         approved_model_pricing_id: approvedPricingId,
         reviewed_at:               reviewedAt,
@@ -244,13 +286,23 @@ router.post('/models', async (req, res) => {
       .single();
 
     if (error) throw error;
+
+    let responseMessage = 'Model submitted for admin review.';
+    if (autoApprove) {
+      responseMessage = 'Model verified from catalog and immediately added to your organization\'s benchmarks!';
+    } else if (validPricingType === 'custom_rate') {
+      responseMessage = 'Custom negotiated rate submitted! An admin will review and verify your organization-specific pricing.';
+    } else if (priceDiffDetected) {
+      responseMessage = 'Price update detected! An admin will review and verify the new pricing against official provider rates.';
+    }
+
     res.status(201).json({
       success: true,
       data,
-      auto_approved: isCatalogModel,
-      message: isCatalogModel
-        ? 'Model verified from catalog and immediately added to your organization\'s benchmarks!'
-        : 'Model submitted for admin review.',
+      auto_approved: autoApprove,
+      pricing_type: validPricingType,
+      price_diff_detected: priceDiffDetected,
+      message: responseMessage,
     });
   } catch (err) {
     console.error('[submissions/models] POST error:', err.message);

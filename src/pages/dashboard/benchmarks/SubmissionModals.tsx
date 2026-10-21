@@ -236,6 +236,7 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
   const [form, setForm] = useState({
     provider: '', model_id: '', display_name: '',
     docs_url: '', context_window: '', notes: '',
+    pricing_type: 'custom_rate' as 'custom_rate' | 'global_update',
   });
   const [components, setComponents] = useState<PricingComponent[]>([
     { component_type: 'input_tokens',  unit: 'per_1m', price_per_unit: '' },
@@ -272,7 +273,7 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
 
     setLoading(true);
     try {
-      const res = await axiosClient.post<{ auto_approved?: boolean; message?: string }>('/api/submissions/models', {
+      const res = await axiosClient.post<{ auto_approved?: boolean; message?: string; price_diff_detected?: boolean }>('/api/submissions/models', {
         ...form,
         context_window: form.context_window ? parseInt(form.context_window, 10) : null,
         pricing_components: validComponents,
@@ -283,10 +284,15 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
           title: 'Added to Benchmarks',
           body: 'This model is verified in the catalog and has been immediately added to your organization\'s benchmarks.',
         });
+      } else if (res.data?.price_diff_detected) {
+        setSuccessInfo({
+          title: 'Submitted for Review',
+          body: res.data.message || 'Pricing discrepancy detected. An admin will review and verify your proposed pricing.',
+        });
       } else {
         setSuccessInfo({
           title: 'Submitted for Review',
-          body: 'An admin will review your model submission shortly.',
+          body: res.data?.message || 'An admin will review your model submission shortly.',
         });
       }
 
@@ -300,7 +306,7 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
   };
 
   const handleClose = () => {
-    setForm({ provider: '', model_id: '', display_name: '', docs_url: '', context_window: '', notes: '' });
+    setForm({ provider: '', model_id: '', display_name: '', docs_url: '', context_window: '', notes: '', pricing_type: 'custom_rate' });
     setComponents([
       { component_type: 'input_tokens',  unit: 'per_1m', price_per_unit: '' },
       { component_type: 'output_tokens', unit: 'per_1m', price_per_unit: '' },
@@ -444,6 +450,45 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
                 </button>
               </div>
             ))}
+          </div>
+
+          {/* ── Pricing Scope Selector (Required) ── */}
+          <div className={styles.formRow} style={{ marginTop: 14 }}>
+            <label className={styles.label}>
+              Pricing Scope *
+              <span className={styles.hint}> — Specify whether this is your organization's custom rate or a global provider update</span>
+            </label>
+            <div className={styles.pricingTypeGrid}>
+              <label className={`${styles.pricingTypeCard} ${form.pricing_type === 'custom_rate' ? styles.pricingTypeActive : ''}`}>
+                <input
+                  type="radio"
+                  name="pricing_type"
+                  value="custom_rate"
+                  checked={form.pricing_type === 'custom_rate'}
+                  onChange={() => handleField('pricing_type', 'custom_rate')}
+                  required
+                />
+                <div>
+                  <div className={styles.pricingTypeTitle}>🏢 Custom / Negotiated Rate</div>
+                  <div className={styles.pricingTypeDesc}>Special enterprise discount or custom contracted pricing for your organization.</div>
+                </div>
+              </label>
+
+              <label className={`${styles.pricingTypeCard} ${form.pricing_type === 'global_update' ? styles.pricingTypeActive : ''}`}>
+                <input
+                  type="radio"
+                  name="pricing_type"
+                  value="global_update"
+                  checked={form.pricing_type === 'global_update'}
+                  onChange={() => handleField('pricing_type', 'global_update')}
+                  required
+                />
+                <div>
+                  <div className={styles.pricingTypeTitle}>🌐 Global Provider Pricing</div>
+                  <div className={styles.pricingTypeDesc}>Publicly updated official pricing from the provider (applies to all users).</div>
+                </div>
+              </label>
+            </div>
           </div>
 
           <div className={styles.formRow} style={{ marginTop: 16 }}>

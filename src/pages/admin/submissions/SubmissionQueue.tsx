@@ -40,6 +40,9 @@ interface ModelSub {
     unit: string;
     price_per_unit: number;
     normalized_per_1k: number;
+    pricing_type?: 'custom_rate' | 'global_update';
+    price_diff_detected?: boolean;
+    catalog_per_1k?: number;
   }>;
   input_cost_per_1k?: number;
   output_cost_per_1k?: number;
@@ -50,6 +53,12 @@ interface ModelSub {
   submitted_by: string;
   created_at: string;
   submitter?: Submitter;
+  pricing_type?: 'custom_rate' | 'global_update';
+  price_diff_detected?: boolean;
+  catalog_pricing?: {
+    input_cost_per_1k?: number | null;
+    output_cost_per_1k?: number | null;
+  } | null;
 }
 
 // ─── Status Badge ─────────────────────────────────────────────────────────────
@@ -174,7 +183,7 @@ function ModelRow({
   onReject,
 }: {
   sub: ModelSub;
-  onApprove: (id: string) => Promise<void>;
+  onApprove: (id: string, updateGlobal?: boolean) => Promise<void>;
   onReject: (id: string, reason: string) => Promise<void>;
 }) {
   const [expanded,  setExpanded]  = useState(false);
@@ -182,17 +191,17 @@ function ModelRow({
   const [working,   setWorking]   = useState(false);
   const [error,     setError]     = useState<string | null>(null);
 
-  const approve = async () => {
+  const approve = async (updateGlobal = false) => {
     setWorking(true); setError(null);
-    try { await onApprove(sub.id); }
-    catch (e: any) { setError(e?.response?.data?.error ?? 'Approve failed.'); }
+    try { await onApprove(sub.id, updateGlobal); }
+    catch (e: any) { setError(e?.data?.error ?? e?.response?.data?.error ?? e?.message ?? 'Approve failed.'); }
     finally { setWorking(false); }
   };
 
   const reject = async (reason: string) => {
     setWorking(true); setError(null);
     try { await onReject(sub.id, reason); setRejecting(false); }
-    catch (e: any) { setError(e?.response?.data?.error ?? 'Reject failed.'); }
+    catch (e: any) { setError(e?.data?.error ?? e?.response?.data?.error ?? e?.message ?? 'Reject failed.'); }
     finally { setWorking(false); }
   };
 
@@ -203,6 +212,22 @@ function ModelRow({
           <span className={styles.subName}>{sub.display_name}</span>
           <code className={styles.subId}>{sub.model_id}</code>
           <span className={styles.subProto}>{sub.provider}</span>
+
+          {sub.pricing_type === 'custom_rate' ? (
+            <span className={styles.badgeCustomRate} title="Organization-specific custom negotiated rate">
+              🏢 Custom Rate
+            </span>
+          ) : (
+            <span className={styles.badgeGlobalUpdate} title="Global provider rate update">
+              🌐 Global Update
+            </span>
+          )}
+
+          {sub.price_diff_detected && (
+            <span className={styles.badgeDiff} title="Price discrepancy with catalog detected">
+              ⚠️ Price Discrepancy
+            </span>
+          )}
         </div>
         <div className={styles.subCardRight}>
           <StatusBadge status={sub.status} />
@@ -216,6 +241,31 @@ function ModelRow({
         <div className={styles.subCardBody}>
           {sub.docs_url && <a href={sub.docs_url} target="_blank" rel="noreferrer" className={styles.link}>Docs</a>}
           {sub.context_window && <div className={styles.meta}><strong>Context window:</strong> {sub.context_window.toLocaleString()} tokens</div>}
+
+          {/* Price discrepancy comparison banner */}
+          {(sub.price_diff_detected || sub.catalog_pricing) && (
+            <div className={styles.diffAlert}>
+              <div className={styles.diffTitle}>
+                <AlertCircle size={14} /> Price Discrepancy with Live Catalog
+              </div>
+              <div className={styles.diffGrid}>
+                <div className={styles.diffCol}>
+                  <span className={styles.diffLabel}>
+                    Submitter Requested ({sub.pricing_type === 'custom_rate' ? 'Custom Org Rate' : 'Global Update'}):
+                  </span>
+                  <div>Input: <strong>${((sub.input_cost_per_1k ?? 0) * 1000).toFixed(4)} / 1M</strong> <span className={styles.per1k}>(${Number(sub.input_cost_per_1k ?? 0).toFixed(6)} / 1K)</span></div>
+                  <div>Output: <strong>${((sub.output_cost_per_1k ?? 0) * 1000).toFixed(4)} / 1M</strong> <span className={styles.per1k}>(${Number(sub.output_cost_per_1k ?? 0).toFixed(6)} / 1K)</span></div>
+                </div>
+                {sub.catalog_pricing && (
+                  <div className={styles.diffCol}>
+                    <span className={styles.diffLabel}>Current Live Catalog Rate:</span>
+                    <div>Input: <strong>${((Number(sub.catalog_pricing.input_cost_per_1k) || 0) * 1000).toFixed(4)} / 1M</strong> <span className={styles.per1k}>(${Number(sub.catalog_pricing.input_cost_per_1k ?? 0).toFixed(6)} / 1K)</span></div>
+                    <div>Output: <strong>${((Number(sub.catalog_pricing.output_cost_per_1k) || 0) * 1000).toFixed(4)} / 1M</strong> <span className={styles.per1k}>(${Number(sub.catalog_pricing.output_cost_per_1k ?? 0).toFixed(6)} / 1K)</span></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Pricing components table */}
           {sub.pricing_components?.length > 0 && (
@@ -242,9 +292,23 @@ function ModelRow({
             </div>
           )}
           {error && <div className={styles.errorNote}><AlertCircle size={13} /> {error}</div>}
+
           {sub.status === 'pending' && !rejecting && (
             <div className={styles.actions}>
-              <Button onClick={approve} disabled={working}>{working ? 'Working…' : '✓ Approve'}</Button>
+              {sub.pricing_type === 'global_update' ? (
+                <>
+                  <Button onClick={() => approve(true)} disabled={working}>
+                    {working ? 'Working…' : '🌐 Update Global Catalog & Approve'}
+                  </Button>
+                  <Button variant="secondary" onClick={() => approve(false)} disabled={working}>
+                    ✓ Approve for Org Only
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => approve(false)} disabled={working}>
+                  {working ? 'Working…' : '✓ Approve as Custom Rate for Org'}
+                </Button>
+              )}
               <Button variant="ghost" onClick={() => setRejecting(true)} disabled={working}>✕ Reject</Button>
             </div>
           )}
@@ -292,8 +356,8 @@ export function SubmissionQueuePage() {
     await load();
   };
 
-  const approveModel = async (id: string) => {
-    await axiosClient.post(`/api/admin/submissions/models/${id}/approve`);
+  const approveModel = async (id: string, updateGlobal = false) => {
+    await axiosClient.post(`/api/admin/submissions/models/${id}/approve`, { update_global: updateGlobal });
     await load();
   };
 

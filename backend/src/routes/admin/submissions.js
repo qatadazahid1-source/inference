@@ -52,8 +52,35 @@ router.get('/', async (req, res) => {
       });
     }
 
+    // Enrich models with pricing_type and catalog comparison
+    models = models.map(m => {
+      const firstComp = Array.isArray(m.pricing_components) ? m.pricing_components[0] : null;
+      const pricingType = firstComp?.pricing_type || (m.notes?.includes('[Custom Rate]') ? 'custom_rate' : 'global_update');
+      const priceDiffDetected = Boolean(firstComp?.price_diff_detected || m.notes?.includes('[Price Difference Detected]'));
+
+      const inputComp = Array.isArray(m.pricing_components)
+        ? m.pricing_components.find(c => c.component_type === 'input_tokens')
+        : null;
+      const outputComp = Array.isArray(m.pricing_components)
+        ? m.pricing_components.find(c => c.component_type === 'output_tokens')
+        : null;
+
+      const hasCatalogRef = inputComp?.catalog_per_1k !== undefined || outputComp?.catalog_per_1k !== undefined;
+      const catalogPricing = hasCatalogRef ? {
+        input_cost_per_1k: inputComp?.catalog_per_1k ?? null,
+        output_cost_per_1k: outputComp?.catalog_per_1k ?? null,
+      } : null;
+
+      return {
+        ...m,
+        pricing_type: pricingType,
+        price_diff_detected: priceDiffDetected,
+        catalog_pricing: catalogPricing,
+        submitter: emailMap[m.submitted_by] || null,
+      };
+    });
+
     providers = providers.map(p => ({ ...p, submitter: emailMap[p.submitted_by] || null }));
-    models    = models.map(m => ({ ...m, submitter: emailMap[m.submitted_by] || null }));
 
     res.json({ data: { providers, models } });
   } catch (err) {
@@ -173,6 +200,7 @@ router.post('/providers/:id/reject', async (req, res) => {
 // ─── POST /api/admin/submissions/models/:id/approve ──────────────────────────
 router.post('/models/:id/approve', async (req, res) => {
   const { id } = req.params;
+  const { update_global = false } = req.body || {};
 
   try {
     const { data: sub, error: fetchErr } = await supabase
@@ -187,13 +215,38 @@ router.post('/models/:id/approve', async (req, res) => {
     // Collision check in live catalog
     const { data: existing } = await supabase
       .from('model_pricing')
-      .select('id')
+      .select('id, input_cost_per_1k, output_cost_per_1k')
       .eq('provider', sub.provider)
       .eq('model', sub.model_id)
       .eq('is_active', true)
       .maybeSingle();
 
     if (existing) {
+      if (update_global) {
+        await supabase
+          .from('model_pricing')
+          .update({
+            input_cost_per_1k:  sub.input_cost_per_1k  ?? existing.input_cost_per_1k,
+            output_cost_per_1k: sub.output_cost_per_1k ?? existing.output_cost_per_1k,
+            updated_at:         new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+
+        try {
+          await supabase.from('pricing_audit_log').insert({
+            changed_by:       req.user.id,
+            model_pricing_id: existing.id,
+            provider:         sub.provider,
+            model_name:       sub.model_id,
+            old_input_cost:   existing.input_cost_per_1k,
+            old_output_cost:  existing.output_cost_per_1k,
+            new_input_cost:   sub.input_cost_per_1k,
+            new_output_cost:  sub.output_cost_per_1k,
+            action:           'global_catalog_update_from_submission',
+          });
+        } catch (_) {}
+      }
+
       await supabase
         .from('user_model_submissions')
         .update({
@@ -205,7 +258,13 @@ router.post('/models/:id/approve', async (req, res) => {
         })
         .eq('id', id);
 
-      return res.json({ success: true, note: 'Model already exists in catalog. Marked approved and linked.', catalog_id: existing.id });
+      return res.json({
+        success: true,
+        note: update_global
+          ? 'Global catalog updated and submission approved.'
+          : 'Approved as custom organization rate linked to catalog model.',
+        catalog_id: existing.id,
+      });
     }
 
     // Insert into model_pricing

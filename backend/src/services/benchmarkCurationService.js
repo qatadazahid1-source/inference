@@ -232,15 +232,18 @@ export async function getUserAddedModels(userId, orgId) {
       if (seenKeys.has(uniqueKey)) continue; // Deduplicate
       seenKeys.add(uniqueKey);
 
-      const catalogRow = sub.approved_model_pricing_id ? catalogMap.get(sub.approved_model_pricing_id) : null;
-      
-      const inputCost = catalogRow?.input_cost_per_1k !== undefined
-        ? Number(catalogRow.input_cost_per_1k)
-        : Number(sub.input_cost_per_1k) || 0;
+      const firstComp = Array.isArray(sub.pricing_components) ? sub.pricing_components[0] : null;
+      const isCustomRate = firstComp?.pricing_type === 'custom_rate' || sub.notes?.includes('[Custom Rate]');
 
-      const outputCost = catalogRow?.output_cost_per_1k !== undefined
-        ? Number(catalogRow.output_cost_per_1k)
-        : Number(sub.output_cost_per_1k) || 0;
+      // If this submission was approved as a custom organization rate, prioritize its custom pricing;
+      // otherwise use the canonical catalog rate.
+      const inputCost = (isCustomRate && Number(sub.input_cost_per_1k) > 0)
+        ? Number(sub.input_cost_per_1k)
+        : (catalogRow?.input_cost_per_1k !== undefined ? Number(catalogRow.input_cost_per_1k) : Number(sub.input_cost_per_1k) || 0);
+
+      const outputCost = (isCustomRate && Number(sub.output_cost_per_1k) > 0)
+        ? Number(sub.output_cost_per_1k)
+        : (catalogRow?.output_cost_per_1k !== undefined ? Number(catalogRow.output_cost_per_1k) : Number(sub.output_cost_per_1k) || 0);
 
       const hasValidPricing = (inputCost > 0 || outputCost > 0);
       const isRoutingSupported = SUPPORTED_GATEWAY_PROVIDERS.has(sub.provider.toLowerCase().trim());

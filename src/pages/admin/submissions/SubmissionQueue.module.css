@@ -329,3 +329,100 @@
 .badgePending  { background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250,204,21,0.25); color: #fbbf24; }
 .badgeApproved { background: rgba(34, 197, 94, 0.1);  border: 1px solid rgba(34,197,94,0.2);   color: #4ade80; }
 .badgeRejected { background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239,68,68,0.2);   color: #f87171; }
+
+/* Pricing Type & Diff badges */
+.badgeCustomRate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  color: #c084fc;
+}
+
+.badgeGlobalUpdate {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  color: #38bdf8;
+}
+
+.badgeDiff {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+/* Price discrepancy alert box */
+.diffAlert {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 10px 0 14px;
+}
+
+.diffTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f59e0b;
+  margin-bottom: 8px;
+}
+
+.diffGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+.diffCol {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.diffLabel {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.per1k {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+@media (max-width: 600px) {
+  .diffGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -248,6 +248,54 @@
   color: #f87171;
 }
 
+/* Pricing Scope selector */
+.pricingTypeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.pricingTypeCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface, #0f1117);
+  border: 1px solid var(--color-border, rgba(255,255,255,0.1));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pricingTypeCard:hover {
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+.pricingTypeCard input[type="radio"] {
+  margin-top: 3px;
+  accent-color: #7c3aed;
+  cursor: pointer;
+}
+
+.pricingTypeActive {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.pricingTypeTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text, #f8fafc);
+  margin-bottom: 2px;
+}
+
+.pricingTypeDesc {
+  font-size: 11px;
+  color: var(--color-text-muted, #94a3b8);
+  line-height: 1.4;
+}
+
 /* Success state */
 .successState {
   display: flex;
