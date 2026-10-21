@@ -3,12 +3,18 @@ import { supabase } from '../../index.js';
 import { extractPricingFromUrl } from '../../utils/llmScraper.js';
 import { runPortkeySync, applyPortkeySyncToDB, getPortkeySyncStatus } from '../../controllers/portkeyScraperController.js';
 import { runOpenRouterSync, applyOpenRouterSyncToDB } from '../../controllers/openrouterScraperController.js';
+import {
+  getSystemCuratedModels,
+  setModelCuration,
+  reorderCuratedModels,
+  MAX_CURATED_MODELS,
+} from '../../services/benchmarkCurationService.js';
 
 const router = express.Router();
 
-// â”€â”€â”€ Pricing Audit Logger â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Pricing Audit Logger ──────────────────────────────────────────────────
 // Inserts a row in pricing_audit_log before returning a response.
-// Called by PUT and POST routes. Never throws â€” audit failure is silent so
+// Called by PUT and POST routes. Never throws — audit failure is silent so
 // the actual pricing update is not rolled back because of it.
 async function logPricingChange({ changedBy, modelPricingId, provider, modelName, oldInputCost, oldOutputCost, newInputCost, newOutputCost, action }) {
   try {
@@ -28,8 +34,9 @@ async function logPricingChange({ changedBy, modelPricingId, provider, modelName
   }
 }
 
-// â”€â”€â”€ GET /api/admin/pricing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/admin/pricing ──────────────────────────────────────────────────
 // All model_pricing rows, ordered by provider then model name.
+// Preserves the FULL ~1,000+ model catalog for platform admins.
 router.get('/', async (req, res) => {
   try {
     let allData = [];
@@ -62,11 +69,62 @@ router.get('/', async (req, res) => {
   }
 });
 
-// â”€â”€â”€ PUT /api/admin/pricing/:id â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET /api/admin/pricing/featured ─────────────────────────────────────────
+// Returns the currently curated models for the Benchmark section (max 20).
+router.get('/featured', async (req, res) => {
+  try {
+    const featured = await getSystemCuratedModels();
+    res.json({
+      data: featured,
+      count: featured.length,
+      max_limit: MAX_CURATED_MODELS,
+    });
+  } catch (err) {
+    console.error('[admin/pricing] GET /featured error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch featured benchmark models.' });
+  }
+});
+
+// ─── POST /api/admin/pricing/featured ────────────────────────────────────────
+// Add, remove, or re-order models in the Benchmark curation list.
+router.post('/featured', async (req, res) => {
+  try {
+    const { modelPricingId, isFeatured, rank, orderedModelIds } = req.body;
+
+    if (Array.isArray(orderedModelIds)) {
+      const result = await reorderCuratedModels(orderedModelIds);
+      return res.json(result);
+    }
+
+    if (!modelPricingId) {
+      return res.status(400).json({ error: 'modelPricingId is required.' });
+    }
+
+    const result = await setModelCuration({
+      modelPricingId,
+      isFeatured: Boolean(isFeatured),
+      rank: rank ? parseInt(rank, 10) : null,
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('[admin/pricing] POST /featured error:', err.message);
+    res.status(400).json({ error: err.message || 'Failed to update featured model.' });
+  }
+});
+
+// ─── PUT /api/admin/pricing/:id ──────────────────────────────────────────────
 // Update a specific pricing row by UUID. Logs to pricing_audit_log.
+// Supports updating is_benchmark_featured and benchmark_rank.
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { input_cost_per_1k, output_cost_per_1k, is_active } = req.body;
+  const {
+    input_cost_per_1k,
+    output_cost_per_1k,
+    is_active,
+    is_benchmark_featured,
+    benchmark_rank,
+  } = req.body;
 
   try {
     // Fetch current values for the audit log
@@ -80,10 +138,25 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Pricing row not found.' });
     }
 
+    // If benchmark curation changed, sync with curation service
+    if (is_benchmark_featured !== undefined) {
+      try {
+        await setModelCuration({
+          modelPricingId: id,
+          isFeatured: Boolean(is_benchmark_featured),
+          rank: benchmark_rank ? parseInt(benchmark_rank, 10) : null,
+        });
+      } catch (curationErr) {
+        return res.status(400).json({ error: curationErr.message });
+      }
+    }
+
     const updates = {};
     if (input_cost_per_1k !== undefined) updates.input_cost_per_1k = input_cost_per_1k;
     if (output_cost_per_1k !== undefined) updates.output_cost_per_1k = output_cost_per_1k;
     if (is_active !== undefined) updates.is_active = is_active;
+    if (is_benchmark_featured !== undefined) updates.is_benchmark_featured = Boolean(is_benchmark_featured);
+    if (benchmark_rank !== undefined) updates.benchmark_rank = benchmark_rank ? parseInt(benchmark_rank, 10) : null;
     updates.updated_at = new Date().toISOString();
 
     const { data, error } = await supabase
@@ -93,7 +166,22 @@ router.put('/:id', async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // If error is due to missing columns in DB, retry without the curation columns in DB
+      if (error.message?.includes('is_benchmark_featured') || error.message?.includes('benchmark_rank')) {
+        delete updates.is_benchmark_featured;
+        delete updates.benchmark_rank;
+        const retryRes = await supabase
+          .from('model_pricing')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+        if (retryRes.error) throw retryRes.error;
+      } else {
+        throw error;
+      }
+    }
 
     // Determine action for the audit log
     const action = is_active === false ? 'deactivated' : 'updated';
@@ -110,7 +198,7 @@ router.put('/:id', async (req, res) => {
       action,
     });
 
-    res.json({ success: true, data });
+    res.json({ success: true, data: data || { id, ...updates } });
   } catch (err) {
     console.error('[admin/pricing] PUT error:', err.message);
     res.status(500).json({ error: 'An internal server error occurred.' });

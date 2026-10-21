@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, History, X, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, History, X, AlertTriangle, ArrowRight, RefreshCw, Star, Sparkles } from 'lucide-react';
 import { adminService, type ModelPricing, type PricingAuditLog } from '../../../api/services/admin.service';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/Card/Card';
 import { DataTable } from '../../../components/ui/DataTable/DataTable';
@@ -10,6 +10,10 @@ export function ModelPricingPage() {
   const [auditLog, setAuditLog] = useState<PricingAuditLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Benchmark curation state
+  const [featuredMap, setFeaturedMap] = useState<Record<string, number>>({});
+  const [filterTab, setFilterTab]     = useState<'all' | 'featured'>('all');
+
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<ModelPricing | null>(null);
@@ -21,8 +25,16 @@ export function ModelPricingPage() {
 
   const fetchPricing = async () => {
     try {
-      const data = await adminService.getPricing();
-      setPricing(data);
+      const [pricingData, featuredRes] = await Promise.all([
+        adminService.getPricing(),
+        adminService.getFeaturedPricing().catch(() => ({ data: [], count: 0, max_limit: 20 })),
+      ]);
+      setPricing(pricingData);
+      const fMap: Record<string, number> = {};
+      (featuredRes.data || []).forEach((m: any, idx: number) => {
+        fMap[m.id] = m.benchmark_rank || idx + 1;
+      });
+      setFeaturedMap(fMap);
     } catch (err) {
       console.error('Failed to fetch pricing:', err);
     } finally {
@@ -108,6 +120,39 @@ export function ModelPricingPage() {
     });
   };
 
+  const handleToggleFeatured = async (row: ModelPricing) => {
+    const isCurrentlyFeatured = featuredMap[row.id] !== undefined || Boolean(row.is_benchmark_featured);
+    const currentCount = Object.keys(featuredMap).length;
+
+    if (!isCurrentlyFeatured && currentCount >= 20) {
+      alert('Cannot feature more than 20 models in the Benchmark section. Please unfeature an existing model first.');
+      return;
+    }
+
+    try {
+      await adminService.setFeaturedPricing({
+        modelPricingId: row.id,
+        isFeatured: !isCurrentlyFeatured,
+      });
+
+      setFeaturedMap(prev => {
+        const next = { ...prev };
+        if (isCurrentlyFeatured) {
+          delete next[row.id];
+        } else {
+          next[row.id] = Object.keys(prev).length + 1;
+        }
+        return next;
+      });
+
+      setPricing(prev =>
+        prev.map(p => p.id === row.id ? { ...p, is_benchmark_featured: !isCurrentlyFeatured } : p)
+      );
+    } catch (err: any) {
+      alert(err?.response?.data?.error || err.message || 'Failed to update benchmark featured status');
+    }
+  };
+
   const handleSyncCustomUrls = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSyncing(true);
@@ -181,6 +226,15 @@ export function ModelPricingPage() {
     setCustomProviders(updated);
   };
 
+  const displayedPricing = useMemo(() => {
+    if (filterTab === 'featured') {
+      return pricing
+        .filter(p => featuredMap[p.id] !== undefined || p.is_benchmark_featured)
+        .sort((a, b) => (featuredMap[a.id] || 99) - (featuredMap[b.id] || 99));
+    }
+    return pricing;
+  }, [pricing, filterTab, featuredMap]);
+
   const columns = [
     { header: 'Provider', accessorKey: 'provider' },
     { header: 'Model', accessorKey: 'model' },
@@ -193,6 +247,36 @@ export function ModelPricingPage() {
       header: 'Output Cost ($ / 1k)', 
       accessorKey: 'output_cost_per_1k',
       cell: (val: number) => `$${val.toFixed(4)}`
+    },
+    { 
+      header: 'Benchmark', 
+      accessorKey: 'id',
+      cell: (id: string, row: ModelPricing) => {
+        const isFeatured = featuredMap[id] !== undefined || Boolean(row.is_benchmark_featured);
+        const rank = featuredMap[id] || row.benchmark_rank;
+        return (
+          <button
+            type="button"
+            onClick={() => handleToggleFeatured(row)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '4px 8px',
+              borderRadius: '4px',
+              border: isFeatured ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid var(--color-border)',
+              background: isFeatured ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
+              color: isFeatured ? '#38bdf8' : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+              fontSize: '11px',
+              fontWeight: 600,
+            }}
+            title={isFeatured ? `Featured in Benchmark (#${rank || '—'}). Click to unfeature.` : 'Click to feature in Benchmark (Max 20)'}
+          >
+            {isFeatured ? `★ Ranked #${rank || '—'}` : '☆ Feature'}
+          </button>
+        );
+      }
     },
     { 
       header: 'Status', 
@@ -254,11 +338,33 @@ export function ModelPricingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Current Rates</CardTitle>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', flexWrap: 'wrap', gap: 12 }}>
+            <CardTitle>
+              {filterTab === 'featured' ? `Benchmark Curated Models (${displayedPricing.length} of max 20)` : `Current Rates (${pricing.length} models)`}
+            </CardTitle>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className={filterTab === 'all' ? styles.btnPrimary : styles.btnSecondary}
+                style={{ padding: '6px 12px', fontSize: 12 }}
+                onClick={() => setFilterTab('all')}
+              >
+                All Models ({pricing.length})
+              </button>
+              <button
+                type="button"
+                className={filterTab === 'featured' ? styles.btnPrimary : styles.btnSecondary}
+                style={{ padding: '6px 12px', fontSize: 12 }}
+                onClick={() => setFilterTab('featured')}
+              >
+                ★ Benchmark Curated ({Object.keys(featuredMap).length} / 20)
+              </button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <DataTable 
-            data={pricing} 
+            data={displayedPricing} 
             columns={columns} 
             isLoading={isLoading} 
           />

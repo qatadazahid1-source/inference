@@ -30,6 +30,8 @@ export interface ModelPricing {
   effective_from: string;
   effective_to?: string;
   updated_at: string;
+  is_benchmark_featured?: boolean;
+  benchmark_rank?: number;
 }
 
 export interface PricingAuditLog {
@@ -106,6 +108,16 @@ export const adminService = {
   getPricingAuditLog: async (): Promise<PricingAuditLog[]> => {
     const { data } = await axiosClient.get<{ data: PricingAuditLog[] }>('/api/admin/pricing/audit-log');
     return data.data;
+  },
+
+  getFeaturedPricing: async (): Promise<{ data: ModelPricing[]; count: number; max_limit: number }> => {
+    const { data } = await axiosClient.get<{ data: ModelPricing[]; count: number; max_limit: number }>('/api/admin/pricing/featured');
+    return data;
+  },
+
+  setFeaturedPricing: async (params: { modelPricingId?: string; isFeatured?: boolean; rank?: number; orderedModelIds?: string[] }): Promise<any> => {
+    const { data } = await axiosClient.post('/api/admin/pricing/featured', params);
+    return data;
   },
 
   // --- Organizations ---

@@ -100,6 +100,9 @@ const AdminBlogPage = lazy(() =>
 const AdminProvidersPage = lazy(() =>
   import('./pages/admin/providers/AdminProviders').then((m) => ({ default: m.AdminProvidersPage }))
 );
+const SubmissionQueuePage = lazy(() =>
+  import('./pages/admin/submissions/SubmissionQueue').then((m) => ({ default: m.SubmissionQueuePage }))
+);
 const Forbidden403 = lazy(() =>
   import('./pages/admin/Forbidden403').then((m) => ({ default: m.Forbidden403 }))
 );
@@ -323,6 +326,7 @@ export default function App() {
           <Route path="pages" element={<AdminPagesPage />} />
           <Route path="blog" element={<AdminBlogPage />} />
           <Route path="providers" element={<AdminProvidersPage />} />
+          <Route path="submissions" element={<SubmissionQueuePage />} />
         </Route>
 
         {/* ── Blog (CMS-driven, explicit routes before catch-all) ── */}

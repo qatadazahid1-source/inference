@@ -24,6 +24,7 @@ import slackRouter from './routes/slack.js';
 import webhooksRouter from './routes/webhooks.js';
 import anomaliesRouter from './routes/anomalies.js';
 import v1Router from './routes/v1.js';
+import submissionsRouter from './routes/submissions.js';
 import rateLimit from 'express-rate-limit';
 import crypto from 'crypto';
 import cron from 'node-cron';
@@ -211,6 +212,7 @@ app.use('/api/slack', (req, res, next) => {
 }, slackRouter);
 app.use('/api/webhooks', requireAuth, webhooksRouter);
 app.use('/api/anomalies', requireAuth, anomaliesRouter);
+app.use('/api/submissions', requireAuth, submissionsRouter);
 
 // Public external gateway — NOT requireAuth. Callers authenticate with a
 // Platform Key (ii_sk_live_...) instead of a Supabase session.

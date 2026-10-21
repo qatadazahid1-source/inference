@@ -17,6 +17,7 @@ import providersRouter from './providers.js';
 import pricingAgentRouter from './pricingAgent.js';
 import adminsRouter from './admins.js';
 import blogRouter from './blog.js';
+import submissionsRouter from './submissions.js';
 
 
 const router = express.Router();
@@ -52,5 +53,6 @@ router.use('/blog', blogRouter);
 router.use('/providers', providersRouter);
 router.use('/pricing-agent', pricingAgentRouter);
 router.use('/admins', adminsRouter);
+router.use('/submissions', submissionsRouter);
 
 export default router;
