@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios';
 import { supabase } from '../../index.js';
 
 const router = express.Router();
@@ -52,6 +53,26 @@ router.get('/', async (req, res) => {
       });
     }
 
+    // Enrich with organization names
+    const allOrgIds = [
+      ...new Set([
+        ...providers.map(p => p.organization_id).filter(Boolean),
+        ...models.map(m => m.organization_id).filter(Boolean),
+      ]),
+    ];
+
+    let orgMap = {};
+    if (allOrgIds.length > 0) {
+      const { data: orgsData } = await supabase
+        .from('organizations')
+        .select('id, name')
+        .in('id', allOrgIds);
+
+      (orgsData || []).forEach(o => {
+        orgMap[o.id] = o.name;
+      });
+    }
+
     // Enrich models with pricing_type and catalog comparison
     models = models.map(m => {
       const firstComp = Array.isArray(m.pricing_components) ? m.pricing_components[0] : null;
@@ -76,11 +97,16 @@ router.get('/', async (req, res) => {
         pricing_type: pricingType,
         price_diff_detected: priceDiffDetected,
         catalog_pricing: catalogPricing,
+        organization_name: orgMap[m.organization_id] || 'Organization',
         submitter: emailMap[m.submitted_by] || null,
       };
     });
 
-    providers = providers.map(p => ({ ...p, submitter: emailMap[p.submitted_by] || null }));
+    providers = providers.map(p => ({
+      ...p,
+      organization_name: orgMap[p.organization_id] || 'Organization',
+      submitter: emailMap[p.submitted_by] || null,
+    }));
 
     res.json({ data: { providers, models } });
   } catch (err) {
@@ -355,6 +381,233 @@ router.post('/models/:id/reject', async (req, res) => {
   } catch (err) {
     console.error('[admin/submissions] reject model error:', err.message);
     res.status(500).json({ error: 'Failed to reject model submission.' });
+  }
+});
+
+// ─── POST /api/admin/submissions/test-ping ────────────────────────────────────
+// Probes an API Base URL or test a submitted provider/model
+router.post('/test-ping', async (req, res) => {
+  let { base_url, protocol = 'openai_compatible', model_id, provider_sub_id, model_sub_id } = req.body;
+
+  try {
+    // If provider_sub_id is supplied, look up the submission
+    if (provider_sub_id && !base_url) {
+      const { data: pSub } = await supabase
+        .from('user_provider_submissions')
+        .select('base_url, protocol')
+        .eq('id', provider_sub_id)
+        .single();
+      if (pSub?.base_url) {
+        base_url = pSub.base_url;
+        protocol = pSub.protocol || protocol;
+      }
+    }
+
+    // If model_sub_id is supplied, look up the model and its provider base_url
+    if (model_sub_id && !base_url) {
+      const { data: mSub } = await supabase
+        .from('user_model_submissions')
+        .select('provider, model_id')
+        .eq('id', model_sub_id)
+        .single();
+      if (mSub) {
+        model_id = mSub.model_id;
+        const { data: pSub } = await supabase
+          .from('user_provider_submissions')
+          .select('base_url, protocol')
+          .eq('provider_id', mSub.provider)
+          .eq('status', 'approved')
+          .maybeSingle();
+        if (pSub?.base_url) {
+          base_url = pSub.base_url;
+        } else if (mSub.provider === 'openai') {
+          base_url = 'https://api.openai.com/v1';
+        } else if (mSub.provider === 'groq') {
+          base_url = 'https://api.groq.com/openai/v1';
+        } else if (mSub.provider === 'mistral') {
+          base_url = 'https://api.mistral.ai/v1';
+        }
+      }
+    }
+
+    if (!base_url || typeof base_url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'No valid API Base URL provided or found for this submission.',
+      });
+    }
+
+    // Auto-clean base_url
+    let cleanUrl = base_url.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/i, '');
+    const startTime = Date.now();
+
+    let probeEndpoint = `${cleanUrl}/chat/completions`;
+    let response;
+    let requestError = null;
+
+    try {
+      response = await axios.post(
+        probeEndpoint,
+        {
+          model: model_id || 'test-probe',
+          messages: [{ role: 'user', content: 'ping' }],
+          max_tokens: 1,
+        },
+        {
+          headers: {
+            'Authorization': 'Bearer ordisum_probe_test_token',
+            'Content-Type': 'application/json',
+          },
+          timeout: 6000,
+          validateStatus: () => true, // Don't throw on 4xx/5xx
+        }
+      );
+    } catch (err) {
+      requestError = err;
+    }
+
+    const latencyMs = Date.now() - startTime;
+
+    if (requestError) {
+      const errMsg = requestError.message || '';
+      const code = requestError.code || '';
+
+      if (code === 'ENOTFOUND' || errMsg.includes('getaddrinfo ENOTFOUND')) {
+        return res.json({
+          success: true,
+          reachable: false,
+          status_code: null,
+          latency_ms: latencyMs,
+          verdict: 'DNS_ERROR',
+          badge: 'danger',
+          recommendation: 'REJECT',
+          title: 'DNS Resolution Failed (Domain Not Found)',
+          message: `The domain in Base URL "${cleanUrl}" could not be resolved. The host does not exist or has a typo. Do NOT approve.`,
+        });
+      }
+
+      if (code === 'ECONNREFUSED' || errMsg.includes('ECONNREFUSED')) {
+        return res.json({
+          success: true,
+          reachable: false,
+          status_code: null,
+          latency_ms: latencyMs,
+          verdict: 'CONNECTION_REFUSED',
+          badge: 'danger',
+          recommendation: 'REJECT',
+          title: 'Connection Refused',
+          message: `The server at "${cleanUrl}" actively refused the connection. Server may be down or port is blocked.`,
+        });
+      }
+
+      if (code === 'ECONNABORTED' || errMsg.includes('timeout')) {
+        return res.json({
+          success: true,
+          reachable: false,
+          status_code: null,
+          latency_ms: latencyMs,
+          verdict: 'TIMEOUT',
+          badge: 'warning',
+          recommendation: 'CAUTION',
+          title: 'Connection Timed Out (6000ms)',
+          message: `The server at "${cleanUrl}" did not respond within 6 seconds. Host may be unreachable or extremely slow.`,
+        });
+      }
+
+      return res.json({
+        success: true,
+        reachable: false,
+        status_code: null,
+        latency_ms: latencyMs,
+        verdict: 'NETWORK_ERROR',
+        badge: 'danger',
+        recommendation: 'REJECT',
+        title: 'Network / SSL Error',
+        message: `Network error connecting to "${cleanUrl}": ${errMsg}`,
+      });
+    }
+
+    const status = response.status;
+    const rawData = typeof response.data === 'string'
+      ? response.data.slice(0, 300)
+      : JSON.stringify(response.data).slice(0, 300);
+
+    if (status === 200) {
+      return res.json({
+        success: true,
+        reachable: true,
+        status_code: 200,
+        latency_ms: latencyMs,
+        verdict: 'HEALTHY_200',
+        badge: 'success',
+        recommendation: 'APPROVE',
+        title: 'HTTP 200 OK — Fully Accessible',
+        message: `Endpoint responded successfully with HTTP 200 OK (${latencyMs}ms). It is live, reachable, and ready.`,
+        raw_snippet: rawData,
+      });
+    }
+
+    if (status === 401 || status === 403) {
+      return res.json({
+        success: true,
+        reachable: true,
+        status_code: status,
+        latency_ms: latencyMs,
+        verdict: 'VALID_AUTH_REQUIRED',
+        badge: 'info',
+        recommendation: 'APPROVE',
+        title: `HTTP ${status} — Valid API (Auth Required)`,
+        message: `Endpoint is live and correctly responded with HTTP ${status} Authentication Required (${latencyMs}ms). This is expected behavior for OpenAI-compatible APIs when probed without a real user API key. Safe to approve!`,
+        raw_snippet: rawData,
+      });
+    }
+
+    if (status === 400) {
+      return res.json({
+        success: true,
+        reachable: true,
+        status_code: 400,
+        latency_ms: latencyMs,
+        verdict: 'ACTIVE_BAD_REQUEST',
+        badge: 'info',
+        recommendation: 'APPROVE',
+        title: 'HTTP 400 — Active Server',
+        message: `Endpoint reached and processed request (${latencyMs}ms). Server responded with 400 (likely due to probe model identifier). The endpoint is live.`,
+        raw_snippet: rawData,
+      });
+    }
+
+    if (status === 404) {
+      return res.json({
+        success: true,
+        reachable: true,
+        status_code: 404,
+        latency_ms: latencyMs,
+        verdict: 'NOT_FOUND_404',
+        badge: 'danger',
+        recommendation: 'REJECT',
+        title: 'HTTP 404 — Endpoint Not Found',
+        message: `Endpoint returned 404 Not Found (${latencyMs}ms). The Base URL path is likely wrong (e.g. missing /v1, e.g. should be "${cleanUrl}/v1"). Double-check before approving.`,
+        raw_snippet: rawData,
+      });
+    }
+
+    return res.json({
+      success: true,
+      reachable: true,
+      status_code: status,
+      latency_ms: latencyMs,
+      verdict: `HTTP_${status}`,
+      badge: status >= 500 ? 'danger' : 'warning',
+      recommendation: status >= 500 ? 'CAUTION' : 'REVIEW',
+      title: `HTTP ${status} Response`,
+      message: `Endpoint responded with HTTP ${status} (${latencyMs}ms).`,
+      raw_snippet: rawData,
+    });
+
+  } catch (err) {
+    console.error('[admin/submissions/test-ping] Error:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

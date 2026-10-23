@@ -1,5 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
-import { CheckCircle, XCircle, Clock, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  Zap,
+  Copy,
+  ExternalLink,
+  Activity,
+} from 'lucide-react';
 import { Button } from '../../../components/ui/Button/Button';
 import axiosClient from '../../../lib/axios';
 import styles from './SubmissionQueue.module.css';
@@ -9,6 +20,19 @@ import styles from './SubmissionQueue.module.css';
 interface Submitter {
   email?: string;
   full_name?: string;
+}
+
+interface PingResult {
+  success: boolean;
+  reachable: boolean;
+  status_code: number | null;
+  latency_ms: number;
+  verdict: string;
+  badge: 'success' | 'info' | 'warning' | 'danger';
+  recommendation: 'APPROVE' | 'REJECT' | 'CAUTION' | 'REVIEW';
+  title: string;
+  message: string;
+  raw_snippet?: string;
 }
 
 interface ProviderSub {
@@ -24,6 +48,8 @@ interface ProviderSub {
   rejection_reason?: string;
   reviewed_at?: string;
   submitted_by: string;
+  organization_id?: string;
+  organization_name?: string;
   created_at: string;
   submitter?: Submitter;
 }
@@ -51,6 +77,8 @@ interface ModelSub {
   rejection_reason?: string;
   reviewed_at?: string;
   submitted_by: string;
+  organization_id?: string;
+  organization_name?: string;
   created_at: string;
   submitter?: Submitter;
   pricing_type?: 'custom_rate' | 'global_update';
@@ -70,6 +98,36 @@ function StatusBadge({ status }: { status: string }) {
   };
   const cfg = map[status] ?? map.pending;
   return <span className={`${styles.badge} ${cfg.cls}`}>{cfg.icon} {cfg.label}</span>;
+}
+
+// ─── Ping Result Banner ───────────────────────────────────────────────────────
+function PingResultBanner({ result }: { result: PingResult }) {
+  const badgeClass =
+    result.badge === 'success'
+      ? styles.pingSuccess
+      : result.badge === 'info'
+      ? styles.pingInfo
+      : result.badge === 'warning'
+      ? styles.pingWarning
+      : styles.pingDanger;
+
+  return (
+    <div className={`${styles.pingResultCard} ${badgeClass}`}>
+      <div className={styles.pingHeader}>
+        <div className={styles.pingTitle}>
+          <Activity size={14} />
+          {result.title}
+        </div>
+        {result.latency_ms > 0 && (
+          <span className={styles.pingLatency}>{result.latency_ms}ms</span>
+        )}
+      </div>
+      <p className={styles.pingMessage}>{result.message}</p>
+      {result.raw_snippet && (
+        <pre className={styles.pingSnippet}>{result.raw_snippet}</pre>
+      )}
+    </div>
+  );
 }
 
 // ─── Rejection reason dialog (inline) ────────────────────────────────────────
@@ -110,10 +168,13 @@ function ProviderRow({
   onApprove: (id: string) => Promise<void>;
   onReject: (id: string, reason: string) => Promise<void>;
 }) {
-  const [expanded,  setExpanded]  = useState(false);
-  const [rejecting, setRejecting] = useState(false);
-  const [working,   setWorking]   = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
+  const [expanded,   setExpanded]   = useState(false);
+  const [rejecting,  setRejecting]  = useState(false);
+  const [working,    setWorking]    = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
+  const [pinging,    setPinging]    = useState(false);
+  const [pingResult, setPingResult] = useState<PingResult | null>(null);
+  const [copied,     setCopied]     = useState(false);
 
   const approve = async () => {
     setWorking(true); setError(null);
@@ -129,6 +190,40 @@ function ProviderRow({
     finally { setWorking(false); }
   };
 
+  const testEndpoint = async () => {
+    setPinging(true);
+    setPingResult(null);
+    try {
+      const res = await axiosClient.post<PingResult>('/api/admin/submissions/test-ping', {
+        provider_sub_id: sub.id,
+        base_url: sub.base_url,
+        protocol: sub.protocol,
+      });
+      setPingResult(res.data);
+    } catch (e: any) {
+      setPingResult({
+        success: false,
+        reachable: false,
+        status_code: null,
+        latency_ms: 0,
+        verdict: 'FAILED',
+        badge: 'danger',
+        recommendation: 'REJECT',
+        title: 'Ping Request Failed',
+        message: e?.response?.data?.error || e?.message || 'Could not reach server to test endpoint.',
+      });
+    } finally {
+      setPinging(false);
+    }
+  };
+
+  const copyBaseUrl = () => {
+    if (!sub.base_url) return;
+    navigator.clipboard.writeText(sub.base_url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className={styles.subCard}>
       <div className={styles.subCardHeader} onClick={() => setExpanded(x => !x)}>
@@ -136,6 +231,11 @@ function ProviderRow({
           <span className={styles.subName}>{sub.name}</span>
           <span className={styles.subId}>{sub.provider_id}</span>
           {sub.protocol && <span className={styles.subProto}>{sub.protocol}</span>}
+          {sub.organization_name && (
+            <span style={{ fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px' }}>
+              🏢 {sub.organization_name}
+            </span>
+          )}
         </div>
         <div className={styles.subCardRight}>
           <StatusBadge status={sub.status} />
@@ -147,20 +247,109 @@ function ProviderRow({
 
       {expanded && (
         <div className={styles.subCardBody}>
-          {sub.website_url && <a href={sub.website_url} target="_blank" rel="noreferrer" className={styles.link}>Website</a>}
-          {sub.docs_url    && <a href={sub.docs_url}    target="_blank" rel="noreferrer" className={styles.link}>Docs</a>}
-          {sub.base_url    && <div className={styles.meta}><strong>Base URL:</strong> <code>{sub.base_url}</code></div>}
-          {sub.notes       && <div className={styles.meta}><strong>Notes:</strong> {sub.notes}</div>}
+          {/* Detailed Metadata Grid */}
+          <div className={styles.detailsGrid}>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Organization</span>
+              <span className={styles.detailValue}>
+                <strong>{sub.organization_name || 'Organization'}</strong>
+                {sub.organization_id && (
+                  <span style={{ display: 'block', fontSize: '10px', color: '#64748b' }}>
+                    {sub.organization_id}
+                  </span>
+                )}
+              </span>
+            </div>
+
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Submitted By</span>
+              <span className={styles.detailValue}>
+                {sub.submitter?.full_name ? `${sub.submitter.full_name} (${sub.submitter.email})` : (sub.submitter?.email || sub.submitted_by)}
+              </span>
+            </div>
+
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Protocol Compatibility</span>
+              <span className={styles.detailValue}>
+                <code className={styles.detailCode}>{sub.protocol || 'openai_compatible'}</code>
+              </span>
+            </div>
+
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>API Base URL</span>
+              <span className={styles.detailValue}>
+                {sub.base_url ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <code className={styles.detailCode}>{sub.base_url}</code>
+                    <button
+                      type="button"
+                      onClick={copyBaseUrl}
+                      style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', padding: '2px' }}
+                      title="Copy URL"
+                    >
+                      <Copy size={13} />
+                    </button>
+                    {copied && <span style={{ fontSize: '11px', color: '#4ade80' }}>Copied!</span>}
+                  </span>
+                ) : (
+                  <span style={{ color: '#94a3b8' }}>None specified</span>
+                )}
+              </span>
+            </div>
+
+            {sub.website_url && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Website URL</span>
+                <a href={sub.website_url} target="_blank" rel="noreferrer" className={styles.link} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  {sub.website_url} <ExternalLink size={12} />
+                </a>
+              </div>
+            )}
+
+            {sub.docs_url && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Docs URL</span>
+                <a href={sub.docs_url} target="_blank" rel="noreferrer" className={styles.link} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  {sub.docs_url} <ExternalLink size={12} />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {sub.notes && (
+            <div className={styles.meta} style={{ marginBottom: '12px' }}>
+              <strong>Notes from Submitter:</strong> {sub.notes}
+            </div>
+          )}
+
+          {/* Test Ping Section */}
+          {sub.base_url && (
+            <div style={{ margin: '10px 0 14px' }}>
+              <button
+                type="button"
+                className={styles.testPingBtn}
+                onClick={testEndpoint}
+                disabled={pinging}
+              >
+                <Zap size={14} />
+                {pinging ? 'Testing Endpoint…' : '⚡ Test Endpoint / Ping Base URL'}
+              </button>
+
+              {pingResult && <PingResultBanner result={pingResult} />}
+            </div>
+          )}
+
           {sub.rejection_reason && (
             <div className={styles.rejectionNote}>
               <XCircle size={13} /> Rejected: {sub.rejection_reason}
             </div>
           )}
           {error && <div className={styles.errorNote}><AlertCircle size={13} /> {error}</div>}
+
           {sub.status === 'pending' && !rejecting && (
             <div className={styles.actions}>
               <Button onClick={approve} disabled={working}>
-                {working ? 'Working…' : '✓ Approve'}
+                {working ? 'Working…' : '✓ Approve Provider'}
               </Button>
               <Button variant="ghost" onClick={() => setRejecting(true)} disabled={working}>
                 ✕ Reject
@@ -186,10 +375,12 @@ function ModelRow({
   onApprove: (id: string, updateGlobal?: boolean) => Promise<void>;
   onReject: (id: string, reason: string) => Promise<void>;
 }) {
-  const [expanded,  setExpanded]  = useState(false);
-  const [rejecting, setRejecting] = useState(false);
-  const [working,   setWorking]   = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
+  const [expanded,   setExpanded]   = useState(false);
+  const [rejecting,  setRejecting]  = useState(false);
+  const [working,    setWorking]    = useState(false);
+  const [error,      setError]      = useState<string | null>(null);
+  const [pinging,    setPinging]    = useState(false);
+  const [pingResult, setPingResult] = useState<PingResult | null>(null);
 
   const approve = async (updateGlobal = false) => {
     setWorking(true); setError(null);
@@ -205,6 +396,32 @@ function ModelRow({
     finally { setWorking(false); }
   };
 
+  const testModel = async () => {
+    setPinging(true);
+    setPingResult(null);
+    try {
+      const res = await axiosClient.post<PingResult>('/api/admin/submissions/test-ping', {
+        model_sub_id: sub.id,
+        model_id: sub.model_id,
+      });
+      setPingResult(res.data);
+    } catch (e: any) {
+      setPingResult({
+        success: false,
+        reachable: false,
+        status_code: null,
+        latency_ms: 0,
+        verdict: 'FAILED',
+        badge: 'danger',
+        recommendation: 'REJECT',
+        title: 'Ping Request Failed',
+        message: e?.response?.data?.error || e?.message || 'Could not test endpoint.',
+      });
+    } finally {
+      setPinging(false);
+    }
+  };
+
   return (
     <div className={styles.subCard}>
       <div className={styles.subCardHeader} onClick={() => setExpanded(x => !x)}>
@@ -212,6 +429,12 @@ function ModelRow({
           <span className={styles.subName}>{sub.display_name}</span>
           <code className={styles.subId}>{sub.model_id}</code>
           <span className={styles.subProto}>{sub.provider}</span>
+
+          {sub.organization_name && (
+            <span style={{ fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '4px' }}>
+              🏢 {sub.organization_name}
+            </span>
+          )}
 
           {sub.pricing_type === 'custom_rate' ? (
             <span className={styles.badgeCustomRate} title="Organization-specific custom negotiated rate">
@@ -239,8 +462,74 @@ function ModelRow({
 
       {expanded && (
         <div className={styles.subCardBody}>
-          {sub.docs_url && <a href={sub.docs_url} target="_blank" rel="noreferrer" className={styles.link}>Docs</a>}
-          {sub.context_window && <div className={styles.meta}><strong>Context window:</strong> {sub.context_window.toLocaleString()} tokens</div>}
+          {/* Detailed Metadata Grid */}
+          <div className={styles.detailsGrid}>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Organization</span>
+              <span className={styles.detailValue}>
+                <strong>{sub.organization_name || 'Organization'}</strong>
+                {sub.organization_id && (
+                  <span style={{ display: 'block', fontSize: '10px', color: '#64748b' }}>
+                    {sub.organization_id}
+                  </span>
+                )}
+              </span>
+            </div>
+
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Submitted By</span>
+              <span className={styles.detailValue}>
+                {sub.submitter?.full_name ? `${sub.submitter.full_name} (${sub.submitter.email})` : (sub.submitter?.email || sub.submitted_by)}
+              </span>
+            </div>
+
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Provider Slug</span>
+              <span className={styles.detailValue}>
+                <code className={styles.detailCode}>{sub.provider}</code>
+              </span>
+            </div>
+
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Exact Model ID</span>
+              <span className={styles.detailValue}>
+                <code className={styles.detailCode}>{sub.model_id}</code>
+              </span>
+            </div>
+
+            {sub.context_window && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Context Window</span>
+                <span className={styles.detailValue}>
+                  {sub.context_window.toLocaleString()} tokens
+                </span>
+              </div>
+            )}
+
+            {sub.docs_url && (
+              <div className={styles.detailItem}>
+                <span className={styles.detailLabel}>Docs URL</span>
+                <a href={sub.docs_url} target="_blank" rel="noreferrer" className={styles.link} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  {sub.docs_url} <ExternalLink size={12} />
+                </a>
+              </div>
+            )}
+          </div>
+
+          {/* Test Ping Button for Model */}
+          <div style={{ margin: '6px 0 14px' }}>
+            <button
+              type="button"
+              className={styles.testPingBtn}
+              onClick={testModel}
+              disabled={pinging}
+            >
+              <Zap size={14} />
+              {pinging ? 'Testing Model Endpoint…' : `⚡ Test Endpoint for "${sub.model_id}"`}
+            </button>
+
+            {pingResult && <PingResultBanner result={pingResult} />}
+          </div>
 
           {/* Price discrepancy comparison banner */}
           {(sub.price_diff_detected || sub.catalog_pricing) && (
@@ -284,7 +573,7 @@ function ModelRow({
             </div>
           )}
 
-          {sub.notes && <div className={styles.meta}><strong>Notes:</strong> {sub.notes}</div>}
+          {sub.notes && <div className={styles.meta} style={{ marginTop: '10px' }}><strong>Notes:</strong> {sub.notes}</div>}
 
           {sub.rejection_reason && (
             <div className={styles.rejectionNote}>

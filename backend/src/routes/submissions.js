@@ -1,5 +1,6 @@
 import express from 'express';
 import { supabase } from '../index.js';
+import { resolveCanonicalProvider } from '../utils/providerResolver.js';
 
 const router = express.Router();
 
@@ -60,6 +61,11 @@ router.post('/providers', async (req, res) => {
     return res.status(400).json({ error: 'provider_id must contain only lowercase letters, digits, and hyphens.' });
   }
 
+  // Auto-clean base_url: strip trailing slashes and accidental /chat/completions suffix
+  const cleanBaseUrl = base_url?.trim()
+    ? base_url.trim().replace(/\/+$/, '').replace(/\/chat\/completions$/i, '')
+    : null;
+
   try {
     const orgId = await getOrganizationIdForUser(req.user.id);
 
@@ -99,7 +105,7 @@ router.post('/providers', async (req, res) => {
         provider_id:     provider_id.trim().toLowerCase(),
         website_url:     website_url?.trim() || null,
         docs_url:        docs_url?.trim()    || null,
-        base_url:        base_url?.trim()    || null,
+        base_url:        cleanBaseUrl,
         protocol:        protocol            || null,
         notes:           notes?.trim()       || null,
         status:          'pending',
@@ -191,13 +197,17 @@ router.post('/models', async (req, res) => {
 
   try {
     const orgId = await getOrganizationIdForUser(req.user.id);
+    const rawProvider = provider.trim();
+    const canonicalProvider = await resolveCanonicalProvider(rawProvider);
+    const providerToUse = canonicalProvider || rawProvider.toLowerCase();
+    const providerCandidates = [...new Set([rawProvider.toLowerCase(), providerToUse].filter(Boolean))];
 
     // Duplicate check: has this organization already submitted this model?
     const { data: existing } = await supabase
       .from('user_model_submissions')
       .select('id, status')
       .eq('organization_id', orgId)
-      .eq('provider', provider.trim().toLowerCase())
+      .in('provider', providerCandidates)
       .eq('model_id', model_id.trim())
       .in('status', ['pending', 'approved'])
       .maybeSingle();
@@ -213,7 +223,7 @@ router.post('/models', async (req, res) => {
     const { data: livePricing } = await supabase
       .from('model_pricing')
       .select('id, input_cost_per_1k, output_cost_per_1k')
-      .eq('provider', provider.trim().toLowerCase())
+      .in('provider', providerCandidates)
       .eq('model', model_id.trim())
       .eq('is_active', true)
       .maybeSingle();
@@ -269,7 +279,7 @@ router.post('/models', async (req, res) => {
       .insert({
         submitted_by:              req.user.id,
         organization_id:           orgId,
-        provider:                  provider.trim().toLowerCase(),
+        provider:                  providerToUse,
         model_id:                  model_id.trim(),
         display_name:              display_name.trim(),
         docs_url:                  docs_url?.trim()     || null,

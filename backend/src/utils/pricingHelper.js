@@ -1,4 +1,5 @@
 import { supabase } from '../index.js';
+import { resolveCanonicalProvider } from './providerResolver.js';
 
 /**
  * Live queries the model_pricing table for the given provider and model name.
@@ -17,6 +18,8 @@ import { supabase } from '../index.js';
 export async function getPricingForModel(provider, modelName, organizationId = null) {
   const normProvider = provider ? provider.trim().toLowerCase() : '';
   const normModel = modelName ? modelName.trim() : '';
+  const canonicalProvider = await resolveCanonicalProvider(normProvider);
+  const providerCandidates = [...new Set([normProvider, canonicalProvider].filter(Boolean))];
 
   // 1. If an organizationId is supplied, check for an approved custom rate in user_model_submissions
   if (organizationId) {
@@ -25,7 +28,7 @@ export async function getPricingForModel(provider, modelName, organizationId = n
         .from('user_model_submissions')
         .select('input_cost_per_1k, output_cost_per_1k')
         .eq('organization_id', organizationId)
-        .eq('provider', normProvider)
+        .in('provider', providerCandidates)
         .eq('model_id', normModel)
         .eq('status', 'approved')
         .order('reviewed_at', { ascending: false })
@@ -49,7 +52,7 @@ export async function getPricingForModel(provider, modelName, organizationId = n
   const { data, error } = await supabase
     .from('model_pricing')
     .select('input_cost_per_1k, output_cost_per_1k, access_tier')
-    .eq('provider', normProvider)
+    .in('provider', providerCandidates)
     .eq('model', normModel)
     .eq('is_active', true)
     .order('effective_from', { ascending: false })

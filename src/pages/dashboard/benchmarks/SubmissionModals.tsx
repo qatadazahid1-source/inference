@@ -201,9 +201,25 @@ export function AddProviderModal({ isOpen, onClose, onSuccess }: AddProviderModa
           </div>
 
           <div className={styles.formRow}>
-            <label className={styles.label}>API Base URL</label>
-            <input id="submit-provider-baseurl" className={styles.input} type="url" value={form.base_url}
-              onChange={e => handleChange('base_url', e.target.value)} placeholder="https://api.example.com/v1" />
+            <label className={styles.label}>
+              API Base URL
+              <span className={styles.hint}> — used for API request routing</span>
+            </label>
+            <input
+              id="submit-provider-baseurl"
+              className={styles.input}
+              type="url"
+              value={form.base_url}
+              onChange={e => handleChange('base_url', e.target.value.replace(/\/chat\/completions$/i, ''))}
+              placeholder="https://api.example.com/v1"
+            />
+            <div className={styles.helperTip}>
+              💡 <strong>Example:</strong> <code>https://api.together.xyz/v1</code> or <code>https://api.groq.com/openai/v1</code>
+              <br />
+              <span style={{ color: '#94a3b8', fontSize: '11px' }}>
+                Include <code>/v1</code> if required by the provider. Do <strong>NOT</strong> append <code>/chat/completions</code>.
+              </span>
+            </div>
           </div>
 
           <div className={styles.formRow}>
@@ -352,10 +368,13 @@ export function AddModelModal({ isOpen, onClose, onSuccess, knownProviders }: Ad
                 id="submit-model-id"
                 className={styles.input}
                 value={form.model_id}
-                onChange={e => handleField('model_id', e.target.value)}
+                onChange={e => handleField('model_id', e.target.value.trim())}
                 placeholder="e.g. gpt-4o-2024-11-20"
                 required
               />
+              <div className={styles.warningTip}>
+                ⚠️ <strong>Exact Identifier Required:</strong> Copy-paste the exact model name from your provider's docs (e.g. <code>gpt-4o-2024-11-20</code>, <code>claude-3-5-sonnet-20241022</code>). Any typo in dots, hyphens, or version will cause upstream <code>404 Model Not Found</code>.
+              </div>
             </div>
           </div>
 
